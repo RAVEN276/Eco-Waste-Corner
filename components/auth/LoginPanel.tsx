@@ -2,9 +2,10 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CheckCircle2, Mail } from "lucide-react";
+import { StationScene } from "@/components/art/BinArt";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { CheckIcon } from "@/components/ui/Icons";
 import { InlineNotice, Spinner } from "@/components/ui/States";
 import {
   DomainError,
@@ -129,22 +130,30 @@ export function LoginPanel() {
   const shownError = formError ?? storeError;
 
   return (
-    <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 px-4 py-12 sm:px-6 md:grid-cols-[1fr_1.1fr] md:py-20">
-      <div className="flex flex-col justify-center">
-        <h1 className="text-3xl font-extrabold text-forest sm:text-4xl">
-          Masuk ke Eco Waste Corner
-        </h1>
-        <p className="mt-4 text-lg text-muted">
-          Masuk dengan akun Google, atau minta tautan login ke email Student UPJ. Kamu tidak perlu
-          memasukkan NIM.
-        </p>
-        <p className="mt-3 text-sm text-muted">
-          Tautan login lewat email hanya untuk alamat berakhiran{" "}
-          <strong className="text-charcoal">{UPJ_STUDENT_DOMAIN}</strong>.
-        </p>
+    <div className="grid min-h-[calc(100dvh-4rem)] md:grid-cols-2">
+      <div className="flex flex-col justify-center gap-10 border-b-2 border-ink bg-cobalt px-4 py-10 text-white sm:px-8 md:border-b-0 md:border-r-2 md:px-12 md:py-16">
+        <div className="fade-up">
+          <h1 className="text-6xl sm:text-7xl">Masuk ke Eco Waste Corner</h1>
+          <p className="mt-5 max-w-md text-lg">
+            Masuk dengan akun Google, atau minta tautan login ke email Student UPJ. Kamu tidak perlu
+            memasukkan NIM.
+          </p>
+          <p className="mt-3 max-w-md text-sm text-mist">
+            Tautan login lewat email hanya untuk alamat berakhiran{" "}
+            <strong className="text-white">{UPJ_STUDENT_DOMAIN}</strong>.
+          </p>
+        </div>
+        <div className="hidden max-w-md overflow-hidden rounded-sheet border-2 border-ink bg-paper p-3 md:block">
+          <StationScene className="block w-full" />
+        </div>
       </div>
 
-      <Card className="space-y-6">
+      <div className="flex items-center justify-center px-4 py-10 sm:px-8 md:px-12">
+      <Card
+        strong
+        className="fade-up w-full max-w-md space-y-6"
+        style={{ ["--delay" as string]: "150ms" }}
+      >
         {!isFirebaseConfigured ? (
           <InlineNotice tone="warning">
             <strong>Login belum aktif.</strong> {FIREBASE_NOT_CONFIGURED_MESSAGE}
@@ -155,12 +164,12 @@ export function LoginPanel() {
 
         {stage === "sent" ? (
           <div className="space-y-3 text-center" role="status">
-            <CheckCircle2 aria-hidden="true" className="mx-auto size-10 text-leaf-deep" />
-            <h2 className="text-xl font-bold">Cek email kamu</h2>
+            <CheckIcon className="mx-auto size-10 text-organik" />
+            <h2 className="text-4xl">Cek email kamu</h2>
             <p className="text-sm text-muted">
               Tautan login dikirim ke{" "}
-              <strong className="text-charcoal">{email.trim().toLowerCase()}</strong>. Buka tautan
-              itu di perangkat ini.
+              <strong className="text-ink">{email.trim().toLowerCase()}</strong>. Buka tautan itu
+              di perangkat ini.
             </p>
             <Button variant="outline" onClick={() => setStage("form")}>
               Kirim ke email lain
@@ -168,7 +177,7 @@ export function LoginPanel() {
           </div>
         ) : stage === "completing" ? (
           <div className="flex flex-col items-center gap-3 py-6">
-            <Spinner className="size-8 text-leaf-deep" label="Menyelesaikan login" />
+            <Spinner className="size-8 text-cobalt" label="Menyelesaikan login" />
             <p className="text-sm text-muted" aria-hidden="true">
               Menyelesaikan login...
             </p>
@@ -178,7 +187,7 @@ export function LoginPanel() {
             {stage === "form" ? (
               <>
                 <Button
-                  variant="primary"
+                  variant="outline"
                   size="lg"
                   className="w-full"
                   onClick={handleGoogle}
@@ -188,9 +197,9 @@ export function LoginPanel() {
                   Masuk dengan Google
                 </Button>
                 <div className="flex items-center gap-3 text-sm text-muted" aria-hidden="true">
-                  <span className="h-px flex-1 bg-line" />
+                  <span className="h-0.5 flex-1 bg-rule" />
                   atau
-                  <span className="h-px flex-1 bg-line" />
+                  <span className="h-0.5 flex-1 bg-rule" />
                 </div>
               </>
             ) : (
@@ -201,7 +210,7 @@ export function LoginPanel() {
 
             <form onSubmit={handleEmailSubmit} noValidate className="space-y-3">
               <div>
-                <label htmlFor="email-upj" className="block text-sm font-semibold">
+                <label htmlFor="email-upj" className="block text-sm font-bold">
                   Email Student UPJ
                 </label>
                 <input
@@ -218,30 +227,27 @@ export function LoginPanel() {
                   disabled={disabled}
                   aria-invalid={fieldError ? true : undefined}
                   aria-describedby={fieldError ? "email-upj-error" : undefined}
-                  className="mt-1.5 min-h-12 w-full rounded-lg border-2 border-line bg-white px-3 text-base placeholder:text-muted disabled:bg-sand aria-[invalid=true]:border-brick"
+                  className="mt-1.5 min-h-12 w-full rounded-ctl border-2 border-edge bg-white px-3 text-base placeholder:text-muted disabled:bg-paper aria-[invalid=true]:border-brick"
                 />
                 {fieldError ? (
                   <p
                     id="email-upj-error"
                     role="alert"
-                    className="mt-1.5 text-sm font-medium text-brick"
+                    className="mt-1.5 text-sm font-bold text-brick"
                   >
                     {fieldError}
                   </p>
                 ) : null}
               </div>
-              <Button type="submit" variant="mint" size="lg" className="w-full" disabled={disabled}>
-                {busy === "link" ? (
-                  <Spinner label="Mengirim" />
-                ) : (
-                  <Mail aria-hidden="true" className="size-5" />
-                )}
+              <Button type="submit" size="lg" className="w-full" disabled={disabled}>
+                {busy === "link" ? <Spinner label="Mengirim" /> : null}
                 {stage === "confirm-email" ? "Selesaikan login" : "Kirim tautan login"}
               </Button>
             </form>
           </>
         )}
       </Card>
+      </div>
     </div>
   );
 }

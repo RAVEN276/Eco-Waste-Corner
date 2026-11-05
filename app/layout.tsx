@@ -1,23 +1,31 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Public_Sans } from "next/font/google";
+import { Atkinson_Hyperlegible_Next, Big_Shoulders } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers/Providers";
+import { BottomNav } from "@/components/layout/BottomNav";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 
-// Display: Bricolage Grotesque has slightly irregular, friendly letterforms that
-// suit a student-run campus program. Body: Public Sans is built for civic
-// readability, which matters for the sorting guidance.
-const display = Bricolage_Grotesque({
-  variable: "--font-display",
+// Tampilan: Big Shoulders, warisan papan penanda jalan, cocok untuk label tong dan
+// angka poin, dan sempit sehingga nama panjang muat di layar ponsel.
+// Isi: Atkinson Hyperlegible Next, dirancang untuk keterbacaan.
+// Next tidak punya metrik font cadangan untuk kedua font ini, jadi penyesuaian otomatis
+// dimatikan (sumber peringatan build) dan fallback dipilih manual: Arial Narrow untuk
+// judul yang sempit, sistem untuk isi.
+const signage = Big_Shoulders({
+  variable: "--font-signage",
   subsets: ["latin"],
   display: "swap",
+  adjustFontFallback: false,
+  fallback: ["Arial Narrow", "Arial", "sans-serif"],
 });
 
-const body = Public_Sans({
-  variable: "--font-body",
+const text = Atkinson_Hyperlegible_Next({
+  variable: "--font-text",
   subsets: ["latin"],
   display: "swap",
+  adjustFontFallback: false,
+  fallback: ["system-ui", "Arial", "sans-serif"],
 });
 
 export const metadata: Metadata = {
@@ -30,27 +38,29 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1B4D3E",
+  themeColor: "#2438A6",
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="id" className={`${display.variable} ${body.variable} h-full`}>
-      <body className="flex min-h-full flex-col">
+    <html lang="id" className={`${signage.variable} ${text.variable} h-full`}>
+      <body className="flex min-h-full flex-col pb-[calc(3.75rem+env(safe-area-inset-bottom))] md:pb-0">
         <a
           href="#konten-utama"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-md focus:bg-forest focus:px-4 focus:py-2 focus:text-white"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-ctl focus:bg-ink focus:px-4 focus:py-3 focus:text-white"
         >
           Lewati ke konten
         </a>
         <Providers>
           <Navbar />
-          <main id="konten-utama" className="flex-1">
+          <main id="konten-utama" className="flex-1 overflow-x-clip">
             {children}
           </main>
           <Footer />
+          <BottomNav />
         </Providers>
       </body>
     </html>

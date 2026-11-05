@@ -1,24 +1,20 @@
 "use client";
 
-import { Lock, Medal, ShieldCheck, Sprout } from "lucide-react";
 import { BADGES, getBadgeProgress } from "@/lib/badges";
 import { cn } from "@/lib/utils";
 import { useUserStore } from "@/store/useUserStore";
 
-const ICONS = {
-  "pemilah-pemula": Sprout,
-  "eco-warrior": ShieldCheck,
-  "recycling-champion": Medal,
-} as const;
+const MAX_SCANS = BADGES[BADGES.length - 1].minScans;
 
 export function BadgesPanel() {
   const totalScan = useUserStore((s) => s.profile?.totalScan ?? 0);
   const progress = getBadgeProgress(totalScan);
+  const reached = Math.min(totalScan, MAX_SCANS);
 
   return (
     <section aria-labelledby="judul-badge">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
-        <h2 id="judul-badge" className="text-2xl font-bold text-forest">
+        <h2 id="judul-badge" className="text-5xl">
           Peringkat dan badge
         </h2>
         <p className="text-sm text-muted">
@@ -27,28 +23,67 @@ export function BadgesPanel() {
             : "Semua badge sudah terbuka"}
         </p>
       </div>
-      <p className="mt-1 text-lg font-semibold">
+      <p className="mt-2 text-lg font-bold">
         Peringkat saat ini: {progress.current ? progress.current.label : "Belum ada, mulai scan pertamamu"}
       </p>
 
-      <ul className="mt-4 grid gap-3 sm:grid-cols-3">
+      <div className="mt-5">
+        <div
+          role="progressbar"
+          aria-label="Progres scan menuju badge tertinggi"
+          aria-valuemin={0}
+          aria-valuemax={MAX_SCANS}
+          aria-valuenow={reached}
+          aria-valuetext={`${reached} dari ${MAX_SCANS} scan`}
+          className="h-4 overflow-hidden rounded-ctl border-2 border-ink bg-white"
+        >
+          <div
+            className="fill-scroll h-full bg-cobalt"
+            style={{ width: `${(reached / MAX_SCANS) * 100}%` }}
+          />
+        </div>
+        <div className="relative mt-1 h-5 text-xs font-bold" aria-hidden="true">
+          {BADGES.map((badge, index) => (
+            <span
+              key={badge.id}
+              className={cn(
+                "absolute",
+                index === BADGES.length - 1 ? "-translate-x-full" : "-translate-x-1/2",
+              )}
+              style={{ left: `${(badge.minScans / MAX_SCANS) * 100}%` }}
+            >
+              {badge.minScans}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <ul className="mt-5 grid gap-3 sm:grid-cols-3">
         {BADGES.map((badge) => {
           const unlocked = totalScan >= badge.minScans;
-          const Icon = unlocked ? ICONS[badge.id as keyof typeof ICONS] : Lock;
           return (
             <li
               key={badge.id}
               className={cn(
-                "flex items-center gap-4 rounded-xl p-4",
-                unlocked ? "bg-mint text-forest" : "border-2 border-dashed border-line bg-white text-muted",
+                "flex items-center gap-4 rounded-plate border-2 p-4",
+                unlocked
+                  ? "border-ink bg-ink text-white"
+                  : "border-dashed border-edge bg-white text-ink",
               )}
             >
-              <Icon aria-hidden="true" className="size-8 shrink-0" strokeWidth={1.75} />
+              <span className="shrink-0 text-center" aria-hidden="true">
+                <span className="block font-display text-6xl font-extrabold leading-none">
+                  {badge.minScans}
+                </span>
+                <span className="text-xs font-bold">scan</span>
+              </span>
               <div>
-                <p className={cn("font-bold", unlocked ? "text-forest" : "text-charcoal")}>{badge.label}</p>
-                <p className="text-sm">
+                <p className="font-bold">{badge.label}</p>
+                <p className={cn("text-sm", unlocked ? "text-mist" : "text-muted")}>
                   {badge.description}
-                  <span className="sr-only">{unlocked ? ", sudah terbuka" : ", masih terkunci"}</span>
+                </p>
+                <p className="mt-1 text-xs font-bold">
+                  {unlocked ? "Sudah terbuka" : `Terkunci, ${badge.minScans - totalScan} scan lagi`}
                 </p>
               </div>
             </li>

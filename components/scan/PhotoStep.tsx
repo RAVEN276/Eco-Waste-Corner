@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
-import { Camera, ImageUp } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { CameraIcon } from "@/components/ui/Icons";
 import { InlineNotice, Spinner } from "@/components/ui/States";
 import { WASTE_ITEMS } from "@/lib/data/items";
 import { ACCEPTED_PHOTO_TYPES, MAX_PHOTO_BYTES, validatePhoto } from "@/lib/photo";
@@ -64,9 +64,9 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <fieldset disabled={submitting}>
-        <legend className="text-lg font-bold">Apa yang kamu buang?</legend>
+        <legend className="font-display text-3xl font-extrabold">Apa yang kamu buang?</legend>
         <p className="mt-1 text-sm text-muted">
           Jawabanmu dicocokkan dengan slot yang kamu pindai. Salah slot akan mengurangi poin.
         </p>
@@ -75,16 +75,16 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
             <label
               key={item.id}
               className={cn(
-                "flex min-h-12 items-center gap-3 rounded-lg border-2 px-3 py-2 has-[:focus-visible]:outline has-[:focus-visible]:outline-[3px] has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-forest",
+                "flex min-h-12 items-center gap-3 rounded-ctl border-2 px-3 py-2 has-[:focus-visible]:outline has-[:focus-visible]:outline-[3px] has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-cobalt",
                 itemId === item.id
-                  ? "border-forest bg-mint-soft"
-                  : "border-line bg-white hover:border-leaf",
+                  ? "border-ink bg-cobalt-soft"
+                  : "border-edge bg-white hover:bg-cobalt-soft",
               )}
             >
               <input
                 type="radio"
                 name="jenis-sampah"
-                className="size-5 shrink-0 accent-forest"
+                className="size-5 shrink-0 accent-cobalt"
                 checked={itemId === item.id}
                 onChange={() => {
                   setItemId(item.id);
@@ -96,14 +96,14 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
           ))}
         </div>
         {itemError ? (
-          <p role="alert" className="mt-2 text-sm font-medium text-brick">
+          <p role="alert" className="mt-2 text-sm font-bold text-brick">
             {itemError}
           </p>
         ) : null}
       </fieldset>
 
       <fieldset disabled={submitting}>
-        <legend className="text-lg font-bold">Foto bukti pemilahan</legend>
+        <legend className="font-display text-3xl font-extrabold">Foto bukti pemilahan</legend>
         <p className="mt-1 text-sm text-muted">
           Foto sampahmu saat berada di depan slot. JPG, PNG, atau WebP, maksimal{" "}
           {MAX_PHOTO_BYTES / 1024 / 1024} MB. Foto dikecilkan otomatis sebelum disimpan.
@@ -128,14 +128,14 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
               alt="Pratinjau foto bukti yang akan diunggah"
               width={160}
               height={160}
-              className="size-40 shrink-0 rounded-xl border border-line object-cover"
+              className="size-40 shrink-0 rounded-plate border-2 border-ink object-cover"
             />
           ) : (
             <div
-              className="flex size-40 shrink-0 flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-line bg-white text-center text-sm text-muted"
+              className="flex size-40 shrink-0 flex-col items-center justify-center gap-2 rounded-plate border-2 border-dashed border-edge bg-white text-center text-sm text-muted"
               aria-hidden="true"
             >
-              <Camera className="size-8" />
+              <CameraIcon className="size-8" />
               Belum ada foto
             </div>
           )}
@@ -145,14 +145,13 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
               onClick={() => inputRef.current?.click()}
               disabled={submitting}
             >
-              <ImageUp aria-hidden="true" className="size-4" />
               {photo ? "Ganti foto" : "Ambil atau pilih foto"}
             </Button>
             {photo ? <p className="break-all text-sm text-muted">{photo.name}</p> : null}
             <label className="flex min-h-11 items-center gap-2.5 text-sm">
               <input
                 type="checkbox"
-                className="size-5 accent-forest"
+                className="size-5 accent-cobalt"
                 checked={skipPhoto}
                 onChange={(event) => {
                   setSkipPhoto(event.target.checked);
@@ -164,7 +163,7 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
           </div>
         </div>
         {photoError ? (
-          <p id="foto-error" role="alert" className="mt-2 text-sm font-medium text-brick">
+          <p id="foto-error" role="alert" className="mt-2 text-sm font-bold text-brick">
             {photoError}
           </p>
         ) : null}
@@ -174,7 +173,7 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
 
       {submitting ? (
         <div role="status" className="flex items-center gap-3 text-sm text-muted">
-          <Spinner className="text-leaf-deep" label="Mengirim" />
+          <Spinner className="text-cobalt" label="Mengirim" />
           Memproses foto dan menghitung poin...
         </div>
       ) : null}

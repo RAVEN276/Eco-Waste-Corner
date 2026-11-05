@@ -9,11 +9,10 @@ export interface BinInfo {
   /** Frequent mistakes for this bin. */
   avoid: string[];
   tip: string;
-  /** Tailwind classes for the bin's identity color. */
+  /** Tailwind classes for the bin's color code. Kertas is a filled block only, never text on a light ground. */
   tone: {
     solid: string;
     soft: string;
-    ring: string;
   };
 }
 
@@ -26,9 +25,8 @@ export const BINS: Record<BinCategory, BinInfo> = {
     avoid: ["Plastik pembungkus", "Tisu berminyak", "Puntung rokok"],
     tip: "Buang sisa makanan tanpa kemasan supaya bisa diolah jadi kompos.",
     tone: {
-      solid: "bg-leaf-deep text-white",
-      soft: "bg-mint text-forest",
-      ring: "ring-leaf-deep",
+      solid: "bg-organik text-white",
+      soft: "bg-organik-soft text-ink",
     },
   },
   plastik_kertas: {
@@ -39,9 +37,8 @@ export const BINS: Record<BinCategory, BinInfo> = {
     avoid: ["Kemasan yang masih berisi minuman", "Kertas berminyak", "Tisu bekas"],
     tip: "Kosongkan dan bilas singkat wadah plastik sebelum dibuang.",
     tone: {
-      solid: "bg-sun text-charcoal",
-      soft: "bg-sun-soft text-charcoal",
-      ring: "ring-sun",
+      solid: "bg-kertas text-ink",
+      soft: "bg-kertas-soft text-ink",
     },
   },
   residu: {
@@ -52,9 +49,8 @@ export const BINS: Record<BinCategory, BinInfo> = {
     avoid: ["Sisa makanan", "Botol plastik bersih", "Kardus kering"],
     tip: "Residu adalah pilihan terakhir. Pilah dulu, sisanya baru ke sini.",
     tone: {
-      solid: "bg-charcoal text-white",
-      soft: "bg-stone-200 text-charcoal",
-      ring: "ring-charcoal",
+      solid: "bg-residu text-white",
+      soft: "bg-residu-soft text-ink",
     },
   },
 };

@@ -1,19 +1,28 @@
 import type { HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
-/** Default surface: solid, thin border. No shadow, so elevation stays reserved for dialogs. */
-export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+/** Permukaan biasa: putih, garis 2px, tanpa bayangan. Bayangan dicadangkan untuk dialog. */
+export function Card({
+  className,
+  strong = false,
+  ...props
+}: HTMLAttributes<HTMLDivElement> & { strong?: boolean }) {
   return (
     <div
-      className={cn("rounded-xl border border-line bg-white p-5 sm:p-6", className)}
+      className={cn(
+        "rounded-plate border-2 bg-white p-5 sm:p-6",
+        strong ? "border-ink" : "border-rule",
+        className,
+      )}
       {...props}
     />
   );
 }
 
 /**
- * Glassmorphism surface. Only meaningful over a colored or imagery backdrop,
- * so it is used sparingly: the hero status panel and the map legend.
+ * Permukaan kaca. Hanya bermakna di atas latar berwarna, jadi dipakai di dua
+ * tempat: panel langkah di hero (di atas blok tong) dan label denah peta.
+ * Teks gelap di atas kaca terang supaya kontras tetap di atas 7:1 pada semua blok.
  */
 export function GlassCard({
   className,
@@ -23,8 +32,10 @@ export function GlassCard({
   return (
     <div
       className={cn(
-        "rounded-2xl border p-5 text-white backdrop-blur-md",
-        tone === "light" ? "border-white/30 bg-white/15" : "border-white/20 bg-forest/75",
+        "rounded-plate border-2 p-4 backdrop-blur-md sm:p-5",
+        tone === "light"
+          ? "border-white/70 bg-white/75 text-ink"
+          : "border-white/30 bg-ink/80 text-white",
         className,
       )}
       {...props}

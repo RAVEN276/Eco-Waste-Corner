@@ -51,13 +51,13 @@ export default function DashboardPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-14 px-4 py-10 sm:px-6 md:py-14">
       <div>
-        <h1 className="text-3xl font-extrabold text-forest sm:text-4xl">
+        <h1 className="text-6xl sm:text-7xl">
           Halo, {profile.nama.split(" ")[0] || "Mahasiswa UPJ"}
         </h1>
-        <p className="mt-1 text-muted">Ringkasan poin dan aktivitas pemilahanmu.</p>
+        <p className="mt-3 text-lg text-muted">Ringkasan poin dan aktivitas pemilahanmu.</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.4fr_1fr]">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.5fr_1fr]">
         <PointsCard />
         <ProfileCard />
       </div>
