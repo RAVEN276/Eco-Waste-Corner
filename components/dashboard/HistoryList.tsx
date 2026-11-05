@@ -1,10 +1,10 @@
 "use client";
 
-import { useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
-import { AlertTriangle, BadgeCheck, History, Image as ImageIcon, MinusCircle } from "lucide-react";
 import { PhotoDialog } from "@/components/dashboard/PhotoDialog";
 import { Button, buttonClasses } from "@/components/ui/Button";
+import { AlertIcon, CheckIcon } from "@/components/ui/Icons";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { useScanHistory } from "@/hooks/useScanHistory";
 import { BINS } from "@/lib/data/bins";
@@ -14,30 +14,28 @@ import { cn, formatDateTime } from "@/lib/utils";
 
 const MAX_ROWS = 50;
 
-const STATUS_VIEW: Record<
-  ScanStatus,
-  { label: string; icon: typeof BadgeCheck; className: string }
-> = {
-  verified: { label: "Terverifikasi", icon: BadgeCheck, className: "bg-mint text-forest" },
-  unverified: {
-    label: "Tanpa foto bukti",
-    icon: MinusCircle,
-    className: "bg-sun-soft text-charcoal",
-  },
-  penalized: { label: "Penalti", icon: AlertTriangle, className: "bg-[#fbe4e1] text-[#7a1810]" },
+// Baris muncul berurutan dari atas (delapan pertama saja), menandakan data baru tiba.
+function rowDelay(index: number): CSSProperties {
+  return { ["--delay" as string]: `${Math.min(index, 8) * 45}ms` };
+}
+
+const STATUS_VIEW: Record<ScanStatus, { label: string; className: string }> = {
+  verified: { label: "Terverifikasi", className: "bg-organik-soft text-ink" },
+  unverified: { label: "Tanpa foto bukti", className: "bg-kertas-soft text-ink" },
+  penalized: { label: "Penalti", className: "bg-brick-soft text-brick-ink" },
 };
 
 function StatusBadge({ scan }: { scan: ScanRecord }) {
   const view = STATUS_VIEW[scan.status] ?? STATUS_VIEW.unverified;
-  const Icon = view.icon;
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold",
+        "inline-flex items-center gap-1.5 rounded-ctl px-2 py-1 text-xs font-bold",
         view.className,
       )}
     >
-      <Icon aria-hidden="true" className="size-3.5" />
+      {scan.status === "verified" ? <CheckIcon className="size-3.5" /> : null}
+      {scan.status === "penalized" ? <AlertIcon className="size-3.5" /> : null}
       {view.label}
     </span>
   );
@@ -54,7 +52,6 @@ function PhotoButton({ scan, onOpen }: { scan: ScanRecord; onOpen: (scan: ScanRe
       aria-label={`Lihat foto bukti scan ${formatDateTime(scan.timestamp)}`}
       aria-haspopup="dialog"
     >
-      <ImageIcon aria-hidden="true" className="size-4" />
       Lihat foto
     </Button>
   );
@@ -64,8 +61,8 @@ function Points({ value }: { value: number }) {
   return (
     <span
       className={cn(
-        "font-display text-lg font-extrabold tabular-nums",
-        value < 0 ? "text-brick" : "text-forest",
+        "font-display text-4xl font-extrabold leading-none tabular-nums",
+        value < 0 ? "text-brick" : "text-ink",
       )}
     >
       {value > 0 ? `+${value}` : value}
@@ -85,11 +82,11 @@ export function HistoryList() {
 
   return (
     <section aria-labelledby="judul-riwayat">
-      <h2 id="judul-riwayat" className="text-2xl font-bold text-forest">
+      <h2 id="judul-riwayat" className="text-5xl">
         Riwayat pembuangan sampah
       </h2>
 
-      <div className="mt-4">
+      <div className="mt-5">
         {status === "loading" ? (
           <LoadingState label="Memuat riwayat" />
         ) : status === "error" ? (
@@ -100,7 +97,6 @@ export function HistoryList() {
           />
         ) : rows.length === 0 ? (
           <EmptyState
-            icon={<History aria-hidden="true" className="size-8" />}
             title="Belum ada aktivitas"
             description="Scan slot tong pertamamu untuk mulai mengumpulkan poin JSDP."
             action={
@@ -112,11 +108,15 @@ export function HistoryList() {
         ) : (
           <>
             <ul className="space-y-3 md:hidden">
-              {rows.map((scan) => (
-                <li key={scan.scanId} className="rounded-xl border border-line bg-white p-4">
+              {rows.map((scan, index) => (
+                <li
+                  key={scan.scanId}
+                  className="fade-up rounded-plate border-2 border-rule bg-white p-4"
+                  style={rowDelay(index)}
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="font-semibold">
+                      <p className="font-bold">
                         {BINS[scan.categoryBin]?.label ?? scan.categoryBin}
                       </p>
                       <p className="text-sm text-muted">{scan.locationName || scan.location}</p>
@@ -128,9 +128,7 @@ export function HistoryList() {
                     <time className="text-xs text-muted">{formatDateTime(scan.timestamp)}</time>
                   </div>
                   {scan.penaltyReason ? (
-                    <p className="mt-2 text-sm text-[#7a1810]">
-                      {PENALTY_LABEL[scan.penaltyReason]}
-                    </p>
+                    <p className="mt-2 text-sm text-brick-ink">{PENALTY_LABEL[scan.penaltyReason]}</p>
                   ) : null}
                   <div className="mt-3">
                     <PhotoButton scan={scan} onOpen={setPhotoScan} />
@@ -139,38 +137,42 @@ export function HistoryList() {
               ))}
             </ul>
 
-            <div className="hidden overflow-x-auto rounded-xl border border-line bg-white md:block">
+            <div className="hidden overflow-x-auto rounded-plate border-2 border-ink bg-white md:block">
               <table className="w-full border-collapse text-left text-sm">
                 <caption className="sr-only">Riwayat scan, terbaru di atas</caption>
                 <thead>
-                  <tr className="border-b border-line bg-mint-soft text-forest">
-                    <th scope="col" className="px-4 py-3 font-semibold">
+                  <tr className="bg-ink text-white">
+                    <th scope="col" className="px-4 py-3 font-bold">
                       Tanggal
                     </th>
-                    <th scope="col" className="px-4 py-3 font-semibold">
+                    <th scope="col" className="px-4 py-3 font-bold">
                       Kategori bin
                     </th>
-                    <th scope="col" className="px-4 py-3 font-semibold">
+                    <th scope="col" className="px-4 py-3 font-bold">
                       Lokasi
                     </th>
-                    <th scope="col" className="px-4 py-3 text-right font-semibold">
+                    <th scope="col" className="px-4 py-3 text-right font-bold">
                       Poin
                     </th>
-                    <th scope="col" className="px-4 py-3 font-semibold">
+                    <th scope="col" className="px-4 py-3 font-bold">
                       Status verifikasi
                     </th>
-                    <th scope="col" className="px-4 py-3 font-semibold">
+                    <th scope="col" className="px-4 py-3 font-bold">
                       Foto
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((scan) => (
-                    <tr key={scan.scanId} className="border-b border-line last:border-0">
+                  {rows.map((scan, index) => (
+                    <tr
+                      key={scan.scanId}
+                      className="fade-up border-b border-rule last:border-0"
+                      style={rowDelay(index)}
+                    >
                       <td className="whitespace-nowrap px-4 py-3">
                         {formatDateTime(scan.timestamp)}
                       </td>
-                      <td className="px-4 py-3 font-semibold">
+                      <td className="px-4 py-3 font-bold">
                         {BINS[scan.categoryBin]?.label ?? scan.categoryBin}
                       </td>
                       <td className="px-4 py-3">{scan.locationName || scan.location}</td>
@@ -180,7 +182,7 @@ export function HistoryList() {
                       <td className="px-4 py-3">
                         <StatusBadge scan={scan} />
                         {scan.penaltyReason ? (
-                          <p className="mt-1 max-w-xs text-xs text-[#7a1810]">
+                          <p className="mt-1 max-w-xs text-xs text-brick-ink">
                             {PENALTY_LABEL[scan.penaltyReason]}
                           </p>
                         ) : null}

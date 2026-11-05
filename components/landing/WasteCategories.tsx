@@ -1,107 +1,98 @@
-"use client";
-
-import { useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { Check, Leaf, Recycle, Trash2, X } from "lucide-react";
-import { BIN_LIST, type BinInfo } from "@/lib/data/bins";
-import type { BinCategory } from "@/lib/types";
+import { BinArt } from "@/components/art/BinArt";
+import { CountUp } from "@/components/ui/CountUp";
+import { CheckIcon, CloseIcon } from "@/components/ui/Icons";
+import { BIN_LIST } from "@/lib/data/bins";
+import { BASE_POINTS } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
 
-const ICONS: Record<BinCategory, typeof Leaf> = {
-  organik: Leaf,
-  plastik_kertas: Recycle,
-  residu: Trash2,
-};
-
-function Panel({ bin, active, onSelect }: { bin: BinInfo; active: boolean; onSelect: () => void }) {
-  const Icon = ICONS[bin.id];
-  const panelId = `panel-${bin.id}`;
-  return (
-    <motion.article
-      layout
-      transition={{ type: "spring", stiffness: 260, damping: 30 }}
-      className={cn(
-        "overflow-hidden rounded-2xl",
-        bin.tone.solid,
-        active ? "md:flex-[2.4]" : "md:flex-1",
-      )}
-    >
-      <h3 className="m-0">
-        <button
-          type="button"
-          aria-expanded={active}
-          aria-controls={panelId}
-          onClick={onSelect}
-          className="flex min-h-20 w-full items-center gap-4 p-5 text-left sm:p-6"
-        >
-          <Icon aria-hidden="true" className="size-9 shrink-0" strokeWidth={1.75} />
-          <span className="flex-1">
-            <span className="block text-xl font-bold sm:text-2xl">{bin.label}</span>
-            <span className="mt-0.5 block text-sm opacity-90">{bin.short}</span>
-          </span>
-        </button>
-      </h3>
-
-      <AnimatePresence initial={false}>
-        {active ? (
-          <motion.div
-            key="content"
-            id={panelId}
-            role="region"
-            aria-label={`Panduan ${bin.label}`}
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-          >
-            <div className="space-y-5 px-5 pb-6 sm:px-6">
-              <div>
-                <p className="text-sm font-bold">Masukkan ke sini</p>
-                <ul className="mt-2 space-y-1.5">
-                  {bin.accepts.map((item) => (
-                    <li key={item} className="flex items-start gap-2 text-sm">
-                      <Check aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <p className="text-sm font-bold">Jangan dimasukkan</p>
-                <ul className="mt-2 space-y-1.5">
-                  {bin.avoid.map((item) => (
-                    <li key={item} className="flex items-start gap-2 text-sm">
-                      <X aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <p className="rounded-lg bg-black/10 px-3 py-2 text-sm">{bin.tip}</p>
-            </div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
-    </motion.article>
-  );
-}
-
+// Tiga kategori setara dan strukturnya sama, jadi kolomnya sengaja sama lebar.
+// Satu panel dengan garis tegas, bukan tiga kartu terpisah. Gambar tong mencuat dari
+// kepala kolom supaya kode warna langsung dikenali.
 export function WasteCategories() {
-  const [active, setActive] = useState<BinCategory>("organik");
-
   return (
-    <section id="edukasi" className="mx-auto max-w-6xl px-4 py-16 sm:px-6 md:py-24" aria-labelledby="judul-edukasi">
-      <div className="max-w-2xl">
-        <h2 id="judul-edukasi" className="text-3xl font-bold text-forest sm:text-4xl">
-          Tiga slot, satu aturan: pilah dari awal
+    <section
+      id="edukasi"
+      className="mx-auto max-w-6xl px-4 py-14 sm:px-6 md:py-20"
+      aria-labelledby="judul-edukasi"
+    >
+      <div className="reveal max-w-2xl">
+        <h2 id="judul-edukasi" className="text-5xl sm:text-6xl">
+          Tiga tong, satu aturan: pilah dari awal.
         </h2>
-        <p className="mt-3 text-lg text-muted">
-          Ketuk sebuah slot untuk melihat jenis sampah yang benar dan kesalahan yang paling sering terjadi.
+        <p className="mt-4 text-lg text-muted">
+          Cek jenis sampah yang benar dan kesalahan yang paling sering terjadi sebelum kamu
+          membuang.
         </p>
       </div>
-      <div className="mt-8 flex flex-col gap-3 md:flex-row md:items-start">
-        {BIN_LIST.map((bin) => (
-          <Panel key={bin.id} bin={bin} active={active === bin.id} onSelect={() => setActive(bin.id)} />
+
+      {/*
+        Di layar md ke atas, kolom dan kepalanya memakai subgrid bersarang. Lima baris dibagi
+        bersama: judul, deskripsi, poin, isi, tips. Jadi tiap bagian sejajar antar kolom
+        walau satu judul pindah baris (misalnya "Plastik / Kertas" di layar sedang).
+      */}
+      <div className="mt-10 grid overflow-hidden rounded-sheet border-2 border-ink md:grid-cols-3 md:grid-rows-[auto_auto_auto_1fr_auto]">
+        {BIN_LIST.map((bin, index) => (
+          <article
+            key={bin.id}
+            className={cn(
+              "reveal flex flex-col md:row-span-5 md:grid md:grid-rows-subgrid",
+              index > 0 && "border-t-2 border-ink md:border-l-2 md:border-t-0",
+            )}
+            style={{
+              ["--r0" as string]: `${index * 8}%`,
+              ["--r1" as string]: `${40 + index * 8}%`,
+            }}
+          >
+            <header
+              className={cn(
+                "relative flex min-h-44 flex-col overflow-hidden p-5 sm:p-6 md:row-span-3 md:grid md:min-h-0 md:grid-rows-subgrid",
+                bin.tone.solid,
+              )}
+            >
+              <h3 className="relative z-10 text-4xl xl:whitespace-nowrap">{bin.label}</h3>
+              <p className="relative z-10 mt-2 max-w-[60%] text-base">{bin.short}</p>
+              <p className="relative z-10 mt-auto flex items-baseline gap-2 pt-4 md:mt-0 md:self-end">
+                <CountUp
+                  value={BASE_POINTS[bin.id]}
+                  className="font-display text-5xl font-extrabold leading-none"
+                />
+                <span className="text-sm font-bold">poin dasar</span>
+              </p>
+              <BinArt
+                id={bin.id}
+                className="absolute -bottom-8 -right-3 w-32 rotate-6 sm:w-36 md:w-24 lg:w-36"
+              />
+            </header>
+
+            <div className="flex-1 space-y-5 bg-white p-5 sm:p-6">
+              <div>
+                <h4 className="text-sm font-bold">Masukkan ke sini</h4>
+                <ul className="mt-2 space-y-2">
+                  {bin.accepts.map((item) => (
+                    <li key={item} className="flex items-start gap-2.5">
+                      <CheckIcon className="mt-1 size-4 shrink-0 text-organik" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h4 className="text-sm font-bold">Jangan dimasukkan</h4>
+                <ul className="mt-2 space-y-2">
+                  {bin.avoid.map((item) => (
+                    <li key={item} className="flex items-start gap-2.5">
+                      <CloseIcon className="mt-1 size-4 shrink-0 text-brick" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <p className={cn("p-5 text-sm sm:p-6", bin.tone.soft)}>
+              <strong>Tips:</strong> {bin.tip}
+            </p>
+          </article>
         ))}
       </div>
     </section>

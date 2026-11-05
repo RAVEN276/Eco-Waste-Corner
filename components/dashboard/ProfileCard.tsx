@@ -1,17 +1,21 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Pencil } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { InlineNotice, Spinner } from "@/components/ui/States";
+import { useSignOut } from "@/hooks/useSignOut";
 import { describeFirebaseError } from "@/lib/firebase/errors";
 import { updateProfile } from "@/lib/firebase/firestore";
 import { initials } from "@/lib/utils";
 import { useUserStore } from "@/store/useUserStore";
 
+const INPUT_CLASS =
+  "mt-1 min-h-11 w-full rounded-ctl border-2 border-edge bg-white px-3 placeholder:text-muted";
+
 export function ProfileCard() {
   const profile = useUserStore((s) => s.profile);
+  const signOut = useSignOut();
   const [editing, setEditing] = useState(() => !profile?.prodi);
   const [nama, setNama] = useState(profile?.nama ?? "");
   const [prodi, setProdi] = useState(profile?.prodi ?? "");
@@ -45,12 +49,12 @@ export function ProfileCard() {
       <div className="flex items-center gap-4">
         <span
           aria-hidden="true"
-          className="flex size-14 shrink-0 items-center justify-center rounded-xl bg-mint font-display text-xl font-extrabold text-forest"
+          className="flex size-14 shrink-0 items-center justify-center rounded-ctl bg-cobalt font-display text-3xl font-extrabold text-white"
         >
           {initials(profile.nama || profile.email)}
         </span>
         <div className="min-w-0">
-          <h2 id="judul-profil" className="truncate text-lg font-bold">
+          <h2 id="judul-profil" className="truncate text-3xl">
             {profile.nama || "Mahasiswa UPJ"}
           </h2>
           <p className="truncate text-sm text-muted">{profile.email}</p>
@@ -63,7 +67,7 @@ export function ProfileCard() {
             <InlineNotice tone="warning">Lengkapi program studi supaya profilmu utuh.</InlineNotice>
           ) : null}
           <div>
-            <label htmlFor="profil-nama" className="block text-sm font-semibold">
+            <label htmlFor="profil-nama" className="block text-sm font-bold">
               Nama
             </label>
             <input
@@ -72,11 +76,11 @@ export function ProfileCard() {
               onChange={(e) => setNama(e.target.value)}
               maxLength={80}
               autoComplete="name"
-              className="mt-1 min-h-11 w-full rounded-lg border-2 border-line bg-white px-3"
+              className={INPUT_CLASS}
             />
           </div>
           <div>
-            <label htmlFor="profil-prodi" className="block text-sm font-semibold">
+            <label htmlFor="profil-prodi" className="block text-sm font-bold">
               Program studi
             </label>
             <input
@@ -85,7 +89,7 @@ export function ProfileCard() {
               onChange={(e) => setProdi(e.target.value)}
               maxLength={80}
               placeholder="Contoh: Informatika"
-              className="mt-1 min-h-11 w-full rounded-lg border-2 border-line bg-white px-3 placeholder:text-muted"
+              className={INPUT_CLASS}
             />
           </div>
           {error ? <InlineNotice tone="error">{error}</InlineNotice> : null}
@@ -114,17 +118,21 @@ export function ProfileCard() {
           <dl className="space-y-3 text-sm">
             <div>
               <dt className="text-muted">Program studi</dt>
-              <dd className="font-semibold">{profile.prodi}</dd>
+              <dd className="font-bold">{profile.prodi}</dd>
             </div>
             <div>
               <dt className="text-muted">Email</dt>
-              <dd className="break-all font-semibold">{profile.email}</dd>
+              <dd className="break-all font-bold">{profile.email}</dd>
             </div>
           </dl>
-          <Button variant="outline" onClick={() => setEditing(true)} className="self-start">
-            <Pencil aria-hidden="true" className="size-4" />
-            Ubah profil
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => setEditing(true)}>
+              Ubah profil
+            </Button>
+            <Button variant="ghost" onClick={signOut}>
+              Keluar
+            </Button>
+          </div>
         </>
       )}
     </Card>

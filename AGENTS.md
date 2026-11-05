@@ -12,7 +12,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 Aplikasi web edukasi dan pemilahan sampah untuk kampus Universitas Pembangunan Jaya. Mahasiswa memindai slot tong (simulator), menjawab kuis, mengunggah foto bukti, lalu mendapat poin JSDP. Poin JSDP adalah syarat kelulusan, bukan alat tukar: jangan membuat fitur penukaran, katalog hadiah, atau keranjang. Teks antarmuka berbahasa Indonesia.
 
-Stack: Next.js 16 (App Router, Turbopack), React 19, TypeScript strict, Tailwind CSS 4, Framer Motion, Zustand 5, Firebase (Auth, Firestore), lucide-react.
+Stack: Next.js 16 (App Router, Turbopack), React 19, TypeScript strict, Tailwind CSS 4, Framer Motion, Zustand 5, Firebase (Auth, Firestore). Tanpa pustaka ikon: ikon dibuat sendiri di `components/ui/Icons.tsx`. Arah visual (identitas, palet, tipografi, dial) ada di `DESIGN.md`, baca sebelum mengubah UI.
 
 ## Perintah
 
@@ -26,9 +26,9 @@ Tidak ada test runner. Verifikasi dilakukan lewat build, tsc, eslint, dan klik m
 ## Struktur
 
 - `app/`: route `/`, `/login`, `/dashboard`, `/scan`, `/map`, plus `error.tsx` dan `not-found.tsx`. `dashboard/page.tsx` adalah client component, jadi metadata-nya ada di `dashboard/layout.tsx`.
-- `components/`: `landing`, `auth`, `dashboard`, `scan`, `map`, `layout`, `ui` (Button, Card, Dialog, States, AnimatedCounter), `providers`.
+- `components/`: `landing`, `auth`, `dashboard`, `scan`, `map`, `layout` (Navbar, BottomNav, Footer), `art` (BinArt: tong dan stasiun pilah), `ui` (Button, Card, Dialog, States, Icons, AnimatedCounter), `providers`.
 - `store/`: `useUserStore` (status auth, profil, `poinJSDP`, `cooldownUntil`, error).
-- `hooks/`: `useCooldown`, `useRequireAuth`, `useRemoteList` (`useLocations`), `useScanHistory`.
+- `hooks/`: `useCooldown`, `useRequireAuth`, `useRemoteList` (`useLocations`), `useScanHistory`, `useSignOut`.
 - `lib/firebase/`: `config` (init lazy, `isFirebaseConfigured`), `auth`, `firestore` (semua baca/tulis data, termasuk transaksi scan), `errors` (kode error Firebase ke pesan Indonesia).
 - `lib/scoring.ts`: satu-satunya tempat aturan poin, penalti, dan cooldown. `lib/data/`: bin, kuis, daftar jenis sampah, `seed.json`.
 - `lib/photo.ts`: validasi, hash, dan kompresi foto bukti. `firebase.json` dan `.firebaserc` mengarah ke proyek `eco-waste-corner`.
@@ -40,9 +40,9 @@ Tidak ada test runner. Verifikasi dilakukan lewat build, tsc, eslint, dan klik m
 
 **Zustand v5**: selector yang mengembalikan objek atau array baru di setiap panggilan menyebabkan render tanpa henti. Ambil nilai primitif atau referensi stabil, lalu turunkan dengan `useMemo` (lihat `PointsCard`).
 
-**Tailwind** dimuat lewat loader Turbopack di `next.config.ts`, bukan PostCSS. Jangan menambah `postcss.config`. Token warna ada di `app/globals.css` (`forest`, `leaf`, `leaf-deep`, `mint`, `sand`, `charcoal`, `muted`, `sun`, `brick`).
+**Tailwind** dimuat lewat loader Turbopack di `next.config.ts`, bukan PostCSS. Jangan menambah `postcss.config`. Token warna dan radius ada di `app/globals.css` (`paper`, `ink`, `muted`, `mist`, `edge`, `rule`, `cobalt`, `organik`, `kertas`, `residu`, `brick`, beserta varian `-soft`). Font lewat `next/font` di `app/layout.tsx` (Big Shoulders untuk judul dan angka, Atkinson Hyperlegible Next untuk isi). Padding bawah `body` menyisakan ruang untuk `BottomNav` di ponsel, jadi jangan menghapusnya.
 
-**Kontras warna**: `leaf` (#2E8B57) hanya untuk grafis dan teks besar (4.2:1 di atas putih). Teks kecil di latar terang pakai `leaf-deep` atau `forest`. Teks di latar `forest` pakai putih atau `mint`. `brick` hanya untuk status (penuh, penalti).
+**Kontras warna**: `organik`, `kertas`, dan `residu` adalah kode warna tong, hanya untuk elemen yang mewakili kategori tong atau status kapasitas. `kertas` (#F4B81E) selalu blok terisi dengan teks `ink`, tidak pernah teks atau garis di latar putih (1.8:1). Batas kontrol (input, radio) pakai `edge`, bukan `rule` (`rule` hanya garis dekoratif). Teks kecil di latar `ink` pakai putih atau `mist`. `brick` hanya untuk status (penuh, penalti). Tabel rasio lengkap ada di `DESIGN.md`.
 
 **Autentikasi**: login Google menerima domain apa pun. Login tautan email hanya `@student.upj.ac.id`, divalidasi lewat `isUpjStudentEmail` di `lib/validation/email.ts`. Jangan menambah pengecekan domain di `AuthProvider`, karena itu pernah memblokir login Google.
 
@@ -57,7 +57,10 @@ Tidak ada test runner. Verifikasi dilakukan lewat build, tsc, eslint, dan klik m
 - Jangan mengarang data: tidak ada statistik, testimoni, foto area, atau rute nyata yang dibuat sendiri. Pakai placeholder yang jelas berlabel.
 - Jangan memakai tanda pisah em dash di teks UI. Pakai koma, titik, atau titik dua.
 - Elemen interaktif harus `button` atau `a[href]` asli, punya nama aksesibel, tinggi sentuh minimal 44px, dan fokus yang terlihat. Gerak harus berhenti di `prefers-reduced-motion` (sudah diatur lewat `MotionConfig` dan CSS global).
-- Glassmorphism hanya di dua tempat (panel hero dan label peta). Jangan menambahnya ke kartu lain.
+- Glassmorphism maksimal dua tempat, lewat `GlassCard`. Sekarang hanya label denah peta. Jangan menambahnya ke kartu lain.
+- Judul dan angka memakai `font-display` (Big Shoulders), tanpa jarak huruf lebar. Jangan menambah bentuk pil atau animasi yang berulang tanpa henti. Gerak mengikuti tabel di `DESIGN.md` (kelas ada di `app/globals.css`); gerak baru harus punya alasan dan mati pada `prefers-reduced-motion`, termasuk `animation-delay`. Bayangan solid bergeser hanya untuk plat utama (panggung hero, plat latihan, papan skor), dialog memakai bayangan lembut, tempat lain tanpa bayangan.
+- Ilustrasi tong ada di `components/art/BinArt.tsx` (dibuat sendiri, dekoratif, `aria-hidden`). Jangan mengganti dengan ilustrasi stok, dan jangan menjadikan gambar satu-satunya pembawa informasi.
+- Kelas Tailwind yang saling bertabrakan (misalnya `border-ink` dan `border-brick` sekaligus) tidak punya urutan pasti. Pilih salah satu lewat kondisi, jangan menumpuk keduanya.
 - Tema hanya terang. Tidak ada mode gelap.
 
 ## Keamanan dan lingkungan

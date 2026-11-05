@@ -48,7 +48,8 @@ Foto disimpan di Firestore, bukan Storage. Satu dokumen maksimal 1 MiB, jadi `li
 | `app/`                    | Route: `/`, `/login`, `/dashboard`, `/scan`, `/map`                               |
 | `components/`             | `landing`, `auth`, `dashboard`, `scan`, `map`, `layout`, `ui`, `providers`        |
 | `store/`                  | Zustand: `useUserStore` (auth, poin JSDP, cooldown)                    |
-| `hooks/`                  | `useCooldown`, `useRequireAuth`, `useRemoteList`, `useScanHistory`                |
+| `hooks/`                  | `useCooldown`, `useRequireAuth`, `useRemoteList`, `useScanHistory`, `useSignOut`  |
+| `DESIGN.md`               | Arah visual: identitas, palet dan kontras, tipografi, dial, komposisi halaman     |
 | `lib/firebase/`           | Config, auth, firestore, pemetaan error                                           |
 | `lib/validation/email.ts` | `isUpjStudentEmail` (domain `@student.upj.ac.id`)                                 |
 | `lib/scoring.ts`          | Poin berjenjang, penalti, cooldown 15 menit                                       |

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Timer } from "lucide-react";
+import { StationScene } from "@/components/art/BinArt";
 import { PhotoStep } from "@/components/scan/PhotoStep";
 import { QuizStep } from "@/components/scan/QuizStep";
 import { ResultStep } from "@/components/scan/ResultStep";
@@ -117,18 +117,33 @@ export function ScanFlow() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 md:py-14">
-      <h1 className="text-3xl font-extrabold text-forest sm:text-4xl">Scan QR slot tong</h1>
-      <p className="mt-2 text-muted">Pilah dulu, jawab kuis, lalu klaim poin JSDP.</p>
+    <>
+      <div className="border-b-2 border-ink bg-cobalt text-white">
+        <div className="mx-auto flex max-w-3xl items-end justify-between gap-6 px-4 py-8 sm:px-6 md:py-10">
+          <div>
+            <h1 className="text-6xl sm:text-7xl">Scan slot tong</h1>
+            <p className="mt-3 text-lg">Pilah dulu, jawab kuis, lalu klaim poin JSDP.</p>
+          </div>
+          <div className="hidden w-48 shrink-0 rounded-plate border-2 border-ink bg-paper p-2 sm:block">
+            <StationScene drops={false} className="block w-full" />
+          </div>
+        </div>
+      </div>
 
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 md:py-10">
       {cooldown.active && step !== "result" ? (
         <div
           role="status"
-          className="mt-6 flex items-center gap-3 rounded-xl border border-sun/70 bg-sun-soft/60 px-4 py-3"
+          className="flex items-center gap-4 rounded-plate border-2 border-ink bg-kertas-soft px-4 py-3"
         >
-          <Timer aria-hidden="true" className="size-6 shrink-0" />
+          <span
+            aria-hidden="true"
+            className="font-display text-5xl font-extrabold leading-none tabular-nums"
+          >
+            {cooldown.label}
+          </span>
           <p className="text-sm">
-            <strong>Jeda scan {cooldown.label}.</strong> Jeda {COOLDOWN_MINUTES} menit mencegah scan
+            <strong className="sr-only">Jeda scan {cooldown.label}. </strong>Jeda {COOLDOWN_MINUTES} menit mencegah scan
             berulang berurutan. Kamu bisa menyiapkan pilihan sambil menunggu.
           </p>
         </div>
@@ -138,7 +153,7 @@ export function ScanFlow() {
         <Stepper current={STEP_INDEX[step]} />
       </div>
 
-      <div className="mt-8 rounded-2xl border border-line bg-white p-5 sm:p-8">
+      <div className="mt-8 rounded-plate border-2 border-ink bg-white p-5 sm:p-8">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={step}
@@ -178,10 +193,13 @@ export function ScanFlow() {
               <PhotoStep submitting={submitting} error={submitError} onSubmit={handleSubmit} />
             ) : null}
 
-            {step === "result" && result ? <ResultStep result={result} onAgain={reset} /> : null}
+            {step === "result" && result ? (
+              <ResultStep result={result} category={category} onAgain={reset} />
+            ) : null}
           </motion.div>
         </AnimatePresence>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

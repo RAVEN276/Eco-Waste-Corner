@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { X } from "lucide-react";
+import { CloseIcon } from "@/components/ui/Icons";
 import { cn } from "@/lib/utils";
 
 const FOCUSABLE =
@@ -72,7 +72,7 @@ export function Dialog({ open, onClose, title, children, className }: DialogProp
       {open ? (
         <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6">
           <motion.div
-            className="absolute inset-0 bg-charcoal/60"
+            className="absolute inset-0 bg-ink/65"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -90,21 +90,21 @@ export function Dialog({ open, onClose, title, children, className }: DialogProp
             exit={{ opacity: 0, y: 32 }}
             transition={{ duration: 0.22, ease: "easeOut" }}
             className={cn(
-              "relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:max-w-lg sm:rounded-2xl",
+              "relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-sheet border-2 border-ink bg-white shadow-2xl sm:max-w-lg sm:rounded-sheet",
               className,
             )}
           >
-            <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
-              <h2 id={titleId} className="text-xl font-bold text-forest">
+            <div className="flex items-start justify-between gap-4 border-b-2 border-ink bg-paper px-5 py-3">
+              <h2 id={titleId} className="py-1 text-3xl">
                 {title}
               </h2>
               <button
                 type="button"
                 onClick={onClose}
                 aria-label="Tutup"
-                className="-mr-2 inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-charcoal hover:bg-mint-soft"
+                className="-mr-2 inline-flex size-11 shrink-0 items-center justify-center rounded-ctl text-ink hover:bg-cobalt-soft"
               >
-                <X aria-hidden="true" className="size-5" />
+                <CloseIcon className="size-5" />
               </button>
             </div>
             <div className="overflow-y-auto px-5 py-5">{children}</div>

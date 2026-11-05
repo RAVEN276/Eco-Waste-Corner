@@ -1,165 +1,96 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Camera, HelpCircle, QrCode, Timer } from "lucide-react";
-import { Button, buttonClasses } from "@/components/ui/Button";
-import { GlassCard } from "@/components/ui/Card";
+import type { CSSProperties } from "react";
+import { StationScene } from "@/components/art/BinArt";
+import { Button } from "@/components/ui/Button";
+import { BIN_LIST } from "@/lib/data/bins";
+import { BASE_POINTS, COOLDOWN_MINUTES } from "@/lib/scoring";
+import { cn } from "@/lib/utils";
 import { useUserStore } from "@/store/useUserStore";
 
-const GRID = 21;
+const STEPS = [
+  "Pilih slot yang kamu pindai",
+  "Jawab 2 soal kuis",
+  "Foto sampah yang kamu buang",
+  `Tunggu jeda ${COOLDOWN_MINUTES} menit untuk scan berikutnya`,
+];
 
-/** Deterministic QR-like pattern so server and client render the same markup. */
-function buildPattern(): boolean[][] {
-  let seed = 20240612;
-  const next = () => {
-    seed = (seed * 1664525 + 1013904223) % 4294967296;
-    return seed / 4294967296;
-  };
-  const cells = Array.from({ length: GRID }, () =>
-    Array.from({ length: GRID }, () => next() > 0.52),
-  );
-  const finder = (row: number, col: number) => {
-    for (let r = -1; r <= 7; r += 1) {
-      for (let c = -1; c <= 7; c += 1) {
-        const rr = row + r;
-        const cc = col + c;
-        if (rr < 0 || cc < 0 || rr >= GRID || cc >= GRID) continue;
-        const edge = r === 0 || r === 6 || c === 0 || c === 6;
-        const core = r >= 2 && r <= 4 && c >= 2 && c <= 4;
-        cells[rr][cc] = r >= 0 && r <= 6 && c >= 0 && c <= 6 ? edge || core : false;
-      }
-    }
-  };
-  finder(0, 0);
-  finder(0, GRID - 7);
-  finder(GRID - 7, 0);
-  return cells;
+function delay(ms: number): CSSProperties {
+  return { ["--delay" as string]: `${ms}ms` };
 }
 
-const PATTERN = buildPattern();
-
-function ScanFrame() {
-  const size = 220;
-  const cell = size / GRID;
-  return (
-    <div
-      className="relative mx-auto aspect-square w-full max-w-[260px] rounded-2xl bg-mint p-6"
-      style={{ ["--scan-distance" as string]: "205px" }}
-      role="img"
-      aria-label="Ilustrasi kode QR pada slot tong sampah yang sedang dipindai"
-    >
-      <svg
-        viewBox={`0 0 ${size} ${size}`}
-        className="size-full"
-        aria-hidden="true"
-        shapeRendering="crispEdges"
-      >
-        {PATTERN.flatMap((row, r) =>
-          row.map((on, c) =>
-            on ? (
-              <rect
-                key={`${r}-${c}`}
-                x={c * cell}
-                y={r * cell}
-                width={cell}
-                height={cell}
-                fill="#1B4D3E"
-              />
-            ) : null,
-          ),
-        )}
-      </svg>
-      {(
-        [
-          "left-2 top-2 border-l-4 border-t-4",
-          "right-2 top-2 border-r-4 border-t-4",
-          "bottom-2 left-2 border-b-4 border-l-4",
-          "bottom-2 right-2 border-b-4 border-r-4",
-        ] as const
-      ).map((pos) => (
-        <span
-          key={pos}
-          aria-hidden="true"
-          className={`absolute size-7 rounded-sm border-forest ${pos}`}
-        />
-      ))}
-      <span
-        aria-hidden="true"
-        className="scan-line absolute left-4 right-4 top-6 h-1 rounded-full bg-sun"
-      />
-    </div>
-  );
-}
-
+// Hero berwarna penuh: cobalt di belakang, panggung kertas di depan. Gambar stasiun pilah
+// menunjukkan produknya (tiga tong menerima barang), lalu satu baris ink memuat empat langkah scan.
 export function Hero() {
-  const authStatus = useUserStore((s) => s.authStatus);
-  const ctaHref = authStatus === "authenticated" ? "/scan" : "/login?next=/scan";
+  const signedIn = useUserStore((s) => s.authStatus === "authenticated");
 
   return (
-    <section className="bg-forest text-white" aria-labelledby="judul-hero">
-      <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.25fr_1fr] md:py-20 lg:gap-16 lg:py-24">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
-        >
-          <h1
-            id="judul-hero"
-            className="text-4xl font-extrabold leading-[1.05] sm:text-5xl lg:text-6xl"
-          >
-            <span className="text-mint">Eco Waste Corner:</span> Ruang Edukasi &amp; Pemilahan
-            Sampah Kampus UPJ
+    <section aria-labelledby="judul-hero" className="border-b-2 border-ink bg-cobalt text-white">
+      <div className="mx-auto grid max-w-6xl gap-10 px-4 pb-12 pt-10 sm:px-6 md:grid-cols-[1.05fr_1fr] md:items-center md:gap-12 md:pb-16 md:pt-14">
+        <div className="fade-up">
+          <h1 id="judul-hero" className="text-6xl sm:text-7xl lg:text-8xl">
+            Pilah sampah di kampus, kumpulkan{" "}
+            <mark
+              className="wipe inline-block bg-white px-2 leading-none text-cobalt"
+              style={delay(450)}
+            >
+              poin JSDP.
+            </mark>
           </h1>
-          <p className="mt-5 max-w-xl text-lg leading-relaxed text-white/90">
-            Pindai kode di slot tong, jawab kuis kilat, unggah foto buktimu, lalu kumpulkan poin
-            JSDP untuk syarat kelulusanmu.
+          <p className="mt-6 max-w-xl text-lg leading-relaxed">
+            Pindai slot tong, jawab 2 soal kuis, lalu unggah foto buktimu. Poin JSDP jadi syarat
+            kelulusan dan tidak bisa ditukar dengan hadiah.
           </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Button href={ctaHref} variant="sun" size="lg">
-              Login Email Student UPJ / Scan QR Sekarang
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Button href={signedIn ? "/scan" : "/login?next=/scan"} variant="light" size="lg">
+              {signedIn ? "Mulai scan" : "Masuk untuk mulai scan"}
             </Button>
             <a
               href="#edukasi"
-              className={buttonClasses(
-                "ghost",
-                "lg",
-                "border-2 border-white/40 text-white hover:bg-white/10 active:bg-white/20",
-              )}
+              className="inline-flex min-h-12 items-center px-2 text-base font-bold underline decoration-2 underline-offset-4 hover:text-mist"
             >
-              Pelajari cara memilah
+              Baca panduan memilah
             </a>
           </div>
-        </motion.div>
+        </div>
 
-        <motion.div
-          className="relative"
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
-        >
-          <ScanFrame />
-          <GlassCard className="mx-auto mt-5 w-full max-w-sm">
-            <p className="text-sm font-semibold text-mint">Satu scan, empat langkah</p>
-            <ul className="mt-3 space-y-2.5 text-sm">
-              <li className="flex items-center gap-2.5">
-                <QrCode aria-hidden="true" className="size-4 shrink-0 text-mint" />
-                Pilih slot yang kamu pindai
-              </li>
-              <li className="flex items-center gap-2.5">
-                <HelpCircle aria-hidden="true" className="size-4 shrink-0 text-mint" />
-                Jawab 2 pertanyaan kuis
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Camera aria-hidden="true" className="size-4 shrink-0 text-mint" />
-                Foto sampah yang kamu buang
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Timer aria-hidden="true" className="size-4 shrink-0 text-mint" />
-                Jeda 15 menit sebelum scan berikutnya
-              </li>
+        <div className="fade-up" style={delay(150)}>
+          <div className="overflow-hidden rounded-sheet border-2 border-ink bg-paper text-ink shadow-[8px_8px_0_var(--color-ink)]">
+            <StationScene className="block w-full px-3 pt-2" />
+            <ul className="grid grid-cols-3 border-t-2 border-ink">
+              {BIN_LIST.map((bin, index) => (
+                <li
+                  key={bin.id}
+                  className={cn("p-3 sm:p-4", bin.tone.solid, index > 0 && "border-l-2 border-ink")}
+                >
+                  <span className="block font-display text-5xl font-extrabold leading-none sm:text-6xl">
+                    {BASE_POINTS[bin.id]}
+                  </span>
+                  <span className="mt-1 block text-sm font-bold leading-tight">{bin.label}</span>
+                  <span className="block text-xs">poin dasar</span>
+                </li>
+              ))}
             </ul>
-          </GlassCard>
-        </motion.div>
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t-2 border-ink bg-ink">
+        <h2 className="sr-only">Satu scan, empat langkah</h2>
+        <ol className="mx-auto grid max-w-6xl grid-cols-2 gap-px bg-white/25 md:grid-cols-4">
+          {STEPS.map((step, index) => (
+            <li
+              key={step}
+              className="fade-up flex items-start gap-3 bg-ink px-4 py-5 sm:px-6"
+              style={delay(600 + index * 120)}
+            >
+              <span aria-hidden="true" className="font-display text-5xl font-extrabold leading-none">
+                {index + 1}
+              </span>
+              <span className="pt-1 text-sm font-medium">{step}</span>
+            </li>
+          ))}
+        </ol>
       </div>
     </section>
   );

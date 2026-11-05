@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-type Variant = "primary" | "mint" | "outline" | "ghost" | "danger" | "sun";
+type Variant = "primary" | "dark" | "light" | "outline" | "ghost" | "danger";
 type Size = "md" | "lg";
 
 interface CommonProps {
@@ -13,13 +13,15 @@ interface CommonProps {
 }
 
 const variants: Record<Variant, string> = {
-  primary: "bg-forest text-white hover:bg-[#143a2f] active:bg-[#0f2d24]",
-  mint: "bg-mint text-forest hover:bg-[#93dcbf] active:bg-[#7fd1b0]",
-  sun: "bg-sun text-charcoal hover:bg-[#d99429] active:bg-[#c88720]",
+  primary:
+    "bg-cobalt text-white hover:bg-cobalt-deep active:bg-[#101c5e] disabled:hover:bg-cobalt",
+  dark: "bg-ink text-white hover:bg-[#252d47] active:bg-black disabled:hover:bg-ink",
+  light:
+    "bg-white text-ink hover:bg-cobalt-soft active:bg-[#cfd6f2] disabled:hover:bg-white",
   outline:
-    "border-2 border-forest text-forest bg-transparent hover:bg-mint-soft active:bg-mint",
-  ghost: "text-forest hover:bg-mint-soft active:bg-mint",
-  danger: "bg-brick text-white hover:bg-[#971d14] active:bg-[#7f180f]",
+    "border-2 border-ink bg-transparent text-ink hover:bg-cobalt-soft active:bg-[#cfd6f2] disabled:hover:bg-transparent",
+  ghost: "text-cobalt hover:bg-cobalt-soft active:bg-[#cfd6f2] disabled:hover:bg-transparent",
+  danger: "bg-brick text-white hover:bg-[#971d14] active:bg-[#7f180f] disabled:hover:bg-brick",
 };
 
 const sizes: Record<Size, string> = {
@@ -29,8 +31,8 @@ const sizes: Record<Size, string> = {
 
 export function buttonClasses(variant: Variant = "primary", size: Size = "md", className?: string) {
   return cn(
-    "inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-colors duration-150",
-    "disabled:opacity-60 disabled:hover:bg-inherit",
+    "inline-flex items-center justify-center gap-2 rounded-ctl font-bold transition-[color,background-color,scale] duration-150",
+    "active:scale-[0.98] disabled:opacity-55 disabled:active:scale-100",
     variants[variant],
     sizes[size],
     className,

@@ -1,18 +1,14 @@
 "use client";
 
-import { Leaf, MapPin, Recycle, Trash2 } from "lucide-react";
+import { BinArt } from "@/components/art/BinArt";
 import { Button } from "@/components/ui/Button";
+import { CheckIcon } from "@/components/ui/Icons";
 import { ErrorState, InlineNotice, LoadingState } from "@/components/ui/States";
 import { BIN_LIST } from "@/lib/data/bins";
+import { BASE_POINTS } from "@/lib/scoring";
 import type { BinCategory, CampusLocation, DataSource } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { ListStatus } from "@/hooks/useRemoteList";
-
-const ICONS: Record<BinCategory, typeof Leaf> = {
-  organik: Leaf,
-  plastik_kertas: Recycle,
-  residu: Trash2,
-};
 
 interface SelectStepProps {
   locations: CampusLocation[];
@@ -33,9 +29,9 @@ export function SelectStep(props: SelectStepProps) {
   const ready = Boolean(locationId && category) && !blocked;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <fieldset>
-        <legend className="text-lg font-bold">1. Di mana kamu berada?</legend>
+        <legend className="font-display text-3xl font-extrabold">1. Di mana kamu berada?</legend>
         {locationsStatus === "loading" ? (
           <LoadingState label="Memuat lokasi" className="mt-3 py-8" />
         ) : (
@@ -51,16 +47,16 @@ export function SelectStep(props: SelectStepProps) {
               </div>
             ) : null}
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              {locations.map((location) => {
+              {locations.map((location, index) => {
                 const selected = location.locationId === locationId;
                 return (
                   <label
                     key={location.locationId}
                     className={cn(
-                      "flex min-h-16 items-center gap-3 rounded-xl border-2 p-4 has-[:focus-visible]:outline has-[:focus-visible]:outline-[3px] has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-forest",
+                      "flex min-h-20 items-center gap-4 rounded-plate border-2 p-4 has-[:focus-visible]:outline has-[:focus-visible]:outline-[3px] has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-cobalt",
                       selected
-                        ? "border-forest bg-mint-soft"
-                        : "border-line bg-white hover:border-leaf",
+                        ? "border-ink bg-cobalt-soft"
+                        : "border-edge bg-white hover:bg-cobalt-soft",
                     )}
                   >
                     <input
@@ -70,8 +66,19 @@ export function SelectStep(props: SelectStepProps) {
                       checked={selected}
                       onChange={() => props.onLocationChange(location.locationId)}
                     />
-                    <MapPin aria-hidden="true" className="size-6 shrink-0 text-leaf-deep" />
-                    <span className="font-semibold">{location.name}</span>
+                    <span
+                      aria-hidden="true"
+                      className="font-display text-6xl font-extrabold leading-none text-cobalt"
+                    >
+                      {String.fromCharCode(65 + index)}
+                    </span>
+                    <span className="flex-1 font-bold">{location.name}</span>
+                    {selected ? (
+                      <>
+                        <CheckIcon className="size-5 shrink-0" />
+                        <span className="sr-only">Dipilih</span>
+                      </>
+                    ) : null}
                   </label>
                 );
               })}
@@ -81,21 +88,20 @@ export function SelectStep(props: SelectStepProps) {
       </fieldset>
 
       <fieldset>
-        <legend className="text-lg font-bold">2. Slot mana yang kamu pindai?</legend>
+        <legend className="font-display text-3xl font-extrabold">2. Slot mana yang kamu pindai?</legend>
         <p className="mt-1 text-sm text-muted">
           Ini simulator: pilih slot seolah kamu memindai kode QR yang tertempel di slot itu.
         </p>
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
           {BIN_LIST.map((bin) => {
             const selected = bin.id === category;
-            const Icon = ICONS[bin.id];
             return (
               <label
                 key={bin.id}
                 className={cn(
-                  "flex min-h-28 flex-col justify-between gap-4 rounded-xl p-4 ring-offset-2 has-[:focus-visible]:outline has-[:focus-visible]:outline-[3px] has-[:focus-visible]:outline-offset-4 has-[:focus-visible]:outline-forest",
-                  bin.tone.solid,
-                  selected ? `ring-4 ${bin.tone.ring}` : "hover:brightness-110",
+                  "flex min-h-44 flex-col justify-between gap-3 rounded-plate border-2 border-ink p-4 has-[:focus-visible]:outline has-[:focus-visible]:outline-[3px] has-[:focus-visible]:outline-offset-8 has-[:focus-visible]:outline-cobalt",
+                  bin.tone.soft,
+                  selected ? "ring-4 ring-ink ring-offset-2 ring-offset-white" : "hover:brightness-95",
                 )}
               >
                 <input
@@ -105,12 +111,28 @@ export function SelectStep(props: SelectStepProps) {
                   checked={selected}
                   onChange={() => props.onCategoryChange(bin.id)}
                 />
-                <Icon aria-hidden="true" className="size-8" strokeWidth={1.75} />
-                <span>
-                  <span className="block text-lg font-bold">{bin.label}</span>
-                  <span className="block text-sm opacity-90">
-                    {selected ? "Dipilih" : bin.short}
+                <span className="flex items-end justify-between gap-2">
+                  <BinArt id={bin.id} className="w-20 shrink-0" />
+                  <span className="text-right">
+                    <span className="block font-display text-6xl font-extrabold leading-none">
+                      {BASE_POINTS[bin.id]}
+                    </span>
+                    <span className="text-xs font-bold">poin dasar</span>
                   </span>
+                </span>
+                <span>
+                  <span className="flex items-center justify-between gap-2">
+                    <span className="font-display text-3xl font-extrabold leading-none">
+                      {bin.label}
+                    </span>
+                    {selected ? (
+                      <span className="flex items-center gap-1 text-sm font-bold">
+                        <CheckIcon className="size-4" />
+                        Dipilih
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="mt-1 block text-sm">{bin.short}</span>
                 </span>
               </label>
             );

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { CheckIcon, CloseIcon } from "@/components/ui/Icons";
 import type { QuizQuestion } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -39,12 +39,14 @@ export function QuizStep({ questions, onFinish }: QuizStepProps) {
 
   return (
     <div className="space-y-6">
-      <p className="text-sm font-semibold text-leaf-deep">
+      <p className="font-display text-2xl font-extrabold text-cobalt">
         Pertanyaan {index + 1} dari {questions.length}
       </p>
 
       <fieldset disabled={checked} className="space-y-3">
-        <legend className="text-xl font-bold leading-snug">{question.question}</legend>
+        <legend className="font-display text-4xl font-extrabold leading-tight">
+          {question.question}
+        </legend>
         <div className="mt-4 space-y-2.5">
           {question.options.map((option, optionIndex) => {
             const isSelected = selected === optionIndex;
@@ -54,33 +56,33 @@ export function QuizStep({ questions, onFinish }: QuizStepProps) {
               <label
                 key={option}
                 className={cn(
-                  "flex min-h-14 items-center gap-3 rounded-xl border-2 px-4 py-3 has-[:focus-visible]:outline has-[:focus-visible]:outline-[3px] has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-forest",
+                  "flex min-h-14 items-center gap-3 rounded-plate border-2 px-4 py-3 has-[:focus-visible]:outline has-[:focus-visible]:outline-[3px] has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-cobalt",
                   showRight
-                    ? "border-leaf-deep bg-mint"
+                    ? "border-organik bg-organik-soft"
                     : showWrong
-                      ? "border-brick bg-[#fbe4e1]"
+                      ? "shake border-brick bg-brick-soft"
                       : isSelected
-                        ? "border-forest bg-mint-soft"
-                        : "border-line bg-white hover:border-leaf",
+                        ? "border-ink bg-cobalt-soft"
+                        : "border-edge bg-white hover:bg-cobalt-soft",
                 )}
               >
                 <input
                   type="radio"
                   name={`kuis-${question.id}`}
-                  className="size-5 shrink-0 accent-forest"
+                  className="size-5 shrink-0 accent-cobalt"
                   checked={isSelected}
                   onChange={() => setSelected(optionIndex)}
                 />
                 <span className="flex-1">{option}</span>
                 {showRight ? (
                   <>
-                    <CheckCircle2 aria-hidden="true" className="size-5 shrink-0 text-forest" />
+                    <CheckIcon className="pop size-5 shrink-0 text-organik" />
                     <span className="sr-only">Jawaban benar</span>
                   </>
                 ) : null}
                 {showWrong ? (
                   <>
-                    <XCircle aria-hidden="true" className="size-5 shrink-0 text-brick" />
+                    <CloseIcon className="pop size-5 shrink-0 text-brick" />
                     <span className="sr-only">Jawabanmu salah</span>
                   </>
                 ) : null}
@@ -94,8 +96,10 @@ export function QuizStep({ questions, onFinish }: QuizStepProps) {
         <div
           role="status"
           className={cn(
-            "rounded-xl p-4 text-sm",
-            isCorrect ? "bg-mint text-forest" : "bg-[#fbe4e1] text-[#5c1a14]",
+            "fade-up rounded-plate border-2 p-4 text-sm",
+            isCorrect
+              ? "border-organik bg-organik-soft text-ink"
+              : "border-brick bg-brick-soft text-brick-ink",
           )}
         >
           <p className="font-bold">{isCorrect ? "Benar." : "Belum tepat."}</p>

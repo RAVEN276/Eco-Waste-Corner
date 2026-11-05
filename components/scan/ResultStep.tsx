@@ -1,14 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle, CheckCircle2, Timer } from "lucide-react";
+import { BinArt, BinDrop } from "@/components/art/BinArt";
 import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
 import { Button, buttonClasses } from "@/components/ui/Button";
+import { AlertIcon, CheckIcon } from "@/components/ui/Icons";
 import { useCooldown } from "@/hooks/useCooldown";
 import type { SubmitScanResult } from "@/lib/firebase/firestore";
+import type { BinCategory } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-export function ResultStep({ result, onAgain }: { result: SubmitScanResult; onAgain: () => void }) {
+export function ResultStep({
+  result,
+  category,
+  onAgain,
+}: {
+  result: SubmitScanResult;
+  category: BinCategory | null;
+  onAgain: () => void;
+}) {
   const cooldown = useCooldown();
   const { breakdown, applied } = result;
   const penalized = breakdown.status === "penalized";
@@ -17,22 +27,31 @@ export function ResultStep({ result, onAgain }: { result: SubmitScanResult; onAg
     <div className="space-y-6" role="status">
       <div
         className={cn(
-          "rounded-2xl p-6 sm:p-8",
-          penalized ? "bg-[#fbe4e1] text-[#5c1a14]" : "bg-forest text-white",
+          "stamp relative rounded-plate p-6 sm:min-h-[14rem] sm:p-8",
+          penalized ? "border-2 border-brick bg-brick-soft text-brick-ink" : "bg-ink text-white",
         )}
       >
+        {category ? (
+          <div className="absolute right-4 top-4 hidden w-24 rounded-plate border-2 border-ink bg-paper p-2 sm:block">
+            {penalized ? (
+              <BinArt id={category} className="block w-full" />
+            ) : (
+              <BinDrop id={category} className="block w-full" />
+            )}
+          </div>
+        ) : null}
         <div className="flex items-center gap-3">
           {penalized ? (
-            <AlertTriangle aria-hidden="true" className="size-7 shrink-0 text-brick" />
+            <AlertIcon className="size-7 shrink-0 text-brick" />
           ) : (
-            <CheckCircle2 aria-hidden="true" className="size-7 shrink-0 text-mint" />
+            <CheckIcon className="size-7 shrink-0" />
           )}
-          <h2 className="text-xl font-bold">{penalized ? "Pelanggaran terdeteksi" : "Scan tercatat"}</h2>
+          <h2 className="text-4xl">{penalized ? "Pelanggaran terdeteksi" : "Scan tercatat"}</h2>
         </div>
-        <p className="mt-4 font-display text-6xl font-extrabold leading-none">
+        <p className="mt-4 font-display text-8xl font-extrabold leading-none">
           {applied > 0 ? "+" : ""}
-          {applied}
-          <span className="ml-2 text-lg font-semibold">poin</span>
+          <AnimatedCounter value={applied} />
+          <span className="ml-3 text-3xl font-bold">poin</span>
         </p>
         <p className="mt-3 text-sm">{breakdown.tierLabel}</p>
         {penalized && applied === 0 ? (
@@ -41,18 +60,15 @@ export function ResultStep({ result, onAgain }: { result: SubmitScanResult; onAg
       </div>
 
       <dl className="grid grid-cols-2 gap-3 text-sm">
-        <div className="rounded-xl border border-line bg-white p-4">
+        <div className="rounded-plate border-2 border-rule bg-white p-4">
           <dt className="text-muted">Saldo poin JSDP</dt>
-          <dd className="mt-1 font-display text-3xl font-extrabold text-forest">
+          <dd className="mt-1 font-display text-5xl font-extrabold leading-none text-ink">
             <AnimatedCounter value={result.balance} />
           </dd>
         </div>
-        <div className="rounded-xl border border-line bg-white p-4">
-          <dt className="flex items-center gap-1.5 text-muted">
-            <Timer aria-hidden="true" className="size-4" />
-            Scan berikutnya
-          </dt>
-          <dd className="mt-1 font-display text-3xl font-extrabold tabular-nums text-forest">
+        <div className="rounded-plate border-2 border-rule bg-white p-4">
+          <dt className="text-muted">Scan berikutnya</dt>
+          <dd className="mt-1 font-display text-5xl font-extrabold leading-none tabular-nums text-ink">
             {cooldown.active ? cooldown.label : "Siap"}
           </dd>
         </div>

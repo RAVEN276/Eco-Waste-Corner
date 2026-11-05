@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ImageOff } from "lucide-react";
 import { Dialog } from "@/components/ui/Dialog";
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import { BINS } from "@/lib/data/bins";
@@ -47,8 +46,7 @@ function PhotoContent({ scan }: { scan: ScanRecord }) {
       ) : state.status === "error" ? (
         <ErrorState title="Foto gagal dimuat" message={state.message} onRetry={retry} className="py-8" />
       ) : state.status === "missing" ? (
-        <div className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-line bg-sand px-4 text-center text-sm text-muted">
-          <ImageOff aria-hidden="true" className="size-8" />
+        <div className="flex aspect-[4/3] w-full items-center justify-center rounded-plate border-2 border-dashed border-edge bg-paper px-4 text-center text-sm text-muted">
           Foto untuk scan ini tidak ditemukan.
         </div>
       ) : (
@@ -56,7 +54,7 @@ function PhotoContent({ scan }: { scan: ScanRecord }) {
         <img
           src={state.dataUrl}
           alt={`Foto bukti scan ${BINS[scan.categoryBin]?.label ?? scan.categoryBin}, ${formatDateTime(scan.timestamp)}`}
-          className="max-h-[60dvh] w-full rounded-xl bg-sand object-contain"
+          className="max-h-[60dvh] w-full rounded-plate bg-paper object-contain"
         />
       )}
       <p className="text-sm text-muted">
