@@ -1,0 +1,97 @@
+rules_version = '2';
+
+// Deploy with: firebase deploy --only firestore:rules
+// The client enforces the scoring logic, so these rules add a second line of
+// defence: domain lock, per-field limits, cooldown and bounded point changes.
+// A production deployment should move scoring into a Cloud Function.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // Google accounts may use any domain. The UPJ domain restriction for the
+    // email-link flow is enforced in the client only.
+    function isUpjStudent() {
+      return signedIn()
+        && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(uid) {
+      return isUpjStudent() && request.auth.uid == uid;
+    }
+
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+
+      allow create: if isOwner(uid)
+        && request.resource.data.uid == uid
+        && request.resource.data.email.lower() == request.auth.token.email.lower()
+        && request.resource.data.poinJSDP == 0
+        && request.resource.data.totalScan == 0
+        && request.resource.data.cooldownUntil == null;
+
+      // Identity fields are immutable. JSDP points count toward graduation and
+      // cannot be spent, so they may only fall by a penalty (at most 3) or rise
+      // by at most 7 when the cooldown has passed and a new cooldown window is
+      // written in the same update.
+      allow update: if isOwner(uid)
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.poinJSDP >= 0
+        && request.resource.data.totalScan >= resource.data.totalScan
+        && request.resource.data.totalScan <= resource.data.totalScan + 1
+        && (
+          (
+            request.resource.data.poinJSDP <= resource.data.poinJSDP
+            && request.resource.data.poinJSDP >= resource.data.poinJSDP - 3
+          )
+          || (
+            request.resource.data.poinJSDP <= resource.data.poinJSDP + 7
+            && (resource.data.cooldownUntil == null || resource.data.cooldownUntil <= request.time)
+            && request.resource.data.cooldownUntil > request.time
+            && request.resource.data.cooldownUntil <= request.time + duration.value(16, 'm')
+          )
+        );
+
+      allow delete: if false;
+    }
+
+    match /scans/{scanId} {
+      allow read: if isUpjStudent() && resource.data.userId == request.auth.uid;
+
+      allow create: if isUpjStudent()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.scanId == scanId
+        && request.resource.data.categoryBin in ['organik', 'plastik_kertas', 'residu']
+        && request.resource.data.pointsEarned >= -3
+        && request.resource.data.pointsEarned <= 7
+        && request.resource.data.timestamp == request.time;
+
+      allow update, delete: if false;
+    }
+
+    // Proof photos are stored as compressed JPEG data URLs. A document is capped
+    // at 1 MiB, so the client compresses to under 300 KB and the rule allows 400 KB.
+    match /scanPhotos/{scanId} {
+      allow read: if isUpjStudent() && resource.data.userId == request.auth.uid;
+      allow create: if isUpjStudent()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.scanId == scanId
+        && request.resource.data.mime == 'image/jpeg'
+        && request.resource.data.dataUrl is string
+        && request.resource.data.dataUrl.size() <= 400000
+        && request.resource.data.timestamp == request.time;
+      allow update, delete: if false;
+    }
+
+    match /locations/{locationId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+
+  }
+}

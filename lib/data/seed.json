@@ -1,0 +1,28 @@
+{
+  "locations": [
+    {
+      "locationId": "spot-a",
+      "name": "Spot A: Dekat Pantry Kantin",
+      "coordinates": { "x": 27, "y": 64 },
+      "statusCapacity": "Kosong",
+      "imageUrl": "",
+      "routeSteps": [
+        "Menuju area Pantry Kantin.",
+        "Eco Waste Corner berada di dekat pantry.",
+        "Cari tiga slot: Organik, Plastik/Kertas, dan Residu."
+      ]
+    },
+    {
+      "locationId": "spot-b",
+      "name": "Spot B: Dekat Parkiran Motor",
+      "coordinates": { "x": 74, "y": 30 },
+      "statusCapacity": "Kosong",
+      "imageUrl": "",
+      "routeSteps": [
+        "Menuju area Parkiran Motor.",
+        "Eco Waste Corner berada di dekat parkiran.",
+        "Cari tiga slot: Organik, Plastik/Kertas, dan Residu."
+      ]
+    }
+  ]
+}
