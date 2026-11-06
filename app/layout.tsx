@@ -5,6 +5,7 @@ import { Providers } from "@/components/providers/Providers";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { ScrollMotion } from "@/components/layout/ScrollMotion";
 
 // Tampilan: Big Shoulders, warisan papan penanda jalan, cocok untuk label tong dan
 // angka poin, dan sempit sehingga nama panjang muat di layar ponsel.
@@ -34,7 +35,7 @@ export const metadata: Metadata = {
     template: "%s | Eco Waste Corner UPJ",
   },
   description:
-    "Ruang edukasi dan pemilahan sampah kampus Universitas Pembangunan Jaya. Pilah sampah, jawab kuis, kumpulkan poin JSDP.",
+    "Ruang edukasi dan pemilahan sampah kampus Universitas Pembangunan Jaya. Pilah sampah, jawab kuis, kumpulkan poin, lalu tukar jadi poin JSDP.",
 };
 
 export const viewport: Viewport = {
@@ -46,7 +47,11 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="id" className={`${signage.variable} ${text.variable} h-full`}>
+    <html
+      lang="id"
+      data-scroll-behavior="smooth"
+      className={`${signage.variable} ${text.variable} h-full`}
+    >
       <body className="flex min-h-full flex-col pb-[calc(3.75rem+env(safe-area-inset-bottom))] md:pb-0">
         <a
           href="#konten-utama"
@@ -61,6 +66,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </main>
           <Footer />
           <BottomNav />
+          <ScrollMotion />
         </Providers>
       </body>
     </html>

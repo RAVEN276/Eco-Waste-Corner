@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { buttonClasses } from "@/components/ui/Button";
 import { CountUp } from "@/components/ui/CountUp";
+import { ExchangeRate } from "@/components/ui/ExchangeRate";
 import { BIN_LIST } from "@/lib/data/bins";
 import {
   BASE_POINTS,
   COOLDOWN_MINUTES,
+  EXCHANGE_JSDP,
+  EXCHANGE_POIN,
   FULL_PROOF_BONUS,
   PENALTY_LABEL,
   PENALTY_POINTS,
@@ -21,7 +24,11 @@ const STEPS = [
   { title: "Foto bukti", text: "Unggah foto sampah yang dibuang dan pilih jenis sampahnya." },
   {
     title: "Poin masuk",
-    text: `Poin JSDP dihitung otomatis. Scan berikutnya terbuka setelah jeda ${COOLDOWN_MINUTES} menit.`,
+    text: `Poin dihitung otomatis. Scan berikutnya terbuka setelah jeda ${COOLDOWN_MINUTES} menit.`,
+  },
+  {
+    title: "Tukar jadi JSDP",
+    text: `Di dashboard, tukar ${EXCHANGE_POIN} poin jadi ${EXCHANGE_JSDP} poin JSDP. Poin JSDP adalah syarat kelulusan.`,
   },
 ];
 
@@ -40,8 +47,7 @@ export function PointRules() {
                 key={step.title}
                 className="reveal grid grid-cols-[3rem_1fr] gap-4 py-5"
                 style={{
-                  ["--r0" as string]: `${index * 6}%`,
-                  ["--r1" as string]: `${36 + index * 6}%`,
+                  ["--delay" as string]: `${index * 100}ms`,
                 }}
               >
                 <span
@@ -122,6 +128,15 @@ export function PointRules() {
               ))}
             </ul>
             <p className="mt-3 text-sm text-mist">Saldo poin tidak pernah turun di bawah 0.</p>
+          </div>
+
+          <div>
+            <h3 className="text-3xl">Tukar poin jadi poin JSDP</h3>
+            <ExchangeRate className="mt-3" />
+            <p className="mt-3 text-sm text-mist">
+              Ditukar per kelipatan {EXCHANGE_POIN} poin, sisanya tetap tersimpan. Penukaran tidak
+              bisa dibatalkan.
+            </p>
           </div>
 
           <Link href="/scan" className={buttonClasses("light", "lg", "w-full sm:w-auto")}>

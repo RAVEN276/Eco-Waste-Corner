@@ -1,17 +1,20 @@
 import { BinArt } from "@/components/art/BinArt";
 import { CountUp } from "@/components/ui/CountUp";
+import { ScrollLinked } from "@/components/ui/ScrollLinked";
 import { CheckIcon, CloseIcon } from "@/components/ui/Icons";
 import { BIN_LIST } from "@/lib/data/bins";
 import { BASE_POINTS } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
 
 // Tiga kategori setara dan strukturnya sama, jadi kolomnya sengaja sama lebar.
+// Pemotongan sudut memakai overflow-clip, bukan overflow-hidden: overflow-hidden menjadikan elemen
+// "scroll container", sehingga gerak terikat gulir di dalamnya (tong di kepala kolom) mengira
+// elemen itu yang digulir dan berhenti bergerak. overflow-clip memotong sama tanpa efek itu.
 // Satu panel dengan garis tegas, bukan tiga kartu terpisah. Gambar tong mencuat dari
 // kepala kolom supaya kode warna langsung dikenali.
 export function WasteCategories() {
   return (
     <section
-      id="edukasi"
       className="mx-auto max-w-6xl px-4 py-14 sm:px-6 md:py-20"
       aria-labelledby="judul-edukasi"
     >
@@ -30,7 +33,7 @@ export function WasteCategories() {
         bersama: judul, deskripsi, poin, isi, tips. Jadi tiap bagian sejajar antar kolom
         walau satu judul pindah baris (misalnya "Plastik / Kertas" di layar sedang).
       */}
-      <div className="mt-10 grid overflow-hidden rounded-sheet border-2 border-ink md:grid-cols-3 md:grid-rows-[auto_auto_auto_1fr_auto]">
+      <div className="mt-10 grid overflow-clip rounded-sheet border-2 border-ink md:grid-cols-3 md:grid-rows-[auto_auto_auto_1fr_auto]">
         {BIN_LIST.map((bin, index) => (
           <article
             key={bin.id}
@@ -39,13 +42,12 @@ export function WasteCategories() {
               index > 0 && "border-t-2 border-ink md:border-l-2 md:border-t-0",
             )}
             style={{
-              ["--r0" as string]: `${index * 8}%`,
-              ["--r1" as string]: `${40 + index * 8}%`,
+              ["--delay" as string]: `${index * 140}ms`,
             }}
           >
             <header
               className={cn(
-                "relative flex min-h-44 flex-col overflow-hidden p-5 sm:p-6 md:row-span-3 md:grid md:min-h-0 md:grid-rows-subgrid",
+                "relative flex min-h-44 flex-col overflow-clip p-5 sm:p-6 md:row-span-3 md:grid md:min-h-0 md:grid-rows-subgrid",
                 bin.tone.solid,
               )}
             >
@@ -58,10 +60,12 @@ export function WasteCategories() {
                 />
                 <span className="text-sm font-bold">poin dasar</span>
               </p>
-              <BinArt
-                id={bin.id}
+              <ScrollLinked
+                y={[44, -28]}
                 className="absolute -bottom-8 -right-3 w-32 rotate-6 sm:w-36 md:w-24 lg:w-36"
-              />
+              >
+                <BinArt id={bin.id} className="block w-full" />
+              </ScrollLinked>
             </header>
 
             <div className="flex-1 space-y-5 bg-white p-5 sm:p-6">

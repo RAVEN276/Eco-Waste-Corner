@@ -25,6 +25,7 @@ import {
   PENALTY_POINTS,
   applyToBalance,
   calculateScore,
+  exchangeQuote,
   isCoolingDown,
   type ScoreBreakdown,
 } from "@/lib/scoring";
@@ -33,6 +34,7 @@ import type {
   CampusLocation,
   CapacityStatus,
   DataSource,
+  ExchangeRecord,
   ScanRecord,
   UserProfile,
 } from "@/lib/types";
@@ -53,6 +55,7 @@ function mapUser(uid: string, data: DocumentData): UserProfile {
     email: String(data.email ?? ""),
     nama: String(data.nama ?? ""),
     prodi: String(data.prodi ?? ""),
+    poin: Number(data.poin ?? 0),
     poinJSDP: Number(data.poinJSDP ?? 0),
     totalScan: Number(data.totalScan ?? 0),
     cooldownUntil: toMillis(data.cooldownUntil),
@@ -76,6 +79,16 @@ function mapScan(id: string, data: DocumentData): ScanRecord {
     pointsEarned: Number(data.pointsEarned ?? 0),
     status: data.status ?? "unverified",
     penaltyReason: data.penaltyReason ?? null,
+    timestamp: toMillis(data.timestamp) ?? 0,
+  };
+}
+
+function mapExchange(id: string, data: DocumentData): ExchangeRecord {
+  return {
+    exchangeId: id,
+    userId: String(data.userId ?? ""),
+    poinSpent: Number(data.poinSpent ?? 0),
+    jsdpGained: Number(data.jsdpGained ?? 0),
     timestamp: toMillis(data.timestamp) ?? 0,
   };
 }
@@ -110,6 +123,7 @@ export async function ensureUserProfile(identity: {
     email: identity.email,
     nama: identity.displayName ?? identity.email.split("@")[0],
     prodi: "",
+    poin: 0,
     poinJSDP: 0,
     totalScan: 0,
     cooldownUntil: null,
@@ -252,7 +266,7 @@ export async function submitScan(input: SubmitScanInput): Promise<SubmitScanResu
       };
     }
 
-    const { balance, applied } = applyToBalance(profile.poinJSDP, breakdown.net);
+    const { balance, applied } = applyToBalance(profile.poin, breakdown.net);
     const cooldownUntil = violatedCooldown ? (profile.cooldownUntil as number) : now + COOLDOWN_MS;
     const countsAsScan = breakdown.status !== "penalized";
 
@@ -285,12 +299,77 @@ export async function submitScan(input: SubmitScanInput): Promise<SubmitScanResu
     }
 
     tx.update(userRef, {
-      poinJSDP: balance,
+      poin: balance,
       totalScan: profile.totalScan + (countsAsScan ? 1 : 0),
       cooldownUntil: Timestamp.fromMillis(cooldownUntil),
     });
 
     return { scanId: scanRef.id, breakdown, applied, balance, cooldownUntil };
+  });
+}
+
+/* -------------------------------- exchanges -------------------------------- */
+
+export function subscribeExchanges(
+  uid: string,
+  onData: (exchanges: ExchangeRecord[]) => void,
+  onError: (error: unknown) => void,
+): Unsubscribe {
+  return onSnapshot(
+    query(collection(getDb(), "exchanges"), where("userId", "==", uid)),
+    (snap) => {
+      const exchanges = snap.docs
+        .map((d) => mapExchange(d.id, d.data({ serverTimestamps: "estimate" })))
+        .sort((a, b) => b.timestamp - a.timestamp);
+      onData(exchanges);
+    },
+    onError,
+  );
+}
+
+export interface SubmitExchangeResult {
+  exchangeId: string;
+  poinSpent: number;
+  jsdpGained: number;
+  /** Points left after the exchange. */
+  poin: number;
+  poinJSDP: number;
+}
+
+/** Turns `packages` packages of points into JSDP points. The balance is re-read inside the transaction. */
+export async function submitExchange(input: {
+  uid: string;
+  packages: number;
+}): Promise<SubmitExchangeResult> {
+  if (!Number.isInteger(input.packages) || input.packages < 1) {
+    throw new Error("Jumlah penukaran tidak valid.");
+  }
+  const db = getDb();
+  const { spent, gained } = exchangeQuote(input.packages);
+  const userRef = doc(db, "users", input.uid);
+  const exchangeRef = doc(collection(db, "exchanges"));
+
+  return runTransaction(db, async (tx) => {
+    const userSnap = await tx.get(userRef);
+    if (!userSnap.exists()) throw new Error("Profil tidak ditemukan. Muat ulang halaman.");
+    const profile = mapUser(input.uid, userSnap.data());
+    if (profile.poin < spent) {
+      throw new Error(`Poin tidak cukup. Poinmu ${profile.poin}, penukaran ini butuh ${spent}.`);
+    }
+
+    const poin = profile.poin - spent;
+    const poinJSDP = profile.poinJSDP + gained;
+
+    tx.set(exchangeRef, {
+      exchangeId: exchangeRef.id,
+      userId: input.uid,
+      poinSpent: spent,
+      jsdpGained: gained,
+      timestamp: serverTimestamp(),
+    });
+    tx.update(userRef, { poin, poinJSDP });
+
+    return { exchangeId: exchangeRef.id, poinSpent: spent, jsdpGained: gained, poin, poinJSDP };
   });
 }
 

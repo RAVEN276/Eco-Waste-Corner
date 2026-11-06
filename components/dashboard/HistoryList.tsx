@@ -1,9 +1,8 @@
 "use client";
 
 import { useLayoutEffect, useState, type CSSProperties } from "react";
-import Link from "next/link";
 import { PhotoDialog } from "@/components/dashboard/PhotoDialog";
-import { Button, buttonClasses } from "@/components/ui/Button";
+import { Button } from "@/components/ui/Button";
 import { AlertIcon, CheckIcon } from "@/components/ui/Icons";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
 import { useScanHistory } from "@/hooks/useScanHistory";
@@ -14,9 +13,11 @@ import { cn, formatDateTime } from "@/lib/utils";
 
 const MAX_ROWS = 50;
 
-// Baris muncul berurutan dari atas (delapan pertama saja), menandakan data baru tiba.
+// Baris muncul bergantian dalam kelompok empat (jeda 0 sampai 135 ms) dan diulang tiap baris
+// masuk layar lagi (lihat ScrollMotion). Jeda tidak terus bertambah, supaya baris yang jauh
+// di bawah tidak menunggu lama saat akhirnya digulir ke sana.
 function rowDelay(index: number): CSSProperties {
-  return { ["--delay" as string]: `${Math.min(index, 8) * 45}ms` };
+  return { ["--delay" as string]: `${(index % 4) * 45}ms` };
 }
 
 const STATUS_VIEW: Record<ScanStatus, { label: string; className: string }> = {
@@ -82,7 +83,7 @@ export function HistoryList() {
 
   return (
     <section aria-labelledby="judul-riwayat">
-      <h2 id="judul-riwayat" className="text-5xl">
+      <h2 id="judul-riwayat" className="reveal text-5xl">
         Riwayat pembuangan sampah
       </h2>
 
@@ -98,12 +99,7 @@ export function HistoryList() {
         ) : rows.length === 0 ? (
           <EmptyState
             title="Belum ada aktivitas"
-            description="Scan slot tong pertamamu untuk mulai mengumpulkan poin JSDP."
-            action={
-              <Link href="/scan" className={buttonClasses("primary")}>
-                Mulai scan
-              </Link>
-            }
+            description="Scan slot tong pertamamu untuk mulai mengumpulkan poin."
           />
         ) : (
           <>

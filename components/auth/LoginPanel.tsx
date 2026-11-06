@@ -8,19 +8,38 @@ import { Card } from "@/components/ui/Card";
 import { CheckIcon } from "@/components/ui/Icons";
 import { InlineNotice, Spinner } from "@/components/ui/States";
 import {
-  DomainError,
-  completeLoginLink,
-  getStoredLoginEmail,
-  isLoginLink,
-  sendLoginLink,
+  LOGIN_EMAIL_SENDER,
+  checkVerified,
+  registerWithEmail,
+  resendVerification,
+  sendPasswordReset,
+  signInWithEmail,
   signInWithGoogle,
+  signOut,
 } from "@/lib/firebase/auth";
 import { FIREBASE_NOT_CONFIGURED_MESSAGE, isFirebaseConfigured } from "@/lib/firebase/config";
 import { describeFirebaseError } from "@/lib/firebase/errors";
-import { EMAIL_DOMAIN_ERROR, UPJ_STUDENT_DOMAIN, isUpjStudentEmail } from "@/lib/validation/email";
+import {
+  EMAIL_INVALID_ERROR,
+  MIN_PASSWORD_LENGTH,
+  PASSWORD_REQUIRED_ERROR,
+  PASSWORD_SHORT_ERROR,
+  isValidEmail,
+  normalizeEmail,
+} from "@/lib/validation/email";
+import { cn } from "@/lib/utils";
 import { useUserStore } from "@/store/useUserStore";
 
-type Stage = "form" | "sent" | "confirm-email" | "completing";
+type Mode = "masuk" | "daftar";
+type Stage = "form" | "lupa" | "lupa-terkirim" | "verifikasi";
+type Busy = "google" | "submit" | "resend" | "check" | null;
+
+// Jeda sebelum email verifikasi boleh dikirim ulang, supaya klik berulang tidak membanjiri
+// kotak masuk atau menghabiskan kuota pengiriman Firebase.
+const RESEND_SECONDS = 60;
+
+const INPUT_CLASS =
+  "mt-1.5 min-h-12 w-full rounded-ctl border-2 border-edge bg-white px-3 text-base placeholder:text-muted disabled:bg-paper aria-[invalid=true]:border-brick";
 
 function safeNextPath(raw: string | null): string {
   if (raw && raw.startsWith("/") && !raw.startsWith("//")) return raw;
@@ -59,75 +78,163 @@ export function LoginPanel() {
   const storeError = useUserStore((s) => s.error);
   const clearError = useUserStore((s) => s.clearError);
 
+  const [mode, setMode] = useState<Mode>("masuk");
   const [stage, setStage] = useState<Stage>("form");
   const [email, setEmail] = useState("");
-  const [fieldError, setFieldError] = useState<string | null>(null);
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<"google" | "link" | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [busy, setBusy] = useState<Busy>(null);
+  const [wait, setWait] = useState(0);
 
   useEffect(() => {
     if (authStatus === "authenticated") router.replace(nextPath);
   }, [authStatus, nextPath, router]);
 
   useEffect(() => {
-    if (!isFirebaseConfigured) return;
-    const url = window.location.href;
-    if (!isLoginLink(url)) return;
+    if (wait <= 0) return;
+    const timer = window.setTimeout(() => setWait((seconds) => seconds - 1), 1000);
+    return () => window.clearTimeout(timer);
+  }, [wait]);
 
-    const stored = getStoredLoginEmail();
-    if (!stored) {
-      queueMicrotask(() => setStage("confirm-email"));
-      return;
-    }
-    queueMicrotask(() => setStage("completing"));
-    completeLoginLink(stored, url).catch((error: unknown) => {
-      setStage("form");
-      setFormError(error instanceof DomainError ? error.message : describeFirebaseError(error));
-    });
-  }, []);
+  const clearMessages = () => {
+    setFormError(null);
+    setNotice(null);
+    clearError();
+  };
+
+  const switchMode = (next: Mode) => {
+    setMode(next);
+    setEmailError(null);
+    setPasswordError(null);
+    clearMessages();
+  };
+
+  const toForm = () => {
+    setStage("form");
+    clearMessages();
+  };
 
   const handleGoogle = async () => {
-    setFormError(null);
-    clearError();
+    clearMessages();
     setBusy("google");
     try {
       await signInWithGoogle();
     } catch (error) {
-      setFormError(error instanceof DomainError ? error.message : describeFirebaseError(error));
+      setFormError(describeFirebaseError(error));
     } finally {
       setBusy(null);
     }
   };
 
-  const handleEmailSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setFormError(null);
-    clearError();
-
-    if (!isUpjStudentEmail(email)) {
-      setFieldError(EMAIL_DOMAIN_ERROR);
-      return;
-    }
-    setFieldError(null);
-    setBusy("link");
-    try {
-      if (stage === "confirm-email") {
-        setStage("completing");
-        await completeLoginLink(email, window.location.href);
+  const validate = (needPassword: boolean): boolean => {
+    const emailOk = isValidEmail(email);
+    setEmailError(emailOk ? null : EMAIL_INVALID_ERROR);
+    let passwordOk = true;
+    if (needPassword) {
+      if (!password) {
+        setPasswordError(PASSWORD_REQUIRED_ERROR);
+        passwordOk = false;
+      } else if (mode === "daftar" && password.length < MIN_PASSWORD_LENGTH) {
+        setPasswordError(PASSWORD_SHORT_ERROR);
+        passwordOk = false;
       } else {
-        await sendLoginLink(email);
-        setStage("sent");
+        setPasswordError(null);
+      }
+    }
+    return emailOk && passwordOk;
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    clearMessages();
+    if (!validate(true)) return;
+
+    setBusy("submit");
+    try {
+      if (mode === "daftar") {
+        const { verificationError } = await registerWithEmail(email, password);
+        setStage("verifikasi");
+        if (verificationError) setFormError(verificationError);
+        else setWait(RESEND_SECONDS);
+      } else {
+        const user = await signInWithEmail(email, password);
+        if (!user.emailVerified) {
+          setStage("verifikasi");
+          setNotice("Emailmu belum terverifikasi. Kirim ulang email verifikasi bila perlu.");
+        }
+        // Bila sudah terverifikasi, AuthProvider membuka akses dan halaman ini berpindah sendiri.
       }
     } catch (error) {
-      setStage(stage === "confirm-email" ? "confirm-email" : "form");
-      setFormError(error instanceof DomainError ? error.message : describeFirebaseError(error));
+      setFormError(describeFirebaseError(error));
     } finally {
       setBusy(null);
+    }
+  };
+
+  const handleReset = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    clearMessages();
+    if (!validate(false)) return;
+    setBusy("submit");
+    try {
+      await sendPasswordReset(email);
+      setStage("lupa-terkirim");
+    } catch (error) {
+      setFormError(describeFirebaseError(error));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const handleResend = async () => {
+    if (wait > 0) return;
+    clearMessages();
+    setBusy("resend");
+    try {
+      await resendVerification();
+      setWait(RESEND_SECONDS);
+      setNotice("Email verifikasi dikirim ulang.");
+    } catch (error) {
+      setFormError(describeFirebaseError(error));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const handleCheck = async () => {
+    clearMessages();
+    setBusy("check");
+    try {
+      const verified = await checkVerified();
+      if (!verified) {
+        setFormError("Emailmu belum terverifikasi. Buka tautan di email itu dulu, lalu coba lagi.");
+      }
+      // Bila sudah, AuthProvider membuka akses dan halaman ini berpindah sendiri.
+    } catch (error) {
+      setFormError(describeFirebaseError(error));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const handleLeaveVerification = async () => {
+    setBusy("check");
+    try {
+      await signOut();
+    } finally {
+      setBusy(null);
+      setPassword("");
+      toForm();
     }
   };
 
   const disabled = !isFirebaseConfigured || busy !== null;
   const shownError = formError ?? storeError;
+  const shownEmail = normalizeEmail(email);
 
   return (
     <div className="grid min-h-[calc(100dvh-4rem)] md:grid-cols-2">
@@ -135,12 +242,12 @@ export function LoginPanel() {
         <div className="fade-up">
           <h1 className="text-6xl sm:text-7xl">Masuk ke Eco Waste Corner</h1>
           <p className="mt-5 max-w-md text-lg">
-            Masuk dengan akun Google, atau minta tautan login ke email Student UPJ. Kamu tidak perlu
-            memasukkan NIM.
+            Masuk dengan akun Google, atau daftar dan masuk dengan email dan kata sandi. Email apa
+            pun bisa dipakai, termasuk Gmail. Kamu tidak perlu memasukkan NIM.
           </p>
           <p className="mt-3 max-w-md text-sm text-mist">
-            Tautan login lewat email hanya untuk alamat berakhiran{" "}
-            <strong className="text-white">{UPJ_STUDENT_DOMAIN}</strong>.
+            Pendaftaran dengan email perlu verifikasi: kami mengirim tautan ke emailmu, dan akunnya
+            aktif setelah tautan itu dibuka.
           </p>
         </div>
         <div className="hidden max-w-md overflow-hidden rounded-sheet border-2 border-ink bg-paper p-3 md:block">
@@ -149,104 +256,261 @@ export function LoginPanel() {
       </div>
 
       <div className="flex items-center justify-center px-4 py-10 sm:px-8 md:px-12">
-      <Card
-        strong
-        className="fade-up w-full max-w-md space-y-6"
-        style={{ ["--delay" as string]: "150ms" }}
-      >
-        {!isFirebaseConfigured ? (
-          <InlineNotice tone="warning">
-            <strong>Login belum aktif.</strong> {FIREBASE_NOT_CONFIGURED_MESSAGE}
-          </InlineNotice>
-        ) : null}
+        <Card
+          strong
+          className="fade-up w-full max-w-md space-y-6"
+          style={{ ["--delay" as string]: "150ms" }}
+        >
+          {!isFirebaseConfigured ? (
+            <InlineNotice tone="warning">
+              <strong>Login belum aktif.</strong> {FIREBASE_NOT_CONFIGURED_MESSAGE}
+            </InlineNotice>
+          ) : null}
 
-        {shownError ? <InlineNotice tone="error">{shownError}</InlineNotice> : null}
+          {shownError ? <InlineNotice tone="error">{shownError}</InlineNotice> : null}
+          {notice ? <InlineNotice tone="info">{notice}</InlineNotice> : null}
 
-        {stage === "sent" ? (
-          <div className="space-y-3 text-center" role="status">
-            <CheckIcon className="mx-auto size-10 text-organik" />
-            <h2 className="text-4xl">Cek email kamu</h2>
-            <p className="text-sm text-muted">
-              Tautan login dikirim ke{" "}
-              <strong className="text-ink">{email.trim().toLowerCase()}</strong>. Buka tautan itu
-              di perangkat ini.
-            </p>
-            <Button variant="outline" onClick={() => setStage("form")}>
-              Kirim ke email lain
-            </Button>
-          </div>
-        ) : stage === "completing" ? (
-          <div className="flex flex-col items-center gap-3 py-6">
-            <Spinner className="size-8 text-cobalt" label="Menyelesaikan login" />
-            <p className="text-sm text-muted" aria-hidden="true">
-              Menyelesaikan login...
-            </p>
-          </div>
-        ) : (
-          <>
-            {stage === "form" ? (
-              <>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="w-full"
-                  onClick={handleGoogle}
-                  disabled={disabled}
-                >
-                  {busy === "google" ? <Spinner label="Membuka Google" /> : <GoogleMark />}
-                  Masuk dengan Google
+          {stage === "verifikasi" ? (
+            <div className="space-y-5">
+              <div className="space-y-3 text-center" role="status">
+                <CheckIcon className="mx-auto size-10 text-organik" />
+                <h2 className="text-4xl">Verifikasi email kamu</h2>
+                <p className="text-sm text-muted">
+                  Tautan verifikasi dikirim ke{" "}
+                  <strong className="break-words text-ink">{shownEmail}</strong>. Buka tautannya, lalu
+                  kembali ke sini dan tekan tombol di bawah.
+                </p>
+              </div>
+
+              <div className="rounded-plate border-2 border-rule bg-paper p-4 text-left text-sm">
+                <p className="font-bold">Belum ada di kotak masuk?</p>
+                <ul className="mt-2 list-disc space-y-1.5 pl-5 text-muted">
+                  <li>Tunggu beberapa menit, lalu cek folder Junk atau Spam.</li>
+                  {LOGIN_EMAIL_SENDER ? (
+                    <li>
+                      Pengirimnya{" "}
+                      <strong className="break-words text-ink">{LOGIN_EMAIL_SENDER}</strong>.
+                    </li>
+                  ) : null}
+                  <li>Salah ketik email? Kembali, lalu daftar dengan alamat yang benar.</li>
+                </ul>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Button onClick={handleCheck} disabled={disabled}>
+                  {busy === "check" ? <Spinner label="Memeriksa" /> : null}
+                  Saya sudah verifikasi
                 </Button>
-                <div className="flex items-center gap-3 text-sm text-muted" aria-hidden="true">
-                  <span className="h-0.5 flex-1 bg-rule" />
-                  atau
-                  <span className="h-0.5 flex-1 bg-rule" />
-                </div>
-              </>
-            ) : (
-              <p className="text-sm text-muted">
-                Masukkan email yang kamu pakai saat meminta tautan untuk menyelesaikan login.
-              </p>
-            )}
-
-            <form onSubmit={handleEmailSubmit} noValidate className="space-y-3">
+                <Button variant="outline" onClick={handleResend} disabled={disabled || wait > 0}>
+                  {busy === "resend" ? <Spinner label="Mengirim" /> : null}
+                  {wait > 0 ? `Kirim ulang email (${wait} dtk)` : "Kirim ulang email verifikasi"}
+                </Button>
+                <Button variant="ghost" onClick={handleLeaveVerification} disabled={disabled}>
+                  Kembali
+                </Button>
+              </div>
+            </div>
+          ) : stage === "lupa-terkirim" ? (
+            <div className="space-y-5">
+              <div className="space-y-3 text-center" role="status">
+                <CheckIcon className="mx-auto size-10 text-organik" />
+                <h2 className="text-4xl">Cek email kamu</h2>
+                <p className="text-sm text-muted">
+                  Jika <strong className="break-words text-ink">{shownEmail}</strong> terdaftar,
+                  tautan untuk mengatur ulang kata sandi sudah dikirim. Cek juga folder Junk atau
+                  Spam.
+                </p>
+              </div>
+              <Button variant="outline" className="w-full" onClick={toForm}>
+                Kembali ke halaman masuk
+              </Button>
+            </div>
+          ) : stage === "lupa" ? (
+            <form onSubmit={handleReset} noValidate className="space-y-4">
               <div>
-                <label htmlFor="email-upj" className="block text-sm font-bold">
-                  Email Student UPJ
+                <h2 className="text-4xl">Lupa kata sandi</h2>
+                <p className="mt-1 text-sm text-muted">
+                  Masukkan email akunmu. Kami kirim tautan untuk membuat kata sandi baru.
+                </p>
+              </div>
+              <div>
+                <label htmlFor="login-email" className="block text-sm font-bold">
+                  Email
                 </label>
                 <input
-                  id="email-upj"
+                  id="login-email"
                   type="email"
                   inputMode="email"
                   autoComplete="email"
                   value={email}
                   onChange={(event) => {
                     setEmail(event.target.value);
-                    if (fieldError) setFieldError(null);
+                    if (emailError) setEmailError(null);
                   }}
-                  placeholder={`nama${UPJ_STUDENT_DOMAIN}`}
+                  placeholder="nama@gmail.com"
                   disabled={disabled}
-                  aria-invalid={fieldError ? true : undefined}
-                  aria-describedby={fieldError ? "email-upj-error" : undefined}
-                  className="mt-1.5 min-h-12 w-full rounded-ctl border-2 border-edge bg-white px-3 text-base placeholder:text-muted disabled:bg-paper aria-[invalid=true]:border-brick"
+                  aria-invalid={emailError ? true : undefined}
+                  aria-describedby={emailError ? "login-email-error" : undefined}
+                  className={INPUT_CLASS}
                 />
-                {fieldError ? (
+                {emailError ? (
                   <p
-                    id="email-upj-error"
+                    id="login-email-error"
                     role="alert"
                     className="mt-1.5 text-sm font-bold text-brick"
                   >
-                    {fieldError}
+                    {emailError}
                   </p>
                 ) : null}
               </div>
               <Button type="submit" size="lg" className="w-full" disabled={disabled}>
-                {busy === "link" ? <Spinner label="Mengirim" /> : null}
-                {stage === "confirm-email" ? "Selesaikan login" : "Kirim tautan login"}
+                {busy === "submit" ? <Spinner label="Mengirim" /> : null}
+                Kirim tautan reset
+              </Button>
+              <Button variant="ghost" className="w-full" onClick={toForm} disabled={disabled}>
+                Kembali
               </Button>
             </form>
-          </>
-        )}
-      </Card>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full"
+                onClick={handleGoogle}
+                disabled={disabled}
+              >
+                {busy === "google" ? <Spinner label="Membuka Google" /> : <GoogleMark />}
+                Masuk dengan Google
+              </Button>
+              <div className="flex items-center gap-3 text-sm text-muted" aria-hidden="true">
+                <span className="h-0.5 flex-1 bg-rule" />
+                atau pakai email
+                <span className="h-0.5 flex-1 bg-rule" />
+              </div>
+
+              <div role="group" aria-label="Masuk atau daftar" className="grid grid-cols-2 gap-2">
+                {(["masuk", "daftar"] as const).map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    aria-pressed={mode === option}
+                    onClick={() => switchMode(option)}
+                    disabled={disabled}
+                    className={cn(
+                      "min-h-11 rounded-ctl border-2 px-4 text-sm font-bold transition-colors duration-150 disabled:opacity-55",
+                      mode === option
+                        ? "border-ink bg-ink text-white"
+                        : "border-edge bg-white hover:bg-cobalt-soft",
+                    )}
+                  >
+                    {option === "masuk" ? "Masuk" : "Daftar"}
+                  </button>
+                ))}
+              </div>
+
+              <form onSubmit={handleSubmit} noValidate className="space-y-4">
+                <div>
+                  <label htmlFor="login-email" className="block text-sm font-bold">
+                    Email
+                  </label>
+                  <input
+                    id="login-email"
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(event) => {
+                      setEmail(event.target.value);
+                      if (emailError) setEmailError(null);
+                    }}
+                    placeholder="nama@gmail.com"
+                    disabled={disabled}
+                    aria-invalid={emailError ? true : undefined}
+                    aria-describedby={emailError ? "login-email-error" : undefined}
+                    className={INPUT_CLASS}
+                  />
+                  {emailError ? (
+                    <p
+                      id="login-email-error"
+                      role="alert"
+                      className="mt-1.5 text-sm font-bold text-brick"
+                    >
+                      {emailError}
+                    </p>
+                  ) : null}
+                </div>
+
+                <div>
+                  <label htmlFor="login-password" className="block text-sm font-bold">
+                    Kata sandi
+                  </label>
+                  <input
+                    id="login-password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete={mode === "daftar" ? "new-password" : "current-password"}
+                    value={password}
+                    onChange={(event) => {
+                      setPassword(event.target.value);
+                      if (passwordError) setPasswordError(null);
+                    }}
+                    disabled={disabled}
+                    aria-invalid={passwordError ? true : undefined}
+                    aria-describedby={
+                      passwordError
+                        ? "login-password-error"
+                        : mode === "daftar"
+                          ? "login-password-hint"
+                          : undefined
+                    }
+                    className={INPUT_CLASS}
+                  />
+                  {mode === "daftar" && !passwordError ? (
+                    <p id="login-password-hint" className="mt-1.5 text-sm text-muted">
+                      Minimal {MIN_PASSWORD_LENGTH} karakter.
+                    </p>
+                  ) : null}
+                  {passwordError ? (
+                    <p
+                      id="login-password-error"
+                      role="alert"
+                      className="mt-1.5 text-sm font-bold text-brick"
+                    >
+                      {passwordError}
+                    </p>
+                  ) : null}
+                  <label className="mt-2 flex min-h-11 items-center gap-2.5 text-sm">
+                    <input
+                      type="checkbox"
+                      className="size-5 accent-cobalt"
+                      checked={showPassword}
+                      onChange={(event) => setShowPassword(event.target.checked)}
+                    />
+                    Tampilkan kata sandi
+                  </label>
+                </div>
+
+                <Button type="submit" size="lg" className="w-full" disabled={disabled}>
+                  {busy === "submit" ? <Spinner label="Memproses" /> : null}
+                  {mode === "daftar" ? "Daftar" : "Masuk"}
+                </Button>
+                {mode === "masuk" ? (
+                  <Button
+                    variant="ghost"
+                    className="w-full"
+                    onClick={() => {
+                      clearMessages();
+                      setStage("lupa");
+                    }}
+                    disabled={disabled}
+                  >
+                    Lupa kata sandi?
+                  </Button>
+                ) : null}
+              </form>
+            </>
+          )}
+        </Card>
       </div>
     </div>
   );

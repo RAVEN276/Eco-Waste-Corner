@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { onAuthStateChanged, type User } from "firebase/auth";
+import { onIdTokenChanged, type User } from "firebase/auth";
 import { getFirebaseAuth, isFirebaseConfigured } from "@/lib/firebase/config";
 import { ensureUserProfile, subscribeUser } from "@/lib/firebase/firestore";
 import { describeFirebaseError } from "@/lib/firebase/errors";
@@ -24,6 +24,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     let unsubscribeProfile: (() => void) | undefined;
+    // Pengguna dan status verifikasi yang terakhir diproses. onIdTokenChanged juga menyala tiap
+    // token diperbarui (sekitar tiap jam), dan itu tidak boleh memulai ulang langganan profil.
+    let lastKey = "";
     const auth = getFirebaseAuth();
 
     const stopProfile = () => {
@@ -32,20 +35,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     const handleUser = async (user: User | null) => {
+      const key = user ? `${user.uid}:${user.emailVerified}` : "none";
+      if (key === lastKey) return;
+      lastKey = key;
+
       stopProfile();
       const state = useUserStore.getState();
 
-      if (!user) {
+      // Akun email dan kata sandi baru bisa dipakai setelah emailnya terverifikasi, karena
+      // firestore.rules mensyaratkan email_verified. Sebelum itu aplikasi menganggapnya belum
+      // masuk, dan LoginPanel yang menuntun verifikasinya. Akun Google sudah terverifikasi.
+      // Tidak ada pengecekan domain di sini: email apa pun boleh.
+      if (!user || !user.emailVerified) {
         state.setSignedOut();
         return;
       }
 
-      // No domain check here: the email-link flow enforces @student.upj.ac.id itself,
-      // and Google accounts of any domain are allowed.
       state.setSignedIn(user.photoURL);
       state.setProfileLoading();
 
       try {
+        // Rules membaca klaim email_verified dari token. Setelah verifikasi, token lama masih
+        // berklaim false, jadi segarkan dulu sebelum menyentuh Firestore.
+        const claims = await user.getIdTokenResult();
+        if (!claims.claims.email_verified) await user.getIdToken(true);
         await ensureUserProfile({
           uid: user.uid,
           email: user.email ?? `${user.uid}@no-email.invalid`,
@@ -63,7 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    const unsubscribeAuth = onAuthStateChanged(
+    const unsubscribeAuth = onIdTokenChanged(
       auth,
       (user) => void handleUser(user),
       (error) => {

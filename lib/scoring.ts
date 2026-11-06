@@ -12,6 +12,23 @@ export const BASE_POINTS: Record<BinCategory, number> = {
 /** Extra points when the quiz is fully correct and a photo proof is attached. */
 export const FULL_PROOF_BONUS = 2;
 
+/**
+ * Points earned from scans can be exchanged for JSDP points in whole packages:
+ * EXCHANGE_POIN points become EXCHANGE_JSDP JSDP points. The rate is a starting
+ * value. When it changes, update the numbers in firestore.rules (isExchangeUpdate
+ * and the exchanges create rule) and the README as well.
+ */
+export const EXCHANGE_POIN = 10;
+export const EXCHANGE_JSDP = 5;
+
+export function maxExchangePackages(poin: number): number {
+  return Math.max(0, Math.floor(poin / EXCHANGE_POIN));
+}
+
+export function exchangeQuote(packages: number): { spent: number; gained: number } {
+  return { spent: packages * EXCHANGE_POIN, gained: packages * EXCHANGE_JSDP };
+}
+
 export const PENALTY_POINTS: Record<PenaltyReason, number> = {
   item_mismatch: 3,
   duplicate_photo: 3,

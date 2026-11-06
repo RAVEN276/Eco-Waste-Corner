@@ -1,6 +1,6 @@
 # Arah desain: Eco Waste Corner UPJ
 
-Dokumen ini adalah sumber arah visual. `AGENTS.md` memuat aturan teknis dan konten yang tetap berlaku di atasnya (tema terang saja, glass maksimal dua tempat, tanpa em dash, tanpa fitur tukar poin).
+Dokumen ini adalah sumber arah visual. `AGENTS.md` memuat aturan teknis dan konten yang tetap berlaku di atasnya (tema terang saja, glass maksimal dua tempat, tanpa em dash, penukaran hanya poin ke poin JSDP, tanpa hadiah).
 
 Dial: ENERGY 3 / RHYTHM 3 / MOTION 3
 
@@ -10,7 +10,7 @@ Catatan arah: versi pertama terlalu minimalis (ENERGY 2, tanpa ilustrasi). Versi
 
 ## Identitas
 
-Tiga tong adalah identitas produk. Warna dan bentuk berasal dari tong itu sendiri, bukan dari tema "hijau ramah lingkungan". Poin JSDP ditampilkan sebagai angka besar seperti papan skor, karena poin adalah syarat kelulusan dan harus langsung terbaca.
+Tiga tong adalah identitas produk. Warna dan bentuk berasal dari tong itu sendiri, bukan dari tema "hijau ramah lingkungan". Poin ditampilkan sebagai angka besar seperti papan skor, karena itu yang dikumpulkan lewat scan dan harus langsung terbaca. Poin JSDP (syarat kelulusan) tidak ikut di papan skor supaya papan itu tetap satu fokus, saldonya ada di panel tukar poin.
 
 Motif yang diulang: **tong berkode warna**, digambar sendiri di `components/art/BinArt.tsx` (garis ink tebal, bidang rata, label putih dengan simbol sederhana). Tiga bentuk dipakai berulang:
 
@@ -64,44 +64,58 @@ Teks kecil di latar terang memakai `ink`, `muted`, `cobalt`, atau `organik`. `ke
 
 ## Komposisi per halaman
 
-- Beranda (urutan dan ritme sengaja berganti): hero cobalt penuh dengan panggung tong, baris ink empat langkah scan, latihan memilah interaktif di atas cobalt-soft, panduan tiga kolom dengan tong mencuat dari kepala kolom, dua bidang SDG 12 (cobalt dan paper), bagian gelap aturan poin, penutup cobalt dengan titik A dan B.
+- Beranda (urutan dan ritme sengaja berganti): hero cobalt penuh dengan panggung tong, baris ink empat langkah scan, lalu bagian Edukasi (satu pembungkus `#edukasi`, lima bagian berganti latar supaya tidak monoton: panduan tiga kolom di paper dengan tong mencuat dari kepala kolom, tiga pertanyaan penentu di pita putih, tabel kesalahan umum di paper, kamus sampah yang bisa dicari di pita putih, latihan memilah interaktif di cobalt-soft), dua bidang SDG 12 (cobalt dan paper), bagian gelap aturan poin, penutup cobalt dengan titik A dan B. Belajar dulu, baru berlatih: latihan sengaja di ujung Edukasi.
 - Login: dua bidang penuh, cobalt dengan panggung tong di kiri dan formulir di kanan.
 - Scan: pita cobalt berisi judul dan tiga tong kecil, lalu satu kolom fokus, penanda langkah, kartu slot berilustrasi.
 - Peta: pita cobalt-soft untuk judul, lalu denah dan daftar titik.
-- Dashboard: papan skor cobalt dengan angka poin raksasa, lalu jalur badge, lalu riwayat.
+- Dashboard: papan skor cobalt dengan angka poin raksasa dan satu tombol (scan), lalu panel tukar poin (kolom ink berisi kurs, kolom putih berisi jumlah paket, pratinjau saldo, dan dialog konfirmasi karena tidak bisa dibatalkan), lalu jalur badge, lalu riwayat. Panel tukar di dashboard karena di sanalah saldo dan riwayat berada. Dari hasil scan ada pintasan ke panel itu saat poin sudah cukup. Dashboard punya satu tombol scan saja (di papan skor), jangan menambah tombol scan lain di panel tukar atau riwayat.
 - Mobile: bilah navigasi bawah (Beranda, Peta, Scan, Dashboard atau Masuk), ruang di bawah konten disisakan setinggi bilah itu.
 
 ## Gerak
 
-Kosakata gerak sengaja pendek supaya terasa seperti satu sistem, bukan tumpukan efek. Tiga kata kerja utama, ditambah umpan balik kecil. Semuanya berjalan sekali (tidak ada putaran tanpa henti, kecuali spinner pemuatan) dan tiap gerak punya alasan.
+Kosakata gerak sengaja pendek supaya terasa seperti satu sistem, bukan tumpukan efek. Tiga kata kerja utama, ditambah umpan balik kecil. Gerak masuk tidak hanya jalan saat halaman dibuka: tiap kali sebuah bagian kembali ke layar setelah keluar sepenuhnya, geraknya mulai dari awal lagi (lihat "Mengulang"). Tidak ada putaran tanpa henti (kecuali spinner pemuatan), dan tiap gerak punya alasan.
 
 | Gerak | Kelas atau komponen | Di mana | Alasan |
 | --- | --- | --- | --- |
 | Jatuh | `.drop`, `.bump` di `BinArt` | hero, login, hasil scan, latihan memilah | Menunjukkan aksi produk: barang masuk tong. Di latihan, barang jatuh ke tong yang dipilih sebagai jawaban. |
-| Muncul saat digulir | `.reveal`, `.reveal-l`, `.reveal-r` | beranda | Mengatur laju baca per bagian. Mengikuti posisi gulir (bukan waktu), berurutan antar kolom lewat `--r0` dan `--r1`. |
-| Hitung naik | `CountUp`, `AnimatedCounter` | angka poin dasar, skor latihan, poin hasil scan, saldo | Menarik mata ke angka inti produk. Nilai akhir selalu ada di HTML dan teks pembaca layar. |
-| Sapu sorotan | `.wipe` | "poin JSDP." di judul hero | Menekankan konsep kunci tepat setelah judul tampil. |
+| Muncul saat digulir | `.reveal`, `.reveal-l`, `.reveal-r` | beranda, dashboard (papan skor, panel tukar dari dua sisi, lencana), peta (denah dan daftar titik), scan (form foto) | Mengatur laju baca per bagian: isi baru muncul saat dibaca, bukan semuanya sejak awal. Berbasis waktu (0,7 detik) dan berurutan antar anak lewat `--delay`, jadi sama di semua browser. |
+| Mengulang | `ScrollMotion` (`components/layout/ScrollMotion.tsx`), penanda `data-replay` | semua halaman | Supaya halaman tetap terasa hidup selama dibaca, bukan hanya saat dibuka. Bagian yang sudah jauh di luar layar (30% tinggi layar) dijeda di awal animasinya (tidak terlihat), lalu diputar dari awal saat masuk lagi dari bawah (dimulai 10% tinggi layar sebelum terlihat, supaya pada gulir pelan animasinya sudah jalan saat tampak). Bagian yang masuk dari atas (digulir naik) langsung tampil penuh: isinya sudah dibaca, dan memutarnya dari kosong membuatnya berkedip di tepi layar. Berlaku untuk `.reveal*`, `.fade-up`, `.land`, dan elemen `data-replay`, termasuk gerak di dalamnya. |
+| Bilah progres | `ScrollProgress` di `Navbar` | semua halaman | Halaman panjang (beranda belasan layar, dashboard beberapa layar), jadi bilah di tepi atas navbar memberi tahu sudah sejauh mana membaca. Dijalankan CSS (linimasa gulir akar halaman), jadi mulus dan tidak tertinggal dari gulir. Kosong di halaman yang muat dalam satu layar, dan tidak tampil di browser tanpa linimasa gulir. |
+| Plat utama mundur | `ScrollLinked` | panggung hero, papan skor dashboard, judul peta, pita scan | Saat plat utama sebuah halaman digulir lewat, ia mengecil sedikit (0,94 sampai 0,97) dan turun pelan. Perhatian berpindah dari plat itu ke isi di bawahnya (Edukasi, panel tukar, denah, form), dan ada kesan kedalaman. Satu perilaku yang sama di tiap halaman supaya terasa sebagai satu sistem. Dijalankan CSS (`animation-timeline`), bukan JavaScript: nilai yang dihitung JavaScript tertinggal satu bingkai dari gulir dan elemennya bergetar saat digulir pelan. |
+| Tumbuh | `.grow-y` di `CapacityBadge` | daftar titik peta, dialog lokasi | Batang meter kapasitas tumbuh dari bawah satu per satu, jadi tinggi-rendahnya terbaca sebagai "terisi". |
+| Menempel | `sticky` di pembungkus `Stepper` | scan | Form foto bukti cukup panjang, jadi penanda langkah tetap terlihat tepat di bawah navbar saat digulir. |
+| Tong naik | `ScrollLinked` | kepala tiga kolom panduan | Tong naik dari bawah kepala kolom seiring digulir (digeser 44 ke -28 px, dipotong tepi kepala kolom), jadi kode warna tiap kolom "muncul" tepat saat kolomnya dibaca. |
+| Hitung naik | `CountUp`, `AnimatedCounter` | angka poin dasar, skor latihan, poin hasil scan, saldo | Menarik mata ke angka inti produk. `CountUp` menghitung ulang dari 0 tiap kali angkanya kembali ke layar. Nilai akhir selalu ada di HTML dan teks pembaca layar. |
+| Sapu sorotan | `.wipe` | "poin." di judul hero | Menekankan konsep kunci tepat setelah judul tampil. |
 | Berurutan | `.fade-up` dengan `--delay` | empat langkah di hero, baris riwayat, kartu login, panel umpan balik | Urutan gerak meniru urutan isi (langkah 1 sampai 4, baris dari atas). |
-| Isi bilah | `.fill-x`, `.fill-scroll` | penanda langkah scan, progres badge | Menunjukkan kemajuan. Bilah badge terisi saat masuk layar. |
+| Isi bilah | `.fill-x` | penanda langkah scan, progres badge | Menunjukkan kemajuan. Bilah badge terisi tiap kali panelnya masuk layar. |
 | Getar dan membal | `.shake`, `.pop` | kuis, latihan memilah | Umpan balik jawaban yang tidak bergantung pada warna: salah bergetar, ikon benar atau salah membal. |
 | Cap | `.stamp` | plat hasil scan | Menegaskan bahwa scan tercatat. |
 | Mendarat | `.land` | penanda denah peta | Menunjukkan letak dua titik begitu denah muncul. |
 | Tekan | `active:scale-[0.98]` di tombol | semua tombol | Memberi tahu bahwa klik terdaftar. |
 
 Aturan:
-- Semua gerak berhenti pada `prefers-reduced-motion`: durasi dan jeda dipangkas jadi nol, gerak berbasis gulir dimatikan, dan `CountUp` langsung menampilkan nilai akhir.
-- Tidak ada paralaks, tidak ada animasi yang berputar terus, dan tidak ada tumpukan banyak efek pada satu elemen.
+- Semua gerak berhenti pada `prefers-reduced-motion`: durasi dan jeda dipangkas jadi nol, `.reveal*` dimatikan, `ScrollLinked` diam lewat CSS (`[data-scroll-linked]`), dan `CountUp` langsung menampilkan nilai akhir. Bilah progres tetap mengikuti gulir karena itu penunjuk posisi, bukan gerak hiasan.
+- Gerak terikat gulir hanya dua jenis (`ScrollLinked` dan bilah progres), kecil (maksimal sekitar 70 px), dan tidak menutupi teks. Denah peta sengaja tidak diberi paralaks: posisi titik terhadap bangunan adalah isi petanya, dan tidak boleh bergeser. Tidak ada animasi yang berputar terus dan tidak ada tumpukan banyak efek pada satu elemen.
+- `ScrollMotion` tidak menulis atribut ke elemen React: itu menimbulkan galat hidrasi. Ia hanya menjeda dan memutar ulang animasi lewat Web Animations API, dengan status di memori. Penjedaan hanya dipicu gulir, tidak oleh perubahan ukuran layar (papan ketik ponsel mengecilkan tinggi layar sesaat).
+- Elemen yang menjadi leluhur gerak terikat gulir tidak boleh `overflow-hidden`: itu menjadikannya scroll container, sehingga linimasa gulir di dalamnya mengira elemen itu yang digulir dan gerakannya berhenti. Pakai `overflow-clip` (memotong sama, termasuk sudut membulat).
 - Menambah gerak baru berarti menambah baris di tabel ini beserta alasannya.
 
 ## Latihan memilah
 
-`components/landing/SortGame.tsx` memakai barang yang sama dengan langkah scan (`lib/data/items.ts`). Urutannya tetap, tidak acak (aman untuk prerender). Tidak menyimpan apa pun, tidak menambah poin, dan tidak butuh login. Gunanya membiasakan pengguna sebelum scan sungguhan.
+`components/landing/SortGame.tsx` menampilkan 10 barang per putaran, diacak dari seluruh kamus (`WASTE_ITEMS` di `lib/data/items.ts`, 30 barang) lewat `pickPracticeRound`: sebaran 3-3-4 antar tong supaya tiap putaran seimbang, urutannya diacak. Math.random tidak boleh jalan saat prerender, jadi pengacakan baru dipanggil di browser (setelah tampil, dan saat "Main lagi"). Sebelum itu yang tampil penanda memuat dengan tinggi tetap supaya halaman tidak melompat. Tidak menyimpan apa pun, tidak menambah poin, dan tidak butuh login. Gunanya membiasakan pengguna sebelum scan sungguhan.
+
+## Edukasi dan penanda menu
+
+- Kamus sampah (`WasteDictionary`) memakai daftar barang yang sama dengan latihan. Daftar lengkap tampil dulu (terbaca tanpa JS), pencarian dan saringan hanya menyempitkan. Warna tong hanya penanda tambahan, nama tong selalu tertulis.
+- Form scan memakai daftar lebih pendek (`SCAN_ITEMS`, sepuluh barang) supaya formnya tidak panjang. Id barang tersimpan di riwayat scan, jangan diubah atau dihapus.
+- Navbar menyorot bagian yang sedang dibaca di beranda: "Beranda" di hero dan bagian lain, "Edukasi" selama `#edukasi` melewati garis baca (sekitar sepertiga tinggi layar). Di halaman lain sorotan mengikuti rute. Dipasang lewat `useEdukasiActive` di `Navbar.tsx`.
 
 ## Alasan keputusan utama
 
 - Cobalt sebagai merek: hijau sudah dipakai kode tong organik, jadi merek berwarna lain supaya "hijau" tetap berarti organik.
 - Hero berwarna penuh dengan ilustrasi tong: menunjukkan produk dalam satu pandangan, dan menjawab keluhan UI terlalu minimalis tanpa menambah hiasan tanpa fungsi.
 - Latihan memilah: konten interaktif yang mengajarkan hal yang sama dengan produk, dari data yang sudah ada.
-- Papan skor: poin adalah syarat kelulusan, jadi angkanya yang paling besar di dashboard.
+- Papan skor: poin adalah yang dikumpulkan lewat scan, jadi angkanya yang paling besar di dashboard. Poin JSDP ada di panel tukar poin karena hanya bertambah lewat penukaran.
 - Bilah bawah di mobile: tiga tujuan utama harus terjangkau ibu jari.
 - Ikon bawaan dibuat sendiri dan sedikit (`components/ui/Icons.tsx`): hanya untuk aksi yang butuh simbol.

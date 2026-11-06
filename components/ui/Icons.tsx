@@ -68,6 +68,14 @@ export function CameraIcon(props: IconProps) {
   );
 }
 
+export function ArrowRightIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M3.5 12h16M13 5.5l6.5 6.5-6.5 6.5" />
+    </Base>
+  );
+}
+
 export function RefreshIcon(props: IconProps) {
   return (
     <Base {...props}>

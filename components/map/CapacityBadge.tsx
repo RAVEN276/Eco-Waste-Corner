@@ -26,7 +26,8 @@ export function CapacityBadge({ status, className }: { status: CapacityStatus; c
         {["h-2", "h-3", "h-4"].map((height, i) => (
           <span
             key={height}
-            className={cn("w-1.5 border-2 border-current", height, i < view.filled && "bg-current")}
+            className={cn("grow-y w-1.5 border-2 border-current", height, i < view.filled && "bg-current")}
+            style={{ ["--delay" as string]: `${200 + i * 110}ms` }}
           />
         ))}
       </span>

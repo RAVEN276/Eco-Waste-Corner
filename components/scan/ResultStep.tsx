@@ -7,6 +7,7 @@ import { Button, buttonClasses } from "@/components/ui/Button";
 import { AlertIcon, CheckIcon } from "@/components/ui/Icons";
 import { useCooldown } from "@/hooks/useCooldown";
 import type { SubmitScanResult } from "@/lib/firebase/firestore";
+import { EXCHANGE_JSDP, maxExchangePackages } from "@/lib/scoring";
 import type { BinCategory } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +23,7 @@ export function ResultStep({
   const cooldown = useCooldown();
   const { breakdown, applied } = result;
   const penalized = breakdown.status === "penalized";
+  const packages = maxExchangePackages(result.balance);
 
   return (
     <div className="space-y-6" role="status">
@@ -59,9 +61,9 @@ export function ResultStep({
         ) : null}
       </div>
 
-      <dl className="grid grid-cols-2 gap-3 text-sm">
+      <dl className="fade-up grid grid-cols-2 gap-3 text-sm" style={{ ["--delay" as string]: "300ms" }}>
         <div className="rounded-plate border-2 border-rule bg-white p-4">
-          <dt className="text-muted">Saldo poin JSDP</dt>
+          <dt className="text-muted">Saldo poin</dt>
           <dd className="mt-1 font-display text-5xl font-extrabold leading-none text-ink">
             <AnimatedCounter value={result.balance} />
           </dd>
@@ -74,7 +76,22 @@ export function ResultStep({
         </div>
       </dl>
 
-      <div className="flex flex-col gap-2 sm:flex-row">
+      {packages > 0 ? (
+        <div
+          className="fade-up flex flex-col gap-3 rounded-plate border-2 border-cobalt bg-cobalt-soft p-4 sm:flex-row sm:items-center sm:justify-between"
+          style={{ ["--delay" as string]: "420ms" }}
+        >
+          <p className="text-sm">
+            Saldo poinmu cukup untuk ditukar jadi <strong>{packages * EXCHANGE_JSDP} poin JSDP</strong>
+            , syarat kelulusan.
+          </p>
+          <Link href="/dashboard#tukar-poin" className={buttonClasses("dark", "md", "sm:shrink-0")}>
+            Tukar di dashboard
+          </Link>
+        </div>
+      ) : null}
+
+      <div className="fade-up flex flex-col gap-2 sm:flex-row" style={{ ["--delay" as string]: "540ms" }}>
         <Link href="/dashboard" className={buttonClasses("primary", "lg")}>
           Lihat dashboard
         </Link>

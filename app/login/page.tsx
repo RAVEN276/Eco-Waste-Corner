@@ -4,7 +4,7 @@ import { LoginPanel } from "@/components/auth/LoginPanel";
 import { LoadingState } from "@/components/ui/States";
 
 export const metadata: Metadata = {
-  title: "Login Student UPJ",
+  title: "Masuk atau daftar",
 };
 
 export default function LoginPage() {

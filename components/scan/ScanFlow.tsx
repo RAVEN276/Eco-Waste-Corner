@@ -8,6 +8,7 @@ import { QuizStep } from "@/components/scan/QuizStep";
 import { ResultStep } from "@/components/scan/ResultStep";
 import { SelectStep } from "@/components/scan/SelectStep";
 import { Stepper } from "@/components/scan/Stepper";
+import { ScrollLinked } from "@/components/ui/ScrollLinked";
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import { useCooldown } from "@/hooks/useCooldown";
 import { useLocations } from "@/hooks/useRemoteList";
@@ -119,14 +120,26 @@ export function ScanFlow() {
   return (
     <>
       <div className="border-b-2 border-ink bg-cobalt text-white">
-        <div className="mx-auto flex max-w-3xl items-end justify-between gap-6 px-4 py-8 sm:px-6 md:py-10">
-          <div>
-            <h1 className="text-6xl sm:text-7xl">Scan slot tong</h1>
-            <p className="mt-3 text-lg">Pilah dulu, jawab kuis, lalu klaim poin JSDP.</p>
-          </div>
-          <div className="hidden w-48 shrink-0 rounded-plate border-2 border-ink bg-paper p-2 sm:block">
-            <StationScene drops={false} className="block w-full" />
-          </div>
+        <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 md:py-10">
+          <ScrollLinked
+            y={[0, 24]}
+            scale={[1, 0.97]}
+            range="exit"
+            originClassName="flex origin-top items-end justify-between gap-6"
+          >
+            <div>
+              <h1 className="fade-up text-6xl sm:text-7xl">Scan slot tong</h1>
+              <p className="fade-up mt-3 text-lg" style={{ ["--delay" as string]: "120ms" }}>
+                Pilah dulu, jawab kuis, lalu klaim poin.
+              </p>
+            </div>
+            <div
+              className="fade-up hidden w-48 shrink-0 rounded-plate border-2 border-ink bg-paper p-2 sm:block"
+              style={{ ["--delay" as string]: "200ms" }}
+            >
+              <StationScene drops={false} className="block w-full" />
+            </div>
+          </ScrollLinked>
         </div>
       </div>
 
@@ -134,7 +147,7 @@ export function ScanFlow() {
       {cooldown.active && step !== "result" ? (
         <div
           role="status"
-          className="flex items-center gap-4 rounded-plate border-2 border-ink bg-kertas-soft px-4 py-3"
+          className="fade-up flex items-center gap-4 rounded-plate border-2 border-ink bg-kertas-soft px-4 py-3"
         >
           <span
             aria-hidden="true"
@@ -149,7 +162,8 @@ export function ScanFlow() {
         </div>
       ) : null}
 
-      <div className="mt-8">
+      {/* Menempel di bawah navbar: form foto bukti cukup panjang, jadi posisi langkah tetap terlihat. */}
+      <div className="sticky top-[4.125rem] z-30 -mx-4 mt-6 bg-paper px-4 py-3 sm:-mx-6 sm:px-6">
         <Stepper current={STEP_INDEX[step]} />
       </div>
 

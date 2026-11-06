@@ -135,9 +135,9 @@ body {
 }
 
 /*
- * Bagian halaman muncul saat masuk layar, mengikuti posisi gulir (bukan waktu). Hanya di
- * browser yang mendukung linimasa gulir; di tempat lain konten langsung tampil. `--r0` dan
- * `--r1` menggeser rentang supaya anak-anak satu kelompok muncul berurutan.
+ * Bagian halaman masuk saat muncul di layar, dan masuk lagi setiap kali kembali ke layar
+ * (lihat ScrollMotion). Berbasis waktu, bukan posisi gulir, jadi sama di semua browser.
+ * `--delay` menggeser awalnya supaya anak-anak satu kelompok muncul berurutan.
  */
 @keyframes reveal-in {
   from {
@@ -181,41 +181,42 @@ body {
   }
 }
 
-@supports (animation-timeline: view()) {
-  .reveal,
-  .reveal-l,
-  .reveal-r {
-    animation-timing-function: linear;
-    animation-fill-mode: both;
-    animation-timeline: view();
-    animation-range: entry var(--r0, 0%) entry var(--r1, 40%);
-  }
+.reveal {
+  animation: reveal-in 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: var(--delay, 0ms);
+}
 
-  .reveal {
-    animation-name: reveal-in;
-  }
+.reveal-l {
+  animation: reveal-in-left 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: var(--delay, 0ms);
+}
 
-  .reveal-l {
-    animation-name: reveal-in-left;
-  }
+.reveal-r {
+  animation: reveal-in-right 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: var(--delay, 0ms);
+}
 
-  .reveal-r {
-    animation-name: reveal-in-right;
+/* Batang meter kapasitas tumbuh dari bawah, jadi tinggi-rendahnya terbaca sebagai "terisi". */
+@keyframes grow-y {
+  from {
+    transform: scaleY(0);
   }
-
-  /* Isi bilah progres bertambah seiring bilahnya masuk layar. */
-  .fill-scroll {
-    transform-origin: left;
-    animation: fill-x linear both;
-    animation-timeline: view();
-    animation-range: entry 10% entry 90%;
+  to {
+    transform: scaleY(1);
   }
 }
 
-/* Isi bilah langkah scan terisi dari kiri saat langkahnya menjadi aktif. */
+.grow-y {
+  transform-origin: bottom;
+  animation: grow-y 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: var(--delay, 0ms);
+}
+
+/* Isi bilah terisi dari kiri: langkah scan yang aktif, dan bilah progres badge saat masuk layar. */
 .fill-x {
   transform-origin: left;
   animation: fill-x 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: var(--delay, 0ms);
 }
 
 /* Umpan balik jawaban: salah bergetar sekali, benar muncul membal sekali. */
@@ -328,6 +329,53 @@ body {
   animation-delay: var(--delay, 0ms);
 }
 
+/*
+ * Efek terikat gulir (ScrollLinked dan bilah progres) dijalankan CSS di thread compositor, bukan
+ * JavaScript. Dengan JavaScript, nilainya dihitung setelah gulir terjadi sehingga tertinggal satu
+ * bingkai dan elemennya bergetar saat digulir pelan. Di browser tanpa linimasa gulir, elemennya
+ * diam di posisi aslinya (bilah progres tidak tampil). Elemen luar yang diam menjadi subjek
+ * linimasa, elemen dalam yang bergerak, supaya posisinya tidak ikut bergeser oleh geraknya sendiri.
+ */
+@keyframes scroll-shift {
+  from {
+    transform: translateY(var(--y0, 0px)) scale(var(--s0, 1));
+  }
+  to {
+    transform: translateY(var(--y1, 0px)) scale(var(--s1, 1));
+  }
+}
+
+@keyframes scroll-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.scroll-shift-box {
+  view-timeline-name: --shift-box;
+}
+
+.scroll-progress {
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+@supports (animation-timeline: view()) {
+  .scroll-shift {
+    animation: scroll-shift linear both;
+    animation-timeline: --shift-box;
+    animation-range: var(--range, cover 0% cover 100%);
+  }
+
+  .scroll-progress {
+    animation: scroll-grow linear both;
+    animation-timeline: scroll(root block);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -335,9 +383,14 @@ body {
 
   .reveal,
   .reveal-l,
-  .reveal-r,
-  .fill-scroll {
+  .reveal-r {
     animation: none;
+  }
+
+  /* Gerak yang terikat gulir (ScrollLinked) diam di posisi aslinya. */
+  [data-scroll-linked] {
+    animation: none !important;
+    transform: none !important;
   }
 
   *,
