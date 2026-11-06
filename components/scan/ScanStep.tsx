@@ -4,7 +4,7 @@ import { useState } from "react";
 import { BinArt } from "@/components/art/BinArt";
 import { QrScanner } from "@/components/scan/QrScanner";
 import { Button } from "@/components/ui/Button";
-import { CameraIcon, CheckIcon } from "@/components/ui/Icons";
+import { CheckIcon } from "@/components/ui/Icons";
 import { ErrorState, InlineNotice, LoadingState } from "@/components/ui/States";
 import { BINS } from "@/lib/data/bins";
 import { parseQrText, type ScanTarget } from "@/lib/qr";
@@ -12,6 +12,7 @@ import { BASE_POINTS } from "@/lib/scoring";
 import type { CampusLocation } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { ListStatus } from "@/hooks/useRemoteList";
+import { usePageVisible } from "@/hooks/usePageVisible";
 
 interface ScanStepProps {
   locations: CampusLocation[];
@@ -30,18 +31,16 @@ const NATIVE_CAMERA_HINT =
   "Bisa juga lewat aplikasi kamera bawaan ponsel. Pindai QR di tong, dan tautannya membuka halaman ini dengan lokasi dan tong yang sudah terisi.";
 
 export function ScanStep({ locations, locationsStatus, target, onTarget, initialNotice, onStart, blocked }: ScanStepProps) {
-  // Kamera pemindai langsung menyala saat langkah ini terbuka, kecuali QR-nya sudah ada dari tautan.
-  const [scanning, setScanning] = useState(() => target === null);
   const [scannerKey, setScannerKey] = useState(0);
   const [notice, setNotice] = useState<string | null>(initialNotice);
+  const pageVisible = usePageVisible();
 
   const location = target ? (locations.find((item) => item.locationId === target.locationId) ?? null) : null;
   const bin = target ? BINS[target.category] : null;
 
-  const openScanner = () => {
+  const rescan = () => {
     setNotice(null);
     onTarget(null);
-    setScanning(true);
   };
 
   const handleDetect = (text: string) => {
@@ -51,7 +50,6 @@ export function ScanStep({ locations, locationsStatus, target, onTarget, initial
       return;
     }
     setNotice(null);
-    setScanning(false);
     onTarget(found);
   };
 
@@ -72,7 +70,7 @@ export function ScanStep({ locations, locationsStatus, target, onTarget, initial
         <ErrorState
           title="Lokasi di QR tidak dikenal"
           message="Kode ini menyebut lokasi yang tidak ada di daftar. Pindai QR lain di tong, atau laporkan ke pengelola."
-          onRetry={openScanner}
+          onRetry={rescan}
           className="py-6"
         />
       ) : null}
@@ -105,41 +103,21 @@ export function ScanStep({ locations, locationsStatus, target, onTarget, initial
             <Button size="lg" className="w-full sm:w-auto" disabled={blocked} onClick={onStart}>
               Mulai kuis
             </Button>
-            <Button size="lg" variant="outline" className="w-full sm:w-auto" onClick={openScanner}>
+            <Button size="lg" variant="outline" className="w-full sm:w-auto" onClick={rescan}>
               Pindai ulang
             </Button>
           </div>
         </>
       ) : null}
 
-      {!target && scanning ? (
+      {/* Kamera menyala selama langkah ini terbuka dan tab terlihat, lalu mati sendiri saat QR terbaca atau pengguna pergi. */}
+      {!target && pageVisible ? (
         <div className="space-y-4">
-          <div className="max-w-md">
+          {/* -mx-5 menyamai padding plat di ScanFlow, supaya kamera menempel ke tepi plat di ponsel. */}
+          <div className="-mx-5 sm:mx-0">
             <QrScanner key={scannerKey} onDetect={handleDetect} onRetry={() => setScannerKey((n) => n + 1)} />
           </div>
-          <p role="status" className="text-sm text-muted">
-            Arahkan kamera ke kode QR di tong. Pastikan seluruh kode masuk bingkai.
-          </p>
-          <Button variant="outline" onClick={() => setScanning(false)}>
-            Tutup kamera
-          </Button>
-          <p className="max-w-md text-sm text-muted">{NATIVE_CAMERA_HINT}</p>
-        </div>
-      ) : null}
-
-      {!target && !scanning ? (
-        <div className="space-y-4">
-          <div
-            aria-hidden="true"
-            className="flex aspect-[4/3] max-w-md flex-col items-center justify-center gap-2 rounded-plate border-2 border-dashed border-edge bg-surface text-center text-sm text-muted"
-          >
-            <CameraIcon className="size-8" />
-            Kamera ditutup
-          </div>
-          <Button size="lg" className="w-full sm:w-auto" onClick={openScanner}>
-            Buka kamera lagi
-          </Button>
-          <p className="max-w-md text-sm text-muted">{NATIVE_CAMERA_HINT}</p>
+          <p className="text-sm text-muted">{NATIVE_CAMERA_HINT}</p>
         </div>
       ) : null}
     </div>

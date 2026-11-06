@@ -26,19 +26,18 @@ interface CameraPanelProps {
   videoRef: RefObject<HTMLVideoElement | null>;
   status: CameraStatus;
   onRetry?: () => void;
+  /** Rasio, batas tinggi, sudut, dan garis tepi ditentukan pemanggil. */
+  className?: string;
   /** Tampil di atas gambar kamera hanya saat kamera menyala (misalnya bingkai bidik). */
   children?: ReactNode;
 }
 
-/**
- * Bingkai tempat gambar kamera tampil. Elemen video selalu ada supaya kamera bisa disambungkan,
- * dan keadaan memuat, ditolak, tidak ada, atau bukan https menutupinya dengan penjelasan dan langkah berikutnya.
- */
-export function CameraPanel({ videoRef, status, onRetry, children }: CameraPanelProps) {
+/** Elemen video selalu ada supaya kamera bisa tersambung. Keadaan memuat atau gagal menutupinya dengan penjelasan. */
+export function CameraPanel({ videoRef, status, onRetry, className, children }: CameraPanelProps) {
   const problem = status === "denied" || status === "unavailable" || status === "insecure" ? PROBLEMS[status] : null;
 
   return (
-    <div className="relative aspect-[4/3] w-full overflow-clip rounded-plate border-2 border-line bg-night text-white">
+    <div className={cn("relative w-full overflow-clip bg-night text-white", className)}>
       <video
         ref={videoRef}
         playsInline

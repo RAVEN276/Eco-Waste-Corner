@@ -9,10 +9,8 @@ function cameraSupported(): boolean {
 }
 
 /**
- * Membuka kamera belakang dan menyambungkannya ke elemen video milik pemanggil. Kamera berhenti
- * saat komponen dilepas (termasuk saat halaman disembunyikan Activity), jadi lampu kamera tidak
- * menyala terus. Kamera menyala begitu komponen yang memakainya dirender: pemindai QR sengaja
- * dirender langsung saat langkah scan terbuka, sedangkan kamera foto bukti baru dirender setelah tombol ditekan.
+ * Membuka kamera belakang ke elemen video pemanggil, dan mematikannya saat komponen dilepas,
+ * termasuk saat Activity menyembunyikan halaman. Kamera menyala begitu komponen dirender, tanpa menunggu tombol.
  */
 export function useCameraStream(videoRef: RefObject<HTMLVideoElement | null>): CameraStatus {
   const [status, setStatus] = useState<CameraStatus>(() => (cameraSupported() ? "starting" : "insecure"));
