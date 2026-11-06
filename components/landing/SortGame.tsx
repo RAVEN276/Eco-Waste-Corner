@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/Button";
 import { CheckIcon, CloseIcon } from "@/components/ui/Icons";
 import { LoadingState } from "@/components/ui/States";
 import { BINS, BIN_LIST } from "@/lib/data/bins";
-import { WASTE_ITEMS, pickPracticeRound } from "@/lib/data/items";
-import type { BinCategory, WasteItem } from "@/lib/types";
+import { WASTE_ITEMS, pickPracticeRound, pickRejection } from "@/lib/data/items";
+import type { BinCategory, Rejection, WasteItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const ROUND_SIZE = 10;
@@ -21,6 +21,7 @@ export function SortGame() {
   const [items, setItems] = useState<WasteItem[] | null>(null);
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<BinCategory | null>(null);
+  const [rejection, setRejection] = useState<Rejection | null>(null);
   const [correct, setCorrect] = useState(0);
   const [done, setDone] = useState(false);
   const itemRef = useRef<HTMLParagraphElement>(null);
@@ -37,7 +38,11 @@ export function SortGame() {
   const choose = (id: BinCategory) => {
     if (answered || !item) return;
     setPicked(id);
-    if (id === item.category) setCorrect((n) => n + 1);
+    if (id === item.category) {
+      setCorrect((n) => n + 1);
+      return;
+    }
+    setRejection(pickRejection(rejection?.arah));
   };
 
   const next = () => {
@@ -126,7 +131,8 @@ export function SortGame() {
                         onClick={() => choose(bin.id)}
                         className={cn(
                           "flex h-full w-full flex-col items-center gap-2 rounded-plate border-2 p-3 text-center",
-                          isWrongPick ? "shake border-brick-text bg-brick-soft" : "border-line bg-surface hover:bg-paper",
+                          isWrongPick ? "border-brick-text bg-brick-soft" : "border-line bg-surface hover:bg-paper",
+                          isWrongPick && "relative z-10",
                           isAnswer && "ring-4 ring-ink ring-offset-2 ring-offset-cobalt-soft",
                           answered && !isAnswer && !isWrongPick && "opacity-50",
                         )}
@@ -136,7 +142,8 @@ export function SortGame() {
                           id={bin.id}
                           space
                           drop={picked === bin.id ? item.category : undefined}
-                          className="w-full max-w-[7.5rem]"
+                          reject={isWrongPick && rejection ? rejection : undefined}
+                          className="w-full max-w-[6.5rem] sm:max-w-[7.5rem]"
                         />
                         <span className="font-display text-2xl font-extrabold leading-none">
                           {bin.label}

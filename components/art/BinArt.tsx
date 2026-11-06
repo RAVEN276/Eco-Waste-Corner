@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import type { BinCategory } from "@/lib/types";
+import type { BinCategory, Rejection } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 /*
@@ -62,9 +62,16 @@ function Glyph({ id }: { id: BinCategory }) {
 }
 
 /** Tong dalam kotak 120 lebar, dari y=34 (tutup) sampai y=151 (roda). */
-function BinGraphic({ id, bumpAt }: { id: BinCategory; bumpAt?: number }) {
+function BinGraphic({ id, bumpAt, spitAt }: { id: BinCategory; bumpAt?: number; spitAt?: number }) {
+  const reaction = bumpAt !== undefined ? "bump" : spitAt !== undefined ? "spit" : undefined;
+  const style =
+    bumpAt !== undefined
+      ? delay(bumpAt)
+      : spitAt !== undefined
+        ? { ...delay(spitAt), transformOrigin: "50% 100%" }
+        : undefined;
   return (
-    <g className={bumpAt !== undefined ? "bump" : undefined} style={bumpAt !== undefined ? delay(bumpAt) : undefined}>
+    <g className={reaction} style={style}>
       <path
         d="M16 52 H104 L99 138 Q98.5 144 92 144 H28 Q21.5 144 21 138 Z"
         className={cn(BODY_FILL[id], "stroke-ink")}
@@ -135,6 +142,18 @@ function Dropping({ id, at }: { id: BinCategory; at: number }) {
   );
 }
 
+/** Digambar setelah tong supaya barang yang terlontar terlihat di atasnya. */
+function Ejected({ id, at, rejection }: { id: BinCategory; at: number; rejection: Rejection }) {
+  const style = { ...delay(at), ["--dir" as string]: rejection.arah, ["--turn" as string]: `${rejection.putar}deg` };
+  return (
+    <g transform="translate(46 0)">
+      <g className="eject" style={style}>
+        <ItemGraphic id={id} />
+      </g>
+    </g>
+  );
+}
+
 function Svg({
   viewBox,
   className,
@@ -152,26 +171,33 @@ function Svg({
 }
 
 /**
- * Satu tong. Dengan `drop`, barang dari kategori itu jatuh ke slot sekali lalu tong bergetar,
- * dipakai sebagai umpan balik saat pengguna memilih tong. `space` menyisakan ruang jatuh di atas
- * tong yang diam, supaya ukuran tong sama dengan saudaranya yang sedang menerima barang.
+ * Satu tong. Dengan `drop`, barang dari kategori itu jatuh ke slot sekali lalu tong mengangguk, dipakai
+ * sebagai umpan balik saat pengguna memilih tong. Dengan `reject` (pilihan salah), tong menolak dan
+ * barangnya terlontar lalu mendarat di samping tong, ke arah yang ditentukan `reject`. `space`
+ * menyisakan ruang jatuh di atas tong yang diam, supaya ukurannya sama dengan saudaranya yang sedang
+ * menerima barang.
  */
 export function BinArt({
   id,
   className,
   drop,
+  reject,
   space = false,
 }: {
   id: BinCategory;
   className?: string;
   drop?: BinCategory;
+  reject?: Rejection;
   space?: boolean;
 }) {
   const tall = space || drop !== undefined;
+  const rejection = drop !== undefined ? reject : undefined;
   return (
-    <Svg viewBox={tall ? "0 -40 120 194" : "0 28 120 126"} className={className}>
+    // Barang yang ditolak mendarat di luar kotak gambar, jadi tepinya tidak boleh memotong.
+    <Svg viewBox={tall ? "0 -40 120 194" : "0 28 120 126"} className={cn(className, rejection && "overflow-visible")}>
       {drop ? <Dropping id={drop} at={0.05} /> : null}
-      <BinGraphic id={id} bumpAt={drop ? 0.8 : undefined} />
+      <BinGraphic id={id} bumpAt={drop && !rejection ? 0.8 : undefined} spitAt={rejection ? 0.95 : undefined} />
+      {drop && rejection ? <Ejected id={drop} at={1} rejection={rejection} /> : null}
     </Svg>
   );
 }
