@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { ItemGraphic } from "@/components/art/ItemArt";
 import type { BinCategory, Rejection } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -95,60 +96,23 @@ function BinGraphic({ id, bumpAt, spitAt }: { id: BinCategory; bumpAt?: number; 
   );
 }
 
-/** Barang yang masuk ke tong masing-masing, digambar di atas titik (0, 0). */
-function ItemGraphic({ id }: { id: BinCategory }) {
-  const line = { strokeWidth: 2.5, strokeLinecap: "round", strokeLinejoin: "round" } as const;
-  if (id === "organik") {
-    return (
-      <g>
-        <path
-          d="M14 6 C6 6 3 11 6 16 C8 18 9 19 9 20 C9 21 8 22 6 24 C3 29 6 34 14 34 C22 34 25 29 22 24 C20 22 19 21 19 20 C19 19 20 18 22 16 C25 11 22 6 14 6 Z"
-          className="fill-organik-soft stroke-ink"
-          {...line}
-        />
-        <path d="M14 6 V1" className="stroke-ink" {...line} />
-      </g>
-    );
-  }
-  if (id === "plastik_kertas") {
-    return (
-      <g>
-        <path
-          d="M10 6 H18 V10 C23 13 24 16 24 21 V34 C24 36 22 38 20 38 H8 C6 38 4 36 4 34 V21 C4 16 5 13 10 10 Z"
-          className="fill-white stroke-ink"
-          {...line}
-        />
-        <rect x="9" y="0" width="10" height="6" rx="1.5" className="fill-kertas stroke-ink" {...line} />
-        <rect x="4" y="24" width="20" height="8" className="fill-kertas stroke-ink" strokeWidth="2" />
-      </g>
-    );
-  }
-  return (
-    <g>
-      <rect x="3" y="8" width="26" height="18" rx="5" className="fill-white stroke-ink" {...line} />
-      <path d="M8 14 H24 M8 18 H24 M8 22 H24" className="stroke-ink" strokeWidth="2" strokeLinecap="round" />
-      <path d="M3 12 C-4 12 -4 22 3 22 M29 12 C36 12 36 22 29 22" className="stroke-ink" fill="none" {...line} />
-    </g>
-  );
-}
-
-function Dropping({ id, at }: { id: BinCategory; at: number }) {
+function Dropping({ id, item, at }: { id: BinCategory; item?: string; at: number }) {
   return (
     <g transform="translate(46 0)">
       <g className="drop" style={delay(at)}>
-        <ItemGraphic id={id} />
+        <ItemGraphic category={id} item={item} />
       </g>
     </g>
   );
 }
 
 /** Digambar setelah tong supaya barang yang terlontar terlihat di atasnya. */
-function Ejected({ id, at, rejection }: { id: BinCategory; at: number; rejection: Rejection }) {
+function Ejected({ id, item, at, rejection }: { id: BinCategory; item?: string; at: number; rejection: Rejection }) {
   const style = { ...delay(at), ["--dir" as string]: rejection.arah, ["--turn" as string]: `${rejection.putar}deg` };
   return (
     <g transform="translate(46 0)">
       <g className="eject" style={style}>
-        <ItemGraphic id={id} />
+        <ItemGraphic category={id} item={item} />
       </g>
     </g>
   );
@@ -171,22 +135,25 @@ function Svg({
 }
 
 /**
- * Satu tong. Dengan `drop`, barang dari kategori itu jatuh ke slot sekali lalu tong mengangguk, dipakai
- * sebagai umpan balik saat pengguna memilih tong. Dengan `reject` (pilihan salah), tong menolak dan
- * barangnya terlontar lalu mendarat di samping tong, ke arah yang ditentukan `reject`. `space`
- * menyisakan ruang jatuh di atas tong yang diam, supaya ukurannya sama dengan saudaranya yang sedang
- * menerima barang.
+ * Satu tong. Dengan `drop`, sebuah barang jatuh ke slot sekali lalu tong mengangguk, dipakai sebagai
+ * umpan balik saat pengguna memilih tong. `drop` adalah kategori barangnya, dan `item` (id barang di
+ * kamus) memilih gambar khusus barang itu, atau gambar kategori bila tidak diisi. Dengan `reject`
+ * (pilihan salah), tong menolak dan barangnya terlontar lalu mendarat di samping tong, ke arah yang
+ * ditentukan `reject`. `space` menyisakan ruang jatuh di atas tong yang diam, supaya ukurannya sama
+ * dengan saudaranya yang sedang menerima barang.
  */
 export function BinArt({
   id,
   className,
   drop,
+  item,
   reject,
   space = false,
 }: {
   id: BinCategory;
   className?: string;
   drop?: BinCategory;
+  item?: string;
   reject?: Rejection;
   space?: boolean;
 }) {
@@ -195,18 +162,18 @@ export function BinArt({
   return (
     // Barang yang ditolak mendarat di luar kotak gambar, jadi tepinya tidak boleh memotong.
     <Svg viewBox={tall ? "0 -40 120 194" : "0 28 120 126"} className={cn(className, rejection && "overflow-visible")}>
-      {drop ? <Dropping id={drop} at={0.05} /> : null}
+      {drop ? <Dropping id={drop} item={item} at={0.05} /> : null}
       <BinGraphic id={id} bumpAt={drop && !rejection ? 0.8 : undefined} spitAt={rejection ? 0.95 : undefined} />
-      {drop && rejection ? <Ejected id={drop} at={1} rejection={rejection} /> : null}
+      {drop && rejection ? <Ejected id={drop} item={item} at={1} rejection={rejection} /> : null}
     </Svg>
   );
 }
 
-/** Satu tong dengan barangnya jatuh ke slot sekali, lalu diam. */
-export function BinDrop({ id, className }: { id: BinCategory; className?: string }) {
+/** Satu tong dengan barangnya jatuh ke slot sekali, lalu diam. `item` memilih gambar khusus barangnya. */
+export function BinDrop({ id, item, className }: { id: BinCategory; item?: string; className?: string }) {
   return (
     <Svg viewBox="0 -40 120 194" className={className}>
-      <Dropping id={id} at={0.3} />
+      <Dropping id={id} item={item} at={0.3} />
       <BinGraphic id={id} bumpAt={1.1} />
     </Svg>
   );
