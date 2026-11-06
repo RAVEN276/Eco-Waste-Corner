@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed": "node scripts/seed-firestore.mjs"
+    "seed": "node scripts/seed-firestore.mjs",
+    "reset:accounts": "node scripts/reset-accounts.mjs",
+    "clear:history": "node scripts/clear-history.mjs"
   },
   "dependencies": {
     "firebase": "^13.2.0",

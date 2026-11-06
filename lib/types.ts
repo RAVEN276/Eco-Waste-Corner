@@ -11,6 +11,9 @@ export interface UserProfile {
   email: string;
   nama: string;
   prodi: string;
+  /** Points earned from scans. Can be exchanged for JSDP points. */
+  poin: number;
+  /** JSDP points. Graduation requirement, only grows through an exchange. */
   poinJSDP: number;
   totalScan: number;
   /** Epoch millis. Scanning is blocked until this moment. */
@@ -34,6 +37,14 @@ export interface ScanRecord {
   pointsEarned: number;
   status: ScanStatus;
   penaltyReason: PenaltyReason | null;
+  timestamp: number;
+}
+
+export interface ExchangeRecord {
+  exchangeId: string;
+  userId: string;
+  poinSpent: number;
+  jsdpGained: number;
   timestamp: number;
 }
 

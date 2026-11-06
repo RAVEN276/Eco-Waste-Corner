@@ -1,46 +1,41 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BinArt } from "@/components/art/BinArt";
 import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
 import { Button } from "@/components/ui/Button";
 import { CheckIcon, CloseIcon } from "@/components/ui/Icons";
+import { LoadingState } from "@/components/ui/States";
 import { BINS, BIN_LIST } from "@/lib/data/bins";
-import { findWasteItem } from "@/lib/data/items";
+import { WASTE_ITEMS, pickPracticeRound } from "@/lib/data/items";
 import type { BinCategory, WasteItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-// Urutan tetap dan selang-seling antar tong. Tidak memakai acak, jadi aman untuk prerender.
-const ORDER = [
-  "kulit-buah",
-  "botol-plastik",
-  "masker",
-  "ampas-kopi",
-  "kardus-kertas",
-  "puntung-rokok",
-  "sisa-makanan",
-  "gelas-plastik",
-  "tisu-bekas",
-  "sachet",
-];
-const ITEMS = ORDER.map((id) => findWasteItem(id)).filter((item): item is WasteItem => Boolean(item));
+const ROUND_SIZE = 10;
 
-// Latihan singkat dengan barang yang sama seperti di langkah scan. Tidak menyimpan apa pun
-// dan tidak menambah poin: gunanya membiasakan sebelum scan sungguhan.
+// Latihan singkat dengan barang dari kamus yang sama. Tiap putaran menampilkan 10 barang
+// yang diacak dari seluruh kamus. Pengacakan baru jalan di browser (setelah tampil, atau saat
+// tombol ulang ditekan), karena Math.random tidak boleh dipanggil saat prerender. Sebelum itu
+// yang tampil hanya penanda memuat. Tidak menyimpan apa pun dan tidak menambah poin.
 export function SortGame() {
+  const [items, setItems] = useState<WasteItem[] | null>(null);
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<BinCategory | null>(null);
   const [correct, setCorrect] = useState(0);
   const [done, setDone] = useState(false);
   const itemRef = useRef<HTMLParagraphElement>(null);
 
-  const item = ITEMS[index];
+  useEffect(() => {
+    queueMicrotask(() => setItems(pickPracticeRound(ROUND_SIZE)));
+  }, []);
+
+  const item = items ? items[index] : null;
   const answered = picked !== null;
-  const isRight = picked === item.category;
-  const isLast = index === ITEMS.length - 1;
+  const isRight = item !== null && picked === item.category;
+  const isLast = items !== null && index === items.length - 1;
 
   const choose = (id: BinCategory) => {
-    if (answered) return;
+    if (answered || !item) return;
     setPicked(id);
     if (id === item.category) setCorrect((n) => n + 1);
   };
@@ -56,6 +51,7 @@ export function SortGame() {
   };
 
   const restart = () => {
+    setItems(pickPracticeRound(ROUND_SIZE));
     setIndex(0);
     setPicked(null);
     setCorrect(0);
@@ -70,26 +66,32 @@ export function SortGame() {
             Coba pilah sekarang
           </h2>
           <p className="mt-4 text-lg">
-            Satu barang, tiga tong. Pilih tong yang benar. Latihan ini tidak menambah poin JSDP dan
-            tidak perlu login.
+            Satu barang, tiga tong. Pilih tong yang benar. Setiap main, {ROUND_SIZE} barang diacak
+            dari {WASTE_ITEMS.length} barang di kamus. Latihan ini tidak menambah poin dan tidak
+            perlu login.
           </p>
         </div>
 
-        {done ? (
+        {!items || !item ? (
+          <LoadingState
+            label={`Menyiapkan ${ROUND_SIZE} barang acak`}
+            className="mt-10 min-h-[24rem] bg-white"
+          />
+        ) : done ? (
           <div className="mt-10 grid items-center gap-8 rounded-sheet border-2 border-ink bg-white p-6 shadow-[8px_8px_0_var(--color-ink)] sm:p-8 md:grid-cols-[auto_1fr]">
             <p className="font-display text-[8rem] font-extrabold leading-[0.85] text-cobalt">
               <AnimatedCounter value={correct} />
-              <span className="text-5xl text-ink">/{ITEMS.length}</span>
+              <span className="text-5xl text-ink">/{items.length}</span>
             </p>
             <div>
               <h3 className="text-4xl">Latihan selesai</h3>
               <p className="mt-2 text-lg">
-                {correct} dari {ITEMS.length} barang kamu taruh di tong yang benar. Latihan ini tidak
-                menambah poin JSDP.
+                {correct} dari {items.length} barang kamu taruh di tong yang benar. Latihan ini tidak
+                menambah poin.
               </p>
               <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                 <Button size="lg" onClick={restart}>
-                  Ulangi latihan
+                  Main lagi dengan barang baru
                 </Button>
                 <Button href="/scan" size="lg" variant="outline">
                   Scan sungguhan
@@ -101,7 +103,7 @@ export function SortGame() {
           <div className="mt-10 grid gap-6 lg:grid-cols-[0.85fr_1.4fr]">
             <div className="flex min-h-[15rem] flex-col justify-between gap-6 rounded-sheet border-2 border-ink bg-white p-6 shadow-[8px_8px_0_var(--color-ink)]">
               <p className="font-display text-3xl font-extrabold text-cobalt">
-                Barang {index + 1} dari {ITEMS.length}
+                Barang {index + 1} dari {items.length}
               </p>
               <p ref={itemRef} tabIndex={-1} className="font-display text-6xl font-extrabold leading-none">
                 <span key={index} className="fade-up inline-block">

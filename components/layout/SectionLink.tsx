@@ -8,7 +8,7 @@ interface SectionLinkProps {
   href: string;
   className?: string;
   children: ReactNode;
-  "aria-current"?: "page";
+  "aria-current"?: "page" | "location";
   onClick?: MouseEventHandler<HTMLAnchorElement>;
 }
 

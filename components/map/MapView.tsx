@@ -51,7 +51,7 @@ export function MapView() {
           <CampusMap locations={items} selectedId={selectedId} onSelect={setSelectedId} />
 
           <div>
-            <div className="flex items-center justify-between gap-3">
+            <div className="reveal-r flex items-center justify-between gap-3">
               <h2 className="text-4xl">Titik Eco Waste Corner</h2>
               <Button variant="ghost" onClick={reload} aria-label="Muat ulang status kapasitas">
                 <RefreshIcon className="size-4" />
@@ -60,7 +60,11 @@ export function MapView() {
             </div>
             <ul className="mt-3 space-y-3">
               {items.map((location, index) => (
-                <li key={location.locationId}>
+                <li
+                  key={location.locationId}
+                  className="reveal-r"
+                  style={{ ["--delay" as string]: `${150 + index * 120}ms` }}
+                >
                   <button
                     type="button"
                     onClick={() => setSelectedId(location.locationId)}

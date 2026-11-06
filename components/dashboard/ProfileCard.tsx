@@ -45,7 +45,12 @@ export function ProfileCard() {
   };
 
   return (
-    <Card aria-labelledby="judul-profil" role="region" className="flex flex-col gap-5">
+    <Card
+      aria-labelledby="judul-profil"
+      role="region"
+      className="reveal flex flex-col gap-5"
+      style={{ ["--delay" as string]: "140ms" }}
+    >
       <div className="flex items-center gap-4">
         <span
           aria-hidden="true"

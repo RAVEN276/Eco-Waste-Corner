@@ -16,7 +16,7 @@ export function describeFirebaseError(error: unknown): string {
       return "Koneksi bermasalah. Periksa internet kamu lalu coba lagi.";
     case "auth/invalid-action-code":
     case "auth/expired-action-code":
-      return "Tautan login sudah kedaluwarsa atau pernah dipakai. Minta tautan baru.";
+      return "Tautan sudah kedaluwarsa atau pernah dipakai. Minta tautan baru.";
     case "auth/invalid-email":
       return "Format email tidak valid.";
     case "auth/too-many-requests":
@@ -25,6 +25,22 @@ export function describeFirebaseError(error: unknown): string {
       return "Metode login ini belum diaktifkan di Firebase Console (Authentication > Sign-in method).";
     case "auth/unauthorized-domain":
       return "Domain situs ini belum didaftarkan di Firebase Authentication.";
+    case "auth/unauthorized-continue-uri":
+    case "auth/invalid-continue-uri":
+      return "Alamat situs ini belum diizinkan untuk tautan di email. Tambahkan domainnya di Authentication > Settings > Authorized domains.";
+    case "auth/quota-exceeded":
+      return "Batas pengiriman email hari ini sudah tercapai. Coba lagi besok, atau masuk dengan Google.";
+    case "auth/invalid-credential":
+    case "auth/invalid-login-credentials":
+    case "auth/wrong-password":
+    case "auth/user-not-found":
+      return "Email atau kata sandi salah.";
+    case "auth/email-already-in-use":
+      return "Email ini sudah terdaftar. Coba masuk, atau pakai Lupa kata sandi.";
+    case "auth/weak-password":
+      return "Kata sandi terlalu lemah. Pakai minimal 8 karakter.";
+    case "auth/user-disabled":
+      return "Akun ini dinonaktifkan.";
     case "auth/invalid-api-key":
     case "auth/api-key-not-valid.-please-pass-a-valid-api-key.":
       return "Kunci API Firebase tidak valid. Periksa nilai NEXT_PUBLIC_FIREBASE_* di .env.local.";

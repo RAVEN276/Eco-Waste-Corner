@@ -12,8 +12,8 @@ export function BadgesPanel() {
   const reached = Math.min(totalScan, MAX_SCANS);
 
   return (
-    <section aria-labelledby="judul-badge">
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+    <section aria-labelledby="judul-badge" data-replay="">
+      <div className="reveal flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
         <h2 id="judul-badge" className="text-5xl">
           Peringkat dan badge
         </h2>
@@ -38,7 +38,7 @@ export function BadgesPanel() {
           className="h-4 overflow-hidden rounded-ctl border-2 border-ink bg-white"
         >
           <div
-            className="fill-scroll h-full bg-cobalt"
+            className="fill-x h-full bg-cobalt"
             style={{ width: `${(reached / MAX_SCANS) * 100}%` }}
           />
         </div>
@@ -59,13 +59,14 @@ export function BadgesPanel() {
       </div>
 
       <ul className="mt-5 grid gap-3 sm:grid-cols-3">
-        {BADGES.map((badge) => {
+        {BADGES.map((badge, index) => {
           const unlocked = totalScan >= badge.minScans;
           return (
             <li
               key={badge.id}
+              style={{ ["--delay" as string]: `${index * 120}ms` }}
               className={cn(
-                "flex items-center gap-4 rounded-plate border-2 p-4",
+                "reveal flex items-center gap-4 rounded-plate border-2 p-4",
                 unlocked
                   ? "border-ink bg-ink text-white"
                   : "border-dashed border-edge bg-white text-ink",

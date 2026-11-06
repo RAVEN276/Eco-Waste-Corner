@@ -8,7 +8,9 @@ interface UserState {
   authStatus: AuthStatus;
   profileStatus: ProfileStatus;
   profile: UserProfile | null;
-  /** Mirrors `profile.poinJSDP` so components can subscribe to just the balance. */
+  /** Mirrors `profile.poin` so components can subscribe to just the balance. */
+  poin: number;
+  /** Mirrors `profile.poinJSDP`. */
   poinJSDP: number;
   /** Mirrors `profile.cooldownUntil`, epoch millis. */
   cooldownUntil: number | null;
@@ -31,6 +33,7 @@ export const useUserStore = create<UserState>((set) => ({
   authStatus: "initializing",
   profileStatus: "idle",
   profile: null,
+  poin: 0,
   poinJSDP: 0,
   cooldownUntil: null,
   photoURL: null,
@@ -44,6 +47,7 @@ export const useUserStore = create<UserState>((set) => ({
       authStatus: "unauthenticated",
       profileStatus: "idle",
       profile: null,
+      poin: 0,
       poinJSDP: 0,
       cooldownUntil: null,
       photoURL: null,
@@ -54,6 +58,7 @@ export const useUserStore = create<UserState>((set) => ({
     set({
       profile,
       profileStatus: "ready",
+      poin: profile.poin,
       poinJSDP: profile.poinJSDP,
       cooldownUntil: profile.cooldownUntil,
       error: null,

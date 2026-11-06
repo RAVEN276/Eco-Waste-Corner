@@ -2,7 +2,8 @@ rules_version = '2';
 
 // Deploy with: firebase deploy --only firestore:rules
 // The client enforces the scoring logic, so these rules add a second line of
-// defence: domain lock, per-field limits, cooldown and bounded point changes.
+// defence: verified email, per-field limits, cooldown, bounded point changes and a
+// fixed exchange rate from points to JSDP points.
 // A production deployment should move scoring into a Cloud Function.
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -11,8 +12,9 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Google accounts may use any domain. The UPJ domain restriction for the
-    // email-link flow is enforced in the client only.
+    // Any email domain may sign in (Google, or email and password), but the email must
+    // be verified. Email and password accounts verify through the link Firebase sends.
+    // The name is historical: it no longer checks for a UPJ student address.
     function isUpjStudent() {
       return signedIn()
         && request.auth.token.email_verified == true;
@@ -23,40 +25,91 @@ service cloud.firestore {
     }
 
     match /users/{uid} {
+      // `poin` is read with a default so profiles created before the field existed
+      // can still be updated.
+      function oldPoin() {
+        return resource.data.get('poin', 0);
+      }
+
+      function newPoin() {
+        return request.resource.data.get('poin', 0);
+      }
+
+      // A scan only moves `poin` (JSDP points stay put): down by a penalty of at
+      // most 3, or up by at most 7 when the cooldown has passed and a new cooldown
+      // window is written in the same update.
+      function isScanUpdate() {
+        return request.resource.data.poinJSDP == resource.data.poinJSDP
+          && request.resource.data.totalScan >= resource.data.totalScan
+          && request.resource.data.totalScan <= resource.data.totalScan + 1
+          && (
+            (
+              newPoin() <= oldPoin()
+              && newPoin() >= oldPoin() - 3
+            )
+            || (
+              newPoin() <= oldPoin() + 7
+              && (resource.data.cooldownUntil == null || resource.data.cooldownUntil <= request.time)
+              && request.resource.data.cooldownUntil > request.time
+              && request.resource.data.cooldownUntil <= request.time + duration.value(16, 'm')
+            )
+          );
+      }
+
+      // An exchange spends whole packages of 10 points for 5 JSDP points each.
+      // Keep these numbers in step with EXCHANGE_POIN and EXCHANGE_JSDP in
+      // lib/scoring.ts. It leaves scan counters and the cooldown untouched.
+      function isExchangeUpdate() {
+        let spent = oldPoin() - newPoin();
+        let gained = request.resource.data.poinJSDP - resource.data.poinJSDP;
+        return request.resource.data.totalScan == resource.data.totalScan
+          && request.resource.data.cooldownUntil == resource.data.cooldownUntil
+          && spent > 0
+          && spent % 10 == 0
+          && gained * 10 == spent * 5;
+      }
+
       allow read: if isOwner(uid);
 
       allow create: if isOwner(uid)
         && request.resource.data.uid == uid
         && request.resource.data.email.lower() == request.auth.token.email.lower()
+        && request.resource.data.poin == 0
         && request.resource.data.poinJSDP == 0
         && request.resource.data.totalScan == 0
         && request.resource.data.cooldownUntil == null;
 
-      // Identity fields are immutable. JSDP points count toward graduation and
-      // cannot be spent, so they may only fall by a penalty (at most 3) or rise
-      // by at most 7 when the cooldown has passed and a new cooldown window is
-      // written in the same update.
+      // Identity fields are immutable. JSDP points count toward graduation: they
+      // never fall and only rise through an exchange of `poin`.
       allow update: if isOwner(uid)
         && request.resource.data.uid == resource.data.uid
         && request.resource.data.email == resource.data.email
         && request.resource.data.createdAt == resource.data.createdAt
+        && newPoin() >= 0
         && request.resource.data.poinJSDP >= 0
-        && request.resource.data.totalScan >= resource.data.totalScan
-        && request.resource.data.totalScan <= resource.data.totalScan + 1
-        && (
-          (
-            request.resource.data.poinJSDP <= resource.data.poinJSDP
-            && request.resource.data.poinJSDP >= resource.data.poinJSDP - 3
-          )
-          || (
-            request.resource.data.poinJSDP <= resource.data.poinJSDP + 7
-            && (resource.data.cooldownUntil == null || resource.data.cooldownUntil <= request.time)
-            && request.resource.data.cooldownUntil > request.time
-            && request.resource.data.cooldownUntil <= request.time + duration.value(16, 'm')
-          )
-        );
+        && (isScanUpdate() || isExchangeUpdate());
 
       allow delete: if false;
+    }
+
+    // One document per exchange. The amounts must match the change that the same
+    // write makes to the user document (get = before, getAfter = after).
+    match /exchanges/{exchangeId} {
+      allow read: if isUpjStudent() && resource.data.userId == request.auth.uid;
+
+      allow create: if isUpjStudent()
+        && request.resource.data.keys().hasOnly(['exchangeId', 'userId', 'poinSpent', 'jsdpGained', 'timestamp'])
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.exchangeId == exchangeId
+        && request.resource.data.poinSpent > 0
+        && request.resource.data.poinSpent % 10 == 0
+        && request.resource.data.jsdpGained * 10 == request.resource.data.poinSpent * 5
+        && request.resource.data.poinSpent
+          == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('poin', 0)
+            - getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.poin
+        && request.resource.data.timestamp == request.time;
+
+      allow update, delete: if false;
     }
 
     match /scans/{scanId} {

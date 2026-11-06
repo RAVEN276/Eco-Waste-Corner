@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { CameraIcon } from "@/components/ui/Icons";
 import { InlineNotice, Spinner } from "@/components/ui/States";
-import { WASTE_ITEMS } from "@/lib/data/items";
+import { SCAN_ITEMS } from "@/lib/data/items";
 import { ACCEPTED_PHOTO_TYPES, MAX_PHOTO_BYTES, validatePhoto } from "@/lib/photo";
 import { cn } from "@/lib/utils";
 
@@ -71,7 +71,7 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
           Jawabanmu dicocokkan dengan slot yang kamu pindai. Salah slot akan mengurangi poin.
         </p>
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
-          {WASTE_ITEMS.map((item) => (
+          {SCAN_ITEMS.map((item) => (
             <label
               key={item.id}
               className={cn(
@@ -102,7 +102,7 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
         ) : null}
       </fieldset>
 
-      <fieldset disabled={submitting}>
+      <fieldset disabled={submitting} className="reveal">
         <legend className="font-display text-3xl font-extrabold">Foto bukti pemilahan</legend>
         <p className="mt-1 text-sm text-muted">
           Foto sampahmu saat berada di depan slot. JPG, PNG, atau WebP, maksimal{" "}
@@ -178,7 +178,7 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
         </div>
       ) : null}
 
-      <Button size="lg" onClick={submit} disabled={submitting} className="w-full sm:w-auto">
+      <Button size="lg" onClick={submit} disabled={submitting} className="reveal w-full sm:w-auto">
         Kirim dan klaim poin
       </Button>
     </div>

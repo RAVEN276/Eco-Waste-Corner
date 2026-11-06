@@ -1,9 +1,12 @@
 import Link from "next/link";
+import { CommonMistakes } from "@/components/landing/CommonMistakes";
 import { Hero } from "@/components/landing/Hero";
 import { PointRules } from "@/components/landing/PointRules";
 import { Sdg12Banner } from "@/components/landing/Sdg12Banner";
 import { SortGame } from "@/components/landing/SortGame";
+import { SortSteps } from "@/components/landing/SortSteps";
 import { WasteCategories } from "@/components/landing/WasteCategories";
+import { WasteDictionary } from "@/components/landing/WasteDictionary";
 import { buttonClasses } from "@/components/ui/Button";
 
 // Huruf A dan B sama dengan penanda di denah peta.
@@ -12,13 +15,21 @@ const SPOTS = [
   { letter: "B", name: "Spot B", place: "Dekat Parkiran Motor" },
 ];
 
-// Urutan: hero berwarna, latihan interaktif, panduan tong, konteks SDG, aturan poin (gelap), titik lokasi.
+// Urutan: hero berwarna, bagian Edukasi (panduan tong, tiga pertanyaan, kesalahan umum, kamus,
+// latihan interaktif), konteks SDG, aturan poin (gelap), titik lokasi.
+// Seluruh bagian Edukasi dibungkus satu elemen id="edukasi": itu tujuan tautan menu, dan navbar
+// menyorot "Edukasi" selama bagian ini yang sedang dibaca (lihat useEdukasiActive di Navbar).
 export default function HomePage() {
   return (
     <>
       <Hero />
-      <SortGame />
-      <WasteCategories />
+      <div id="edukasi">
+        <WasteCategories />
+        <SortSteps />
+        <CommonMistakes />
+        <WasteDictionary />
+        <SortGame />
+      </div>
       <Sdg12Banner />
       <PointRules />
       <section className="bg-cobalt text-white" aria-labelledby="judul-lokasi">
@@ -37,7 +48,7 @@ export default function HomePage() {
               <li
                 key={spot.letter}
                 className="reveal flex items-center gap-4 rounded-sheet border-2 border-ink bg-white p-4 text-ink"
-                style={{ ["--r0" as string]: `${index * 10}%`, ["--r1" as string]: `${45 + index * 10}%` }}
+                style={{ ["--delay" as string]: `${index * 140}ms` }}
               >
                 <span
                   aria-hidden="true"

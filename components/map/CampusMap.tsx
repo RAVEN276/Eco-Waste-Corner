@@ -22,7 +22,7 @@ interface CampusMapProps {
  */
 export function CampusMap({ locations, selectedId, onSelect }: CampusMapProps) {
   return (
-    <div className="relative aspect-[10/7] w-full overflow-hidden rounded-plate border-2 border-ink bg-[#eeece5]">
+    <div className="reveal relative aspect-[10/7] w-full overflow-hidden rounded-plate border-2 border-ink bg-[#eeece5]">
       <svg
         viewBox="0 0 100 70"
         className="absolute inset-0 size-full"
@@ -54,7 +54,7 @@ export function CampusMap({ locations, selectedId, onSelect }: CampusMapProps) {
             style={{
               left: `${location.coordinates.x}%`,
               top: `${location.coordinates.y}%`,
-              ["--delay" as string]: `${index * 140}ms`,
+              ["--delay" as string]: `${450 + index * 140}ms`,
             }}
             className={cn(
               "land absolute flex size-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-ctl border-2 border-ink font-display text-3xl font-extrabold leading-none transition-transform hover:scale-110",

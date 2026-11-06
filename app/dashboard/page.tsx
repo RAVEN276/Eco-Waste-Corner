@@ -1,6 +1,7 @@
 "use client";
 
 import { BadgesPanel } from "@/components/dashboard/BadgesPanel";
+import { ExchangePanel } from "@/components/dashboard/ExchangePanel";
 import { HistoryList } from "@/components/dashboard/HistoryList";
 import { PointsCard } from "@/components/dashboard/PointsCard";
 import { ProfileCard } from "@/components/dashboard/ProfileCard";
@@ -51,10 +52,12 @@ export default function DashboardPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-14 px-4 py-10 sm:px-6 md:py-14">
       <div>
-        <h1 className="text-6xl sm:text-7xl">
+        <h1 className="fade-up text-6xl sm:text-7xl">
           Halo, {profile.nama.split(" ")[0] || "Mahasiswa UPJ"}
         </h1>
-        <p className="mt-3 text-lg text-muted">Ringkasan poin dan aktivitas pemilahanmu.</p>
+        <p className="fade-up mt-3 text-lg text-muted" style={{ ["--delay" as string]: "120ms" }}>
+          Ringkasan poin, poin JSDP, dan aktivitas pemilahanmu.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.5fr_1fr]">
@@ -62,6 +65,7 @@ export default function DashboardPage() {
         <ProfileCard />
       </div>
 
+      <ExchangePanel />
       <BadgesPanel />
       <HistoryList />
     </div>
