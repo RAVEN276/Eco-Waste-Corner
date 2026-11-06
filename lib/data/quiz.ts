@@ -374,9 +374,8 @@ function shuffle<T>(input: T[]): T[] {
 const lastAsked = new Map<BinCategory, string[]>();
 
 /**
- * Picks random questions for a bin. The questions asked in the previous scan of the same bin
- * are left out while enough others remain. Call from an event handler or effect,
- * never during render, because it uses `Math.random`.
+ * Picks random questions for a bin, skipping the previous scan's questions while enough others remain.
+ * Uses `Math.random`, so call it from an event handler or effect, never during render.
  */
 export function pickQuestions(category: BinCategory, count = QUESTIONS_PER_SCAN): QuizQuestion[] {
   const pool = QUIZ_BANK.filter((q) => q.category === category);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { StationScene } from "@/components/art/BinArt";
 import { PhotoStep } from "@/components/scan/PhotoStep";
@@ -9,11 +9,13 @@ import { QuizStep } from "@/components/scan/QuizStep";
 import { ResultStep } from "@/components/scan/ResultStep";
 import { ScanStep } from "@/components/scan/ScanStep";
 import { Stepper } from "@/components/scan/Stepper";
+import { Button } from "@/components/ui/Button";
 import { ScrollLinked } from "@/components/ui/ScrollLinked";
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import { useCooldown } from "@/hooks/useCooldown";
 import { useLocations } from "@/hooks/useRemoteList";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { useStepHistory } from "@/hooks/useStepHistory";
 import { pickQuestions } from "@/lib/data/quiz";
 import { describeFirebaseError } from "@/lib/firebase/errors";
 import { submitScan, type SubmitScanResult } from "@/lib/firebase/firestore";
@@ -28,7 +30,6 @@ const STEP_INDEX: Record<Step, number> = { scan: 0, quiz: 1, photo: 2, result: 3
 const BROKEN_LINK = "Tautan QR tidak lengkap atau tidak dikenal. Pindai ulang QR yang tertempel di tong.";
 
 export function ScanFlow() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const authStatus = useRequireAuth();
   const profile = useUserStore((s) => s.profile);
@@ -46,9 +47,32 @@ export function ScanFlow() {
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [quizCorrect, setQuizCorrect] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [session, setSession] = useState(0);
 
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [result, setResult] = useState<SubmitScanResult | null>(null);
+
+  const clearProgress = () => {
+    setStep("scan");
+    setQuestions([]);
+    setQuizCorrect(0);
+    setResult(null);
+    setSubmitError(null);
+  };
+
+  const stepHistory = useStepHistory({
+    // Dari hasil, scan berikutnya mulai dari QR baru. Dari kuis atau foto, QR yang tadi terbaca tetap tampil.
+    onBack: () => {
+      clearProgress();
+      if (step === "result") setTarget(null);
+    },
+    onHide: () => {
+      clearProgress();
+      setTarget(scanTargetFromParams(searchParams));
+      setSession((n) => n + 1);
+    },
+    locked: submitting,
+  });
 
   if (authStatus === "initializing" || authStatus === "unauthenticated") {
     return (
@@ -90,6 +114,7 @@ export function ScanFlow() {
     setQuestions(pickQuestions(category));
     setQuizCorrect(0);
     setSubmitError(null);
+    stepHistory.enter();
     setStep("quiz");
   };
 
@@ -118,20 +143,10 @@ export function ScanFlow() {
     }
   };
 
-  const reset = () => {
-    setStep("scan");
-    setTarget(null);
-    setQuestions([]);
-    setResult(null);
-    setSubmitError(null);
-    // Tautan QR yang tadi membuka halaman ini tidak boleh terpakai lagi untuk scan berikutnya.
-    if (linkHadParams) router.replace("/scan", { scroll: false });
-  };
-
   return (
     <>
       <div className="border-b-2 border-line bg-cobalt text-white">
-        <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 md:py-10">
+        <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-8 md:py-10">
           <ScrollLinked
             y={[0, 24]}
             scale={[1, 0.97]}
@@ -139,7 +154,7 @@ export function ScanFlow() {
             originClassName="flex origin-top items-end justify-between gap-6"
           >
             <div>
-              <h1 className="fade-up text-6xl sm:text-7xl">Scan QR tong</h1>
+              <h1 className="fade-up text-5xl sm:text-7xl">Scan QR tong</h1>
               <p className="fade-up mt-3 text-lg" style={{ ["--delay" as string]: "120ms" }}>
                 Pindai QR di tong, jawab kuis, lalu klaim poin.
               </p>
@@ -154,7 +169,7 @@ export function ScanFlow() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 md:py-10">
+      <div className="mx-auto max-w-3xl px-4 py-5 sm:px-6 sm:py-8 md:py-10">
       {cooldown.active && step !== "result" ? (
         <div
           role="status"
@@ -174,11 +189,18 @@ export function ScanFlow() {
       ) : null}
 
       {/* Menempel di bawah navbar: form foto bukti cukup panjang, jadi posisi langkah tetap terlihat. */}
-      <div className="sticky top-[4.125rem] z-30 -mx-4 mt-6 bg-paper px-4 py-3 sm:-mx-6 sm:px-6">
+      <div className="sticky top-[4.125rem] z-30 -mx-4 mt-3 bg-paper px-4 py-3 sm:-mx-6 sm:mt-6 sm:px-6">
         <Stepper current={STEP_INDEX[step]} />
       </div>
 
-      <div className="mt-8 rounded-plate border-2 border-line bg-surface p-5 sm:p-8">
+      <div className="mt-4 rounded-plate border-2 border-line bg-surface p-5 sm:mt-8 sm:p-8">
+        {step === "quiz" || step === "photo" ? (
+          <div className="mb-6">
+            <Button variant="outline" onClick={stepHistory.back} disabled={submitting}>
+              Kembali ke pindai QR
+            </Button>
+          </div>
+        ) : null}
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={step}
@@ -189,6 +211,7 @@ export function ScanFlow() {
           >
             {step === "scan" ? (
               <ScanStep
+                key={session}
                 locations={locations.items}
                 locationsStatus={locations.status}
                 target={target}
@@ -215,7 +238,7 @@ export function ScanFlow() {
             ) : null}
 
             {step === "result" && result ? (
-              <ResultStep result={result} category={category} onAgain={reset} />
+              <ResultStep result={result} category={category} onAgain={stepHistory.back} />
             ) : null}
           </motion.div>
         </AnimatePresence>

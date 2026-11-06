@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { CameraCapture } from "@/components/scan/CameraCapture";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { CameraIcon } from "@/components/ui/Icons";
 import { InlineNotice, Spinner } from "@/components/ui/States";
 import { SCAN_ITEMS } from "@/lib/data/items";
-import { validatePhoto } from "@/lib/photo";
+import { ACCEPTED_PHOTO_TYPES, validatePhoto } from "@/lib/photo";
 import { cn } from "@/lib/utils";
 
 interface PhotoStepProps {
@@ -23,8 +22,7 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
   const [itemId, setItemId] = useState("");
   const [skipPhoto, setSkipPhoto] = useState(false);
   const [itemError, setItemError] = useState<string | null>(null);
-  const [cameraOpen, setCameraOpen] = useState(false);
-  const [cameraKey, setCameraKey] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!photo) return;
@@ -37,12 +35,14 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
     };
   }, [photo]);
 
-  const onCaptured = (file: File) => {
-    setCameraOpen(false);
+  const onFile = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    if (!file) return;
     const problem = validatePhoto(file);
     if (problem) {
       setPhotoError(problem);
       setPhoto(null);
+      event.target.value = "";
       return;
     }
     setPhotoError(null);
@@ -56,7 +56,7 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
       return;
     }
     if (!photo && !skipPhoto) {
-      setPhotoError("Ambil foto bukti dengan kamera, atau centang pilihan tanpa foto.");
+      setPhotoError("Ambil foto bukti dengan kamera ponsel, atau centang pilihan tanpa foto.");
       return;
     }
     setItemError(null);
@@ -105,65 +105,60 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
       <fieldset disabled={submitting} className="reveal">
         <legend className="font-display text-3xl font-extrabold">Foto bukti pemilahan</legend>
         <p className="mt-1 text-sm text-muted">
-          Foto sampahmu langsung dengan kamera saat berada di depan tong. Foto dari galeri atau berkas tidak bisa
-          dipakai. Foto dikecilkan otomatis sebelum disimpan.
+          Kamera ponselmu akan terbuka. Foto sampahmu langsung saat berada di depan tong. Foto dikecilkan otomatis
+          sebelum disimpan.
         </p>
 
-        {cameraOpen ? (
-          <div className="mt-3">
-            <CameraCapture
-              key={cameraKey}
-              onCapture={onCaptured}
-              onCancel={() => setCameraOpen(false)}
-              onRetry={() => setCameraKey((n) => n + 1)}
+        {/* Kamera ponsel terbuka langsung berkat capture. Browser desktop tetap menampilkan pemilih berkas. */}
+        <input
+          ref={inputRef}
+          id="foto-bukti"
+          type="file"
+          accept={ACCEPTED_PHOTO_TYPES.join(",")}
+          capture="environment"
+          onChange={onFile}
+          tabIndex={-1}
+          className="sr-only"
+          aria-describedby={photoError ? "foto-error" : undefined}
+        />
+
+        <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start">
+          {preview ? (
+            // eslint-disable-next-line @next/next/no-img-element -- blob preview of a local file, nothing to optimise
+            <img
+              src={preview}
+              alt="Pratinjau foto bukti yang akan dikirim"
+              width={160}
+              height={160}
+              className="size-40 shrink-0 rounded-plate border-2 border-line object-cover"
             />
-          </div>
-        ) : (
-          <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start">
-            {preview ? (
-              // eslint-disable-next-line @next/next/no-img-element -- blob preview of a local file, nothing to optimise
-              <img
-                src={preview}
-                alt="Pratinjau foto bukti yang akan dikirim"
-                width={160}
-                height={160}
-                className="size-40 shrink-0 rounded-plate border-2 border-line object-cover"
-              />
-            ) : (
-              <div
-                className="flex size-40 shrink-0 flex-col items-center justify-center gap-2 rounded-plate border-2 border-dashed border-edge bg-surface text-center text-sm text-muted"
-                aria-hidden="true"
-              >
-                <CameraIcon className="size-8" />
-                Belum ada foto
-              </div>
-            )}
-            <div className="space-y-3">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setPhotoError(null);
-                  setCameraOpen(true);
-                }}
-                disabled={submitting}
-              >
-                {photo ? "Foto ulang" : "Buka kamera"}
-              </Button>
-              <label className="flex min-h-11 items-center gap-2.5 text-sm">
-                <input
-                  type="checkbox"
-                  className="size-5 accent-link"
-                  checked={skipPhoto}
-                  onChange={(event) => {
-                    setSkipPhoto(event.target.checked);
-                    if (event.target.checked) setPhotoError(null);
-                  }}
-                />
-                Saya tidak bisa mengambil foto (poin lebih sedikit)
-              </label>
+          ) : (
+            <div
+              className="flex size-40 shrink-0 flex-col items-center justify-center gap-2 rounded-plate border-2 border-dashed border-edge bg-surface text-center text-sm text-muted"
+              aria-hidden="true"
+            >
+              <CameraIcon className="size-8" />
+              Belum ada foto
             </div>
+          )}
+          <div className="space-y-3">
+            <Button variant="outline" onClick={() => inputRef.current?.click()} disabled={submitting}>
+              {photo ? "Foto ulang" : "Buka kamera ponsel"}
+            </Button>
+            <label className="flex min-h-11 items-center gap-2.5 text-sm">
+              <input
+                type="checkbox"
+                className="size-5 accent-link"
+                checked={skipPhoto}
+                onChange={(event) => {
+                  setSkipPhoto(event.target.checked);
+                  if (event.target.checked) setPhotoError(null);
+                }}
+              />
+              Saya tidak bisa mengambil foto (poin lebih sedikit)
+            </label>
           </div>
-        )}
+        </div>
         {photoError ? (
           <p id="foto-error" role="alert" className="mt-2 text-sm font-bold text-brick-text">
             {photoError}
