@@ -142,6 +142,7 @@ export function SortGame() {
                           id={bin.id}
                           space
                           drop={picked === bin.id ? item.category : undefined}
+                          item={item.id}
                           reject={isWrongPick && rejection ? rejection : undefined}
                           className="w-full max-w-[6.5rem] sm:max-w-[7.5rem]"
                         />

@@ -14,10 +14,13 @@ import { cn } from "@/lib/utils";
 export function ResultStep({
   result,
   category,
+  item,
   onAgain,
 }: {
   result: SubmitScanResult;
   category: BinCategory | null;
+  /** Id barang yang dilaporkan pengguna, supaya gambar barangnya yang jatuh ke tong. */
+  item?: string | null;
   onAgain: () => void;
 }) {
   const cooldown = useCooldown();
@@ -38,7 +41,7 @@ export function ResultStep({
             {penalized ? (
               <BinArt id={category} className="block w-full" />
             ) : (
-              <BinDrop id={category} className="block w-full" />
+              <BinDrop id={category} item={item ?? undefined} className="block w-full" />
             )}
           </div>
         ) : null}

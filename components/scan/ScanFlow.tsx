@@ -51,12 +51,14 @@ export function ScanFlow() {
 
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [result, setResult] = useState<SubmitScanResult | null>(null);
+  const [scannedItem, setScannedItem] = useState<string | null>(null);
 
   const clearProgress = () => {
     setStep("scan");
     setQuestions([]);
     setQuizCorrect(0);
     setResult(null);
+    setScannedItem(null);
     setSubmitError(null);
   };
 
@@ -135,6 +137,7 @@ export function ScanFlow() {
         photo,
       });
       setResult(outcome);
+      setScannedItem(itemId);
       setStep("result");
     } catch (error) {
       setSubmitError(describeFirebaseError(error));
@@ -238,7 +241,7 @@ export function ScanFlow() {
             ) : null}
 
             {step === "result" && result ? (
-              <ResultStep result={result} category={category} onAgain={stepHistory.back} />
+              <ResultStep result={result} category={category} item={scannedItem} onAgain={stepHistory.back} />
             ) : null}
           </motion.div>
         </AnimatePresence>
