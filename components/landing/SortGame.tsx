@@ -59,7 +59,7 @@ export function SortGame() {
   };
 
   return (
-    <section id="latihan" aria-labelledby="judul-latihan" className="border-b-2 border-ink bg-cobalt-soft">
+    <section id="latihan" aria-labelledby="judul-latihan" className="border-b-2 border-line bg-cobalt-soft">
       <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 md:py-20">
         <div className="reveal max-w-2xl">
           <h2 id="judul-latihan" className="text-5xl sm:text-6xl">
@@ -75,11 +75,11 @@ export function SortGame() {
         {!items || !item ? (
           <LoadingState
             label={`Menyiapkan ${ROUND_SIZE} barang acak`}
-            className="mt-10 min-h-[24rem] bg-white"
+            className="mt-10 min-h-[24rem] bg-surface"
           />
         ) : done ? (
-          <div className="mt-10 grid items-center gap-8 rounded-sheet border-2 border-ink bg-white p-6 shadow-[8px_8px_0_var(--color-ink)] sm:p-8 md:grid-cols-[auto_1fr]">
-            <p className="font-display text-[8rem] font-extrabold leading-[0.85] text-cobalt">
+          <div className="mt-10 grid items-center gap-8 rounded-sheet border-2 border-line bg-surface p-6 shadow-[8px_8px_0_var(--shadow-ink)] sm:p-8 md:grid-cols-[auto_1fr]">
+            <p className="font-display text-[8rem] font-extrabold leading-[0.85] text-link">
               <AnimatedCounter value={correct} />
               <span className="text-5xl text-ink">/{items.length}</span>
             </p>
@@ -101,8 +101,8 @@ export function SortGame() {
           </div>
         ) : (
           <div className="mt-10 grid gap-6 lg:grid-cols-[0.85fr_1.4fr]">
-            <div className="flex min-h-[15rem] flex-col justify-between gap-6 rounded-sheet border-2 border-ink bg-white p-6 shadow-[8px_8px_0_var(--color-ink)]">
-              <p className="font-display text-3xl font-extrabold text-cobalt">
+            <div className="flex min-h-[15rem] flex-col justify-between gap-6 rounded-sheet border-2 border-line bg-surface p-6 shadow-[8px_8px_0_var(--shadow-ink)]">
+              <p className="font-display text-3xl font-extrabold text-link">
                 Barang {index + 1} dari {items.length}
               </p>
               <p ref={itemRef} tabIndex={-1} className="font-display text-6xl font-extrabold leading-none">
@@ -126,7 +126,7 @@ export function SortGame() {
                         onClick={() => choose(bin.id)}
                         className={cn(
                           "flex h-full w-full flex-col items-center gap-2 rounded-plate border-2 p-3 text-center",
-                          isWrongPick ? "shake border-brick bg-brick-soft" : "border-ink bg-white hover:bg-paper",
+                          isWrongPick ? "shake border-brick-text bg-brick-soft" : "border-line bg-surface hover:bg-paper",
                           isAnswer && "ring-4 ring-ink ring-offset-2 ring-offset-cobalt-soft",
                           answered && !isAnswer && !isWrongPick && "opacity-50",
                         )}
@@ -150,7 +150,7 @@ export function SortGame() {
                           ) : null}
                           {isWrongPick ? (
                             <>
-                              <CloseIcon className="pop size-3.5 text-brick" />
+                              <CloseIcon className="pop size-3.5 text-brick-text" />
                               Pilihanmu
                             </>
                           ) : null}
@@ -168,7 +168,7 @@ export function SortGame() {
                       "fade-up rounded-plate border-2 p-4",
                       isRight
                         ? "border-organik bg-organik-soft"
-                        : "border-brick bg-brick-soft text-brick-ink",
+                        : "border-brick-text bg-brick-soft text-brick-ink",
                     )}
                   >
                     <p className="font-bold">

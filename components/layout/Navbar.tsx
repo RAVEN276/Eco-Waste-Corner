@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { ScrollProgress } from "@/components/layout/ScrollProgress";
 import { SectionLink } from "@/components/layout/SectionLink";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { useSignOut } from "@/hooks/useSignOut";
 import { cn } from "@/lib/utils";
 import { useUserStore } from "@/store/useUserStore";
@@ -63,7 +64,7 @@ function PointsChip({ poin, className }: { poin: number; className?: string }) {
       href="/dashboard"
       aria-label={`Poin kamu: ${poin}. Buka dashboard`}
       className={cn(
-        "inline-flex min-h-11 items-center gap-2 rounded-ctl bg-ink px-3 text-white hover:bg-[#252d47]",
+        "inline-flex min-h-11 items-center gap-2 rounded-ctl bg-pick px-3 text-on-pick hover:bg-pick-hover",
         className,
       )}
     >
@@ -93,7 +94,7 @@ export function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b-2 border-ink bg-paper">
+    <header className="sticky top-0 z-40 border-b-2 border-line bg-paper">
       <ScrollProgress />
       <nav
         aria-label="Navigasi utama"
@@ -101,7 +102,7 @@ export function Navbar() {
       >
         <Link href="/" className="flex min-h-11 items-center">
           <span className="whitespace-nowrap font-display text-xl font-extrabold leading-none md:text-2xl lg:text-3xl">
-            Eco Waste Corner <span className="text-cobalt">UPJ</span>
+            Eco Waste Corner <span className="text-link">UPJ</span>
           </span>
         </Link>
 
@@ -115,7 +116,7 @@ export function Navbar() {
                   aria-current={active ? (link.href === "/#edukasi" ? "location" : "page") : undefined}
                   className={cn(
                     "inline-flex min-h-11 items-center border-b-[3px] px-3 text-sm font-bold transition-colors duration-150",
-                    active ? "border-cobalt text-cobalt" : "border-transparent hover:border-ink",
+                    active ? "border-link text-link" : "border-transparent hover:border-line",
                   )}
                 >
                   {link.label}
@@ -126,6 +127,7 @@ export function Navbar() {
         </ul>
 
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           {signedIn ? (
             <>
               <PointsChip poin={poin} />

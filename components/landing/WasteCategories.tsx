@@ -33,13 +33,13 @@ export function WasteCategories() {
         bersama: judul, deskripsi, poin, isi, tips. Jadi tiap bagian sejajar antar kolom
         walau satu judul pindah baris (misalnya "Plastik / Kertas" di layar sedang).
       */}
-      <div className="mt-10 grid overflow-clip rounded-sheet border-2 border-ink md:grid-cols-3 md:grid-rows-[auto_auto_auto_1fr_auto]">
+      <div className="mt-10 grid overflow-clip rounded-sheet border-2 border-line md:grid-cols-3 md:grid-rows-[auto_auto_auto_1fr_auto]">
         {BIN_LIST.map((bin, index) => (
           <article
             key={bin.id}
             className={cn(
               "reveal flex flex-col md:row-span-5 md:grid md:grid-rows-subgrid",
-              index > 0 && "border-t-2 border-ink md:border-l-2 md:border-t-0",
+              index > 0 && "border-t-2 border-line md:border-l-2 md:border-t-0",
             )}
             style={{
               ["--delay" as string]: `${index * 140}ms`,
@@ -68,7 +68,7 @@ export function WasteCategories() {
               </ScrollLinked>
             </header>
 
-            <div className="flex-1 space-y-5 bg-white p-5 sm:p-6">
+            <div className="flex-1 space-y-5 bg-surface p-5 sm:p-6">
               <div>
                 <h4 className="text-sm font-bold">Masukkan ke sini</h4>
                 <ul className="mt-2 space-y-2">
@@ -85,7 +85,7 @@ export function WasteCategories() {
                 <ul className="mt-2 space-y-2">
                   {bin.avoid.map((item) => (
                     <li key={item} className="flex items-start gap-2.5">
-                      <CloseIcon className="mt-1 size-4 shrink-0 text-brick" />
+                      <CloseIcon className="mt-1 size-4 shrink-0 text-brick-text" />
                       {item}
                     </li>
                   ))}

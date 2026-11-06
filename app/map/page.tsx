@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function MapPage() {
   return (
     <>
-      <div className="border-b-2 border-ink bg-cobalt-soft">
+      <div className="border-b-2 border-line bg-cobalt-soft">
         <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 md:py-14">
           <ScrollLinked
             y={[0, 24]}

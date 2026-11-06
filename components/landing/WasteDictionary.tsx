@@ -25,7 +25,7 @@ export function WasteDictionary() {
   return (
     <section
       aria-labelledby="judul-kamus"
-      className="border-y-2 border-ink bg-white"
+      className="border-y-2 border-line bg-surface"
     >
       <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 md:py-20">
         <div className="reveal max-w-2xl">
@@ -50,7 +50,7 @@ export function WasteDictionary() {
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Contoh: tisu, kardus, kopi"
               autoComplete="off"
-              className="mt-1 min-h-12 w-full rounded-ctl border-2 border-edge bg-white px-4 text-base"
+              className="mt-1 min-h-12 w-full rounded-ctl border-2 border-edge bg-surface px-4 text-base"
             />
           </div>
 
@@ -66,14 +66,14 @@ export function WasteDictionary() {
                   className={cn(
                     "inline-flex min-h-11 items-center gap-2 rounded-ctl border-2 px-4 text-sm font-bold transition-colors duration-150",
                     selected
-                      ? "border-ink bg-ink text-white"
-                      : "border-edge bg-white hover:bg-cobalt-soft",
+                      ? "border-pick bg-pick text-on-pick"
+                      : "border-edge bg-surface hover:bg-cobalt-soft",
                   )}
                 >
                   {option.id !== "semua" ? (
                     <span
                       aria-hidden="true"
-                      className={cn("size-3 shrink-0 border border-white", BINS[option.id].tone.solid)}
+                      className={cn("size-3 shrink-0 border border-on-pick", BINS[option.id].tone.solid)}
                     />
                   ) : null}
                   {option.label}
@@ -98,7 +98,7 @@ export function WasteDictionary() {
             {results.map((item) => (
               <li
                 key={item.id}
-                className="flex items-stretch overflow-hidden rounded-ctl border-2 border-ink bg-white"
+                className="flex items-stretch overflow-hidden rounded-ctl border-2 border-line bg-surface"
               >
                 <span
                   aria-hidden="true"

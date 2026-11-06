@@ -1,7 +1,7 @@
 import { CheckIcon } from "@/components/ui/Icons";
 import { cn } from "@/lib/utils";
 
-export const SCAN_STEPS = ["Pilih slot", "Kuis kilat", "Foto bukti", "Hasil"] as const;
+export const SCAN_STEPS = ["Pindai QR", "Kuis kilat", "Foto bukti", "Hasil"] as const;
 
 // Empat segmen tebal seperti empat slot: yang sudah dilewati terisi ink, yang aktif cobalt.
 export function Stepper({ current }: { current: number }) {
@@ -19,17 +19,17 @@ export function Stepper({ current }: { current: number }) {
             <span
               aria-hidden="true"
               className={cn(
-                "relative block h-3 overflow-hidden rounded-ctl border-2 bg-white",
-                active ? "border-cobalt" : done ? "border-ink" : "border-edge",
+                "relative block h-3 overflow-hidden rounded-ctl border-2 bg-surface",
+                active ? "border-link" : done ? "border-line" : "border-edge",
               )}
             >
               {done ? <span className="absolute inset-0 bg-ink" /> : null}
-              {active ? <span className="fill-x absolute inset-0 bg-cobalt" /> : null}
+              {active ? <span className="fill-x absolute inset-0 bg-link" /> : null}
             </span>
             <span
               className={cn(
                 "flex items-center gap-1 text-xs font-bold sm:text-sm",
-                active ? "text-cobalt" : done ? "text-ink" : "text-muted",
+                active ? "text-link" : done ? "text-ink" : "text-muted",
               )}
             >
               {done ? <CheckIcon className="size-3.5 shrink-0" /> : null}

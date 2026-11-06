@@ -30,11 +30,11 @@ export function ResultStep({
       <div
         className={cn(
           "stamp relative rounded-plate p-6 sm:min-h-[14rem] sm:p-8",
-          penalized ? "border-2 border-brick bg-brick-soft text-brick-ink" : "bg-ink text-white",
+          penalized ? "border-2 border-brick-text bg-brick-soft text-brick-ink" : "bg-plate text-white",
         )}
       >
         {category ? (
-          <div className="absolute right-4 top-4 hidden w-24 rounded-plate border-2 border-ink bg-paper p-2 sm:block">
+          <div className="absolute right-4 top-4 hidden w-24 rounded-plate border-2 border-line bg-paper p-2 sm:block">
             {penalized ? (
               <BinArt id={category} className="block w-full" />
             ) : (
@@ -44,7 +44,7 @@ export function ResultStep({
         ) : null}
         <div className="flex items-center gap-3">
           {penalized ? (
-            <AlertIcon className="size-7 shrink-0 text-brick" />
+            <AlertIcon className="size-7 shrink-0 text-brick-text" />
           ) : (
             <CheckIcon className="size-7 shrink-0" />
           )}
@@ -62,13 +62,13 @@ export function ResultStep({
       </div>
 
       <dl className="fade-up grid grid-cols-2 gap-3 text-sm" style={{ ["--delay" as string]: "300ms" }}>
-        <div className="rounded-plate border-2 border-rule bg-white p-4">
+        <div className="rounded-plate border-2 border-rule bg-surface p-4">
           <dt className="text-muted">Saldo poin</dt>
           <dd className="mt-1 font-display text-5xl font-extrabold leading-none text-ink">
             <AnimatedCounter value={result.balance} />
           </dd>
         </div>
-        <div className="rounded-plate border-2 border-rule bg-white p-4">
+        <div className="rounded-plate border-2 border-rule bg-surface p-4">
           <dt className="text-muted">Scan berikutnya</dt>
           <dd className="mt-1 font-display text-5xl font-extrabold leading-none tabular-nums text-ink">
             {cooldown.active ? cooldown.label : "Siap"}
@@ -78,7 +78,7 @@ export function ResultStep({
 
       {packages > 0 ? (
         <div
-          className="fade-up flex flex-col gap-3 rounded-plate border-2 border-cobalt bg-cobalt-soft p-4 sm:flex-row sm:items-center sm:justify-between"
+          className="fade-up flex flex-col gap-3 rounded-plate border-2 border-link bg-cobalt-soft p-4 sm:flex-row sm:items-center sm:justify-between"
           style={{ ["--delay" as string]: "420ms" }}
         >
           <p className="text-sm">

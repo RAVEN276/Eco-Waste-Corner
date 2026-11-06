@@ -1,6 +1,6 @@
 # Arah desain: Eco Waste Corner UPJ
 
-Dokumen ini adalah sumber arah visual. `AGENTS.md` memuat aturan teknis dan konten yang tetap berlaku di atasnya (tema terang saja, glass maksimal dua tempat, tanpa em dash, penukaran hanya poin ke poin JSDP, tanpa hadiah).
+Dokumen ini adalah sumber arah visual. `AGENTS.md` memuat aturan teknis dan konten yang tetap berlaku di atasnya (dua tema, terang dan gelap, glass maksimal dua tempat, tanpa em dash, penukaran hanya poin ke poin JSDP, tanpa hadiah).
 
 Dial: ENERGY 3 / RHYTHM 3 / MOTION 3
 
@@ -16,13 +16,13 @@ Motif yang diulang: **tong berkode warna**, digambar sendiri di `components/art/
 
 - `StationScene`: tiga tong di atas lantai. Di hero dan login, satu barang jatuh ke slot tiap tong, sekali, lalu diam.
 - `BinDrop`: satu tong dengan barangnya, dipakai di hasil scan yang sah.
-- `BinArt`: satu tong statis, dipakai di panduan, kartu pilih slot, dan latihan memilah.
+- `BinArt`: satu tong statis, dipakai di panduan, kartu hasil bacaan QR di langkah scan, dan latihan memilah.
 
 Gambar ini dekoratif (`aria-hidden`). Informasi yang sama selalu ada sebagai teks di dekatnya (nama tong dan poin dasar). Ilustrasinya langsung menunjukkan produknya, bukan ilustrasi stok.
 
 Wordmark hanya teks "Eco Waste Corner UPJ". Tidak ada logo buatan. Tambahkan logo asli lewat pemilik proyek bila ada.
 
-## Palet (tema terang saja)
+## Palet (tema terang)
 
 Inti: `cobalt` (merek dan aksi utama) dan `ink` (teks dan permukaan gelap) di atas `paper`. Aksen tunggal: `cobalt` di momen kunci. Warna tong adalah sistem kode data, bukan dekorasi: dipakai hanya pada elemen yang mewakili kategori tong atau status.
 
@@ -49,6 +49,35 @@ Inti: `cobalt` (merek dan aksi utama) dan `ink` (teks dan permukaan gelap) di at
 
 Teks kecil di latar terang memakai `ink`, `muted`, `cobalt`, atau `organik`. `kertas` tidak pernah dipakai sebagai teks atau garis di latar putih (1.8:1).
 
+## Tema gelap
+
+Arahnya: stasiun pilah di malam hari. Dial sama dengan tema terang (ENERGY 3 / RHYTHM 3 / MOTION 3). Pengguna memilih lewat tombol di navbar; selama belum memilih, tema mengikuti pengaturan sistem (`lib/theme.ts`, `components/layout/ThemeToggle.tsx`). Nilainya ada di blok `:root[data-theme="dark"]` di `app/globals.css`, dan komponen memakainya lewat token yang sama, tanpa varian `dark:` untuk warna. Alasan tema ini ada: tidak ada alasan produk untuk mengunci satu tema, dan mahasiswa membuka aplikasi di ponsel pada jam kampus yang berbeda-beda, jadi pilihannya diserahkan ke pengguna.
+
+Versi pertama serba navy dengan aksen periwinkle. Itu dibuang karena cobalt merek hilang di tengah rona yang sama, semua kartu berbingkai lavender yang sama sehingga tampak seperti kerangka kawat, dan paletnya terbaca sebagai biru-ungu bawaan. Keputusan sekarang, satu alasan per baris:
+
+| Token | Hex | Alasan | Kontras |
+| --- | --- | --- | --- |
+| `paper` | #0F1217 | Latar arang netral, bukan navy, supaya cobalt jadi satu-satunya rona dingin dan warna tong tetap kode data | ink 16.2:1 |
+| `surface` | #171B22 | Kartu, input, dialog: satu tingkat di atas paper, ketinggian dibaca dari permukaan yang lebih terang | ink 14.9:1 |
+| `night` | #07080B | Blok permanen paling dalam (footer, aturan poin) dan teks gelap di atas kertas atau putih | ink 17.3:1 |
+| `ink` | #F0EEE7 | Putih hangat dari kertas tema terang, bukan putih biru | |
+| `muted` | #AEB2BD | Teks sekunder | 8.9:1 di paper, 8.1:1 di surface |
+| `line` | #6A7080 | Garis struktur sedang, bukan lavender terang. Kartu tidak tampak kerangka kawat, tetap lolos 3:1 untuk batas komponen | 3.8:1 di paper, 3.5:1 di surface |
+| `edge` | #868B99 | Batas kontrol (input, radio), lebih terang dari `line` | 5.5:1 di paper |
+| `rule` | #272B34 | Pemisah dekoratif saja | tidak untuk batas kontrol |
+| `link` | #86A2FF | Cobalt tidak bisa jadi teks di latar gelap (2.0:1), jadi versi muda untuk wordmark, angka besar, tautan, menu aktif. Rona digeser sedikit ke biru langit supaya tidak jadi lavender | 7.7:1 di paper, 7.1:1 di surface |
+| `cobalt-soft` | #151A33 | Pita bergaris cobalt (latihan memilah, judul peta): bagian tetap berganti latar seperti di tema terang | ink 14.7:1 |
+| `organik-soft` `kertas-soft` `residu-soft` | #11291B, #35290A, #21242C | Latar lembut kategori | ink 12.3:1 sampai 13.4:1 |
+| `residu` | #4D5361 | Dinaikkan dari tema terang supaya tong residu terbaca di atas arang | putih 7.7:1 |
+| `brick-soft` `brick-text` `brick-ink` | #3A1917, #FF9A90, #FFC9C3 | Galat dan penalti | 7.7:1 dan 10.8:1 |
+| `pick` `on-pick` | #F0EEE7, #0F1217 | Status terpilih (tab, saringan, badge, menu aktif, poin di navbar) adalah kebalikan permukaan sekitarnya: gelap di terang, terang di gelap. `bg-night` hampir hitam di atas hampir hitam tidak terbaca sebagai terpilih | 16.2:1 |
+| `plate` | #2438A6 | Plat hasil scan yang sah: cobalt di gelap supaya momen poin masuk tetap jadi titik fokus (di terang tetap night) | putih 9.6:1 |
+| `--shadow-ink` | #04050A | Bayangan solid hitam. Jelas di atas cobalt (2.1:1, hero dan plat latihan), samar di atas cobalt-soft (1.2:1), nyaris tak terlihat di atas arang (1.1:1), dan itu disengaja: di tema gelap ketinggian dibaca dari permukaan yang lebih terang, bukan bayangan | |
+
+Tidak berubah di kedua tema: `cobalt` (blok terisi dengan teks putih), `organik`, `kertas` (blok terisi dengan teks `night`), `brick` (blok terisi), `mist` (teks di atas `night` dan cobalt), dan `tint` (hover tombol putih permanen). Ilustrasi tong memakai `stroke-ink`, jadi garisnya otomatis putih hangat di tema gelap.
+
+Aturan saat menambah komponen: jangan menulis hex atau `bg-night text-white` untuk status terpilih, pakai `bg-pick text-on-pick`. Periksa kontras di kedua tema dan di semua keadaan (terpilih, hover, galat, dialog), bukan hanya keadaan awal.
+
 ## Tipografi
 
 - Tampilan: **Big Shoulders**. Warisan papan penanda jalan, cocok untuk label tong dan angka poin, dan sempit sehingga nama panjang tidak menyesakkan layar ponsel. Huruf kecil dan kapital biasa, tanpa jarak huruf lebar.
@@ -66,7 +95,7 @@ Teks kecil di latar terang memakai `ink`, `muted`, `cobalt`, atau `organik`. `ke
 
 - Beranda (urutan dan ritme sengaja berganti): hero cobalt penuh dengan panggung tong, baris ink empat langkah scan, lalu bagian Edukasi (satu pembungkus `#edukasi`, lima bagian berganti latar supaya tidak monoton: panduan tiga kolom di paper dengan tong mencuat dari kepala kolom, tiga pertanyaan penentu di pita putih, tabel kesalahan umum di paper, kamus sampah yang bisa dicari di pita putih, latihan memilah interaktif di cobalt-soft), dua bidang SDG 12 (cobalt dan paper), bagian gelap aturan poin, penutup cobalt dengan titik A dan B. Belajar dulu, baru berlatih: latihan sengaja di ujung Edukasi.
 - Login: dua bidang penuh, cobalt dengan panggung tong di kiri dan formulir di kanan.
-- Scan: pita cobalt berisi judul dan tiga tong kecil, lalu satu kolom fokus, penanda langkah, kartu slot berilustrasi.
+- Scan: pita cobalt berisi judul dan tiga tong kecil, lalu satu kolom fokus dan penanda langkah. Langkah pertama bukan memilih, tapi memindai QR di tong: bingkai kamera dengan bingkai bidik yang langsung menyala saat langkah terbuka, lalu kartu hasil bacaan berwarna tong (tong, lokasi, poin dasar) dengan tombol mulai kuis dan pindai ulang. Foto bukti memakai bingkai kamera yang sama. Bingkai kamera selalu gelap di kedua tema (isinya gambar kamera), dengan penjelasan dan langkah berikutnya saat kamera ditolak, tidak ada, atau bukan https.
 - Peta: pita cobalt-soft untuk judul, lalu denah dan daftar titik.
 - Dashboard: papan skor cobalt dengan angka poin raksasa dan satu tombol (scan), lalu panel tukar poin (kolom ink berisi kurs, kolom putih berisi jumlah paket, pratinjau saldo, dan dialog konfirmasi karena tidak bisa dibatalkan), lalu jalur badge, lalu riwayat. Panel tukar di dashboard karena di sanalah saldo dan riwayat berada. Dari hasil scan ada pintasan ke panel itu saat poin sudah cukup. Dashboard punya satu tombol scan saja (di papan skor), jangan menambah tombol scan lain di panel tukar atau riwayat.
 - Mobile: bilah navigasi bawah (Beranda, Peta, Scan, Dashboard atau Masuk), ruang di bawah konten disisakan setinggi bilah itu.

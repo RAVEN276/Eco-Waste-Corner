@@ -12,7 +12,7 @@ export function ScrollProgress() {
   return (
     <span
       aria-hidden="true"
-      className="scroll-progress pointer-events-none absolute inset-x-0 top-0 h-1 bg-cobalt"
+      className="scroll-progress pointer-events-none absolute inset-x-0 top-0 h-1 bg-link"
     />
   );
 }

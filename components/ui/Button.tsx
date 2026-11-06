@@ -15,12 +15,12 @@ interface CommonProps {
 const variants: Record<Variant, string> = {
   primary:
     "bg-cobalt text-white hover:bg-cobalt-deep active:bg-[#101c5e] disabled:hover:bg-cobalt",
-  dark: "bg-ink text-white hover:bg-[#252d47] active:bg-black disabled:hover:bg-ink",
+  dark: "bg-pick text-on-pick hover:bg-pick-hover active:bg-pick-hover disabled:hover:bg-pick",
   light:
-    "bg-white text-ink hover:bg-cobalt-soft active:bg-[#cfd6f2] disabled:hover:bg-white",
+    "bg-white text-night hover:bg-tint active:bg-tint-press disabled:hover:bg-white",
   outline:
-    "border-2 border-ink bg-transparent text-ink hover:bg-cobalt-soft active:bg-[#cfd6f2] disabled:hover:bg-transparent",
-  ghost: "text-cobalt hover:bg-cobalt-soft active:bg-[#cfd6f2] disabled:hover:bg-transparent",
+    "border-2 border-line bg-transparent text-ink hover:bg-cobalt-soft active:bg-cobalt-press disabled:hover:bg-transparent",
+  ghost: "text-link hover:bg-cobalt-soft active:bg-cobalt-press disabled:hover:bg-transparent",
   danger: "bg-brick text-white hover:bg-[#971d14] active:bg-[#7f180f] disabled:hover:bg-brick",
 };
 

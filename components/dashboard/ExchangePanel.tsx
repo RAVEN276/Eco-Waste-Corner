@@ -16,7 +16,7 @@ import { useUserStore } from "@/store/useUserStore";
 const MAX_ROWS = 5;
 
 const STEP_BUTTON =
-  "inline-flex size-12 shrink-0 items-center justify-center rounded-ctl border-2 border-ink bg-white font-display text-4xl font-extrabold leading-none transition-[color,background-color,scale] duration-150 hover:bg-cobalt-soft active:scale-[0.98] disabled:opacity-55 disabled:hover:bg-white disabled:active:scale-100";
+  "inline-flex size-12 shrink-0 items-center justify-center rounded-ctl border-2 border-line bg-surface font-display text-4xl font-extrabold leading-none transition-[color,background-color,scale] duration-150 hover:bg-cobalt-soft active:scale-[0.98] disabled:opacity-55 disabled:hover:bg-surface disabled:active:scale-100";
 
 // Saldo sekarang, atau saldo sekarang menjadi saldo sesudah tukar. Tanpa perubahan cukup satu angka.
 function Change({ before, after }: { before: number; after: number }) {
@@ -87,8 +87,8 @@ export function ExchangePanel() {
 
   return (
     <section id="tukar-poin" aria-labelledby="judul-tukar" className="scroll-mt-24">
-      <div className="grid overflow-hidden rounded-sheet border-2 border-ink bg-white lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="reveal-l bg-ink p-6 text-white sm:p-8">
+      <div className="grid overflow-hidden rounded-sheet border-2 border-line bg-surface lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="reveal-l bg-night p-6 text-white sm:p-8">
           <h2 id="judul-tukar" className="text-5xl">
             Tukar poin jadi poin JSDP
           </h2>
@@ -165,8 +165,8 @@ export function ExchangePanel() {
 
           <div aria-live="polite">
             {done ? (
-              <p className="pop mt-5 flex items-start gap-2 rounded-ctl border-2 border-cobalt bg-cobalt-soft px-4 py-3 text-sm">
-                <CheckIcon className="mt-0.5 size-4 shrink-0 text-cobalt" />
+              <p className="pop mt-5 flex items-start gap-2 rounded-ctl border-2 border-link bg-cobalt-soft px-4 py-3 text-sm">
+                <CheckIcon className="mt-0.5 size-4 shrink-0 text-link" />
                 <span>
                   Berhasil. {done.spent} poin ditukar jadi {done.gained} poin JSDP.
                 </span>
@@ -194,7 +194,7 @@ export function ExchangePanel() {
             />
           ) : (
             <>
-              <ul className="divide-y-2 divide-rule rounded-plate border-2 border-ink bg-white">
+              <ul className="divide-y-2 divide-rule rounded-plate border-2 border-line bg-surface">
                 {rows.map((row) => (
                   <li
                     key={row.exchangeId}
@@ -209,7 +209,7 @@ export function ExchangePanel() {
                         <span className="ml-1 text-base font-bold">poin</span>
                       </span>
                       <ArrowRightIcon className="size-5" />
-                      <span className="text-4xl text-cobalt">
+                      <span className="text-4xl text-link">
                         <span className="sr-only">jadi </span>
                         <span aria-hidden="true">+</span>
                         {row.jsdpGained}
@@ -239,7 +239,7 @@ export function ExchangePanel() {
         {error ? (
           <p
             role="alert"
-            className="mt-4 rounded-ctl border-2 border-brick bg-brick-soft px-4 py-3 text-sm text-brick-ink"
+            className="mt-4 rounded-ctl border-2 border-brick-text bg-brick-soft px-4 py-3 text-sm text-brick-ink"
           >
             {error}
           </p>

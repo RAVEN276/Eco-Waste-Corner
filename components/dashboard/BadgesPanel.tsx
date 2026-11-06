@@ -35,10 +35,10 @@ export function BadgesPanel() {
           aria-valuemax={MAX_SCANS}
           aria-valuenow={reached}
           aria-valuetext={`${reached} dari ${MAX_SCANS} scan`}
-          className="h-4 overflow-hidden rounded-ctl border-2 border-ink bg-white"
+          className="h-4 overflow-hidden rounded-ctl border-2 border-line bg-surface"
         >
           <div
-            className="fill-x h-full bg-cobalt"
+            className="fill-x h-full bg-link"
             style={{ width: `${(reached / MAX_SCANS) * 100}%` }}
           />
         </div>
@@ -68,8 +68,8 @@ export function BadgesPanel() {
               className={cn(
                 "reveal flex items-center gap-4 rounded-plate border-2 p-4",
                 unlocked
-                  ? "border-ink bg-ink text-white"
-                  : "border-dashed border-edge bg-white text-ink",
+                  ? "border-pick bg-pick text-on-pick"
+                  : "border-dashed border-edge bg-surface text-ink",
               )}
             >
               <span className="shrink-0 text-center" aria-hidden="true">
@@ -80,7 +80,7 @@ export function BadgesPanel() {
               </span>
               <div>
                 <p className="font-bold">{badge.label}</p>
-                <p className={cn("text-sm", unlocked ? "text-mist" : "text-muted")}>
+                <p className={cn("text-sm", unlocked ? "text-on-pick/80" : "text-muted")}>
                   {badge.description}
                 </p>
                 <p className="mt-1 text-xs font-bold">

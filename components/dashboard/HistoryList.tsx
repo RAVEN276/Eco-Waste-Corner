@@ -63,7 +63,7 @@ function Points({ value }: { value: number }) {
     <span
       className={cn(
         "font-display text-4xl font-extrabold leading-none tabular-nums",
-        value < 0 ? "text-brick" : "text-ink",
+        value < 0 ? "text-brick-text" : "text-ink",
       )}
     >
       {value > 0 ? `+${value}` : value}
@@ -99,7 +99,7 @@ export function HistoryList() {
         ) : rows.length === 0 ? (
           <EmptyState
             title="Belum ada aktivitas"
-            description="Scan slot tong pertamamu untuk mulai mengumpulkan poin."
+            description="Scan QR tong pertamamu untuk mulai mengumpulkan poin."
           />
         ) : (
           <>
@@ -107,7 +107,7 @@ export function HistoryList() {
               {rows.map((scan, index) => (
                 <li
                   key={scan.scanId}
-                  className="fade-up rounded-plate border-2 border-rule bg-white p-4"
+                  className="fade-up rounded-plate border-2 border-rule bg-surface p-4"
                   style={rowDelay(index)}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -133,11 +133,11 @@ export function HistoryList() {
               ))}
             </ul>
 
-            <div className="hidden overflow-x-auto rounded-plate border-2 border-ink bg-white md:block">
+            <div className="hidden overflow-x-auto rounded-plate border-2 border-line bg-surface md:block">
               <table className="w-full border-collapse text-left text-sm">
                 <caption className="sr-only">Riwayat scan, terbaru di atas</caption>
                 <thead>
-                  <tr className="bg-ink text-white">
+                  <tr className="bg-night text-white">
                     <th scope="col" className="px-4 py-3 font-bold">
                       Tanggal
                     </th>

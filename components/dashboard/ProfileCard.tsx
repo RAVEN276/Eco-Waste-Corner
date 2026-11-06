@@ -11,7 +11,7 @@ import { initials } from "@/lib/utils";
 import { useUserStore } from "@/store/useUserStore";
 
 const INPUT_CLASS =
-  "mt-1 min-h-11 w-full rounded-ctl border-2 border-edge bg-white px-3 placeholder:text-muted";
+  "mt-1 min-h-11 w-full rounded-ctl border-2 border-edge bg-surface px-3 placeholder:text-muted";
 
 export function ProfileCard() {
   const profile = useUserStore((s) => s.profile);

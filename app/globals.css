@@ -1,39 +1,142 @@
 @import "tailwindcss";
 
 /*
- * Palette (light only). Arah lengkap dan rasio kontras ada di DESIGN.md.
- *  paper       #F5F4EF  latar halaman
- *  ink         #12182B  teks dan permukaan gelap
- *  muted       #474E63  teks sekunder (7.5:1 di paper)
- *  mist        #C6CBDB  teks sekunder di atas ink (10.9:1)
- *  edge        #747B8F  batas kontrol input (3.8:1 di paper, 4.2:1 di putih)
- *  rule        #D6D4CB  garis dekoratif saja, bukan batas kontrol
- *  cobalt      #2438A6  merek dan aksi utama
- *  organik / kertas / residu  kode warna tong, hanya untuk kategori tong
- *  brick       #B42318  status saja: penuh, penalti
+ * Palet terang dan gelap. Arah lengkap dan rasio kontras ada di DESIGN.md.
+ *
+ * Nilai per tema ada di variabel --c-* (satu blok untuk terang, satu untuk gelap), lalu @theme
+ * inline memetakannya ke nama kelas Tailwind. Tema gelap dipasang lewat atribut data-theme="dark"
+ * di <html> (skrip kecil di layout memasangnya sebelum halaman tampil, dan ThemeToggle
+ * mengubahnya). Peran warna dipisah supaya tema bisa membaliknya:
+ *
+ *  paper     latar halaman            surface  latar kartu, input, dialog
+ *  ink       teks dan ikon            line     garis struktur (border-line, tegas di terang, sedang di gelap)
+ *  night     blok gelap permanen (footer, aturan poin) dan teks gelap di atas warna terang
+ *  pick      status terpilih (tab, saringan, badge, menu aktif): kebalikan dari permukaan sekitarnya,
+ *            jadi gelap di tema terang dan terang di tema gelap, dengan teks on-pick
+ *  plate     plat hasil scan yang sah (night di terang, cobalt di gelap supaya tetap jadi titik fokus)
+ *  link      teks aksi dan angka bermerek (cobalt di tema terang, cobalt muda di tema gelap)
+ *  brick-text  teks dan ikon status galat (brick tetap hanya untuk blok terisi)
+ *
+ * Warna tetap di kedua tema: cobalt (merek, selalu dengan teks putih), organik, kertas (selalu
+ * blok terisi dengan teks night), brick (blok terisi), mist (teks di atas night), tint (hover
+ * tombol putih permanen).
+ *
+ * Tema gelap ("stasiun pilah di malam hari"): alasan tiap keputusan ada di DESIGN.md. Ringkasnya,
+ * latarnya arang netral (bukan navy) dan teksnya putih hangat dari kertas tema terang, supaya satu-
+ * satunya rona dingin adalah cobalt merek dan warna tong tetap jadi kode data. Garis struktur
+ * dibuat sedang (bukan lavender terang) supaya kartu tidak tampak seperti kerangka kawat.
  */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root {
+  color-scheme: light;
+
+  --c-paper: #f5f4ef;
+  --c-surface: #ffffff;
+  --c-ink: #12182b;
+  --c-line: #12182b;
+  --c-night: #12182b;
+  --c-muted: #474e63;
+  --c-edge: #747b8f;
+  --c-rule: #d6d4cb;
+  --c-link: #2438a6;
+  --c-cobalt-soft: #e4e8f8;
+  --c-cobalt-press: #cfd6f2;
+  --c-organik-soft: #ddf1e5;
+  --c-kertas-soft: #fcefc4;
+  --c-residu: #363c4a;
+  --c-residu-soft: #e4e6eb;
+  --c-brick-soft: #fbe9e7;
+  --c-brick-ink: #7a1810;
+  --c-brick-text: #b42318;
+  --c-map-ground: #eeece5;
+  --c-map-green: #ddf1e5;
+  --c-map-building: #d3d6de;
+  --c-map-road: #ffffff;
+  --c-pick: #12182b;
+  --c-on-pick: #ffffff;
+  --c-pick-hover: #252d47;
+  --c-plate: #12182b;
+
+  --shadow-ink: #12182b;
+  --focus-ring: #2438a6;
+  --focus-halo: #ffffff;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --c-paper: #0f1217;
+  --c-surface: #171b22;
+  --c-ink: #f0eee7;
+  --c-line: #6a7080;
+  --c-night: #07080b;
+  --c-muted: #aeb2bd;
+  --c-edge: #868b99;
+  --c-rule: #272b34;
+  --c-link: #86a2ff;
+  --c-cobalt-soft: #151a33;
+  --c-cobalt-press: #1d2548;
+  --c-organik-soft: #11291b;
+  --c-kertas-soft: #35290a;
+  --c-residu: #4d5361;
+  --c-residu-soft: #21242c;
+  --c-brick-soft: #3a1917;
+  --c-brick-ink: #ffc9c3;
+  --c-brick-text: #ff9a90;
+  --c-map-ground: #171b22;
+  --c-map-green: #12301f;
+  --c-map-building: #232831;
+  --c-map-road: #2e343f;
+  --c-pick: #f0eee7;
+  --c-on-pick: #0f1217;
+  --c-pick-hover: #d9d6cc;
+  --c-plate: #2438a6;
+
+  --shadow-ink: #04050a;
+  --focus-ring: #86a2ff;
+  --focus-halo: #0f1217;
+}
+
 @theme inline {
-  --color-paper: #f5f4ef;
-  --color-ink: #12182b;
-  --color-muted: #474e63;
+  --color-paper: var(--c-paper);
+  --color-surface: var(--c-surface);
+  --color-ink: var(--c-ink);
+  --color-line: var(--c-line);
+  --color-night: var(--c-night);
+  --color-muted: var(--c-muted);
   --color-mist: #c6cbdb;
-  --color-edge: #747b8f;
-  --color-rule: #d6d4cb;
+  --color-edge: var(--c-edge);
+  --color-rule: var(--c-rule);
+  --color-link: var(--c-link);
+  --color-pick: var(--c-pick);
+  --color-on-pick: var(--c-on-pick);
+  --color-pick-hover: var(--c-pick-hover);
+  --color-plate: var(--c-plate);
 
   --color-cobalt: #2438a6;
   --color-cobalt-deep: #18277c;
-  --color-cobalt-soft: #e4e8f8;
+  --color-cobalt-soft: var(--c-cobalt-soft);
+  --color-cobalt-press: var(--c-cobalt-press);
+  --color-tint: #e4e8f8;
+  --color-tint-press: #cfd6f2;
 
   --color-organik: #1e7a4b;
-  --color-organik-soft: #ddf1e5;
+  --color-organik-soft: var(--c-organik-soft);
   --color-kertas: #f4b81e;
-  --color-kertas-soft: #fcefc4;
-  --color-residu: #363c4a;
-  --color-residu-soft: #e4e6eb;
+  --color-kertas-soft: var(--c-kertas-soft);
+  --color-residu: var(--c-residu);
+  --color-residu-soft: var(--c-residu-soft);
 
   --color-brick: #b42318;
-  --color-brick-soft: #fbe9e7;
-  --color-brick-ink: #7a1810;
+  --color-brick-soft: var(--c-brick-soft);
+  --color-brick-ink: var(--c-brick-ink);
+  --color-brick-text: var(--c-brick-text);
+
+  --color-map-ground: var(--c-map-ground);
+  --color-map-green: var(--c-map-green);
+  --color-map-building: var(--c-map-building);
+  --color-map-road: var(--c-map-road);
 
   --radius-ctl: 0.375rem;
   --radius-plate: 0.625rem;
@@ -41,10 +144,6 @@
 
   --font-sans: var(--font-text), system-ui, sans-serif;
   --font-display: var(--font-signage), var(--font-text), system-ui, sans-serif;
-}
-
-:root {
-  color-scheme: light;
 }
 
 html {
@@ -79,11 +178,12 @@ body {
     cursor: not-allowed;
   }
 
-  /* Cincin dua lapis: putih di dalam, cobalt di luar, terlihat di atas paper, cobalt, dan ink. */
+  /* Cincin dua lapis: lingkaran terang atau gelap di dalam, warna aksi di luar, terlihat di atas
+     paper, cobalt, dan blok gelap di kedua tema. */
   :focus-visible {
-    outline: 3px solid var(--color-cobalt);
+    outline: 3px solid var(--focus-ring);
     outline-offset: 2px;
-    box-shadow: 0 0 0 5px #ffffff;
+    box-shadow: 0 0 0 5px var(--focus-halo);
   }
 
   h1,

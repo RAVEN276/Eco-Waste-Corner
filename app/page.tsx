@@ -47,12 +47,12 @@ export default function HomePage() {
             {SPOTS.map((spot, index) => (
               <li
                 key={spot.letter}
-                className="reveal flex items-center gap-4 rounded-sheet border-2 border-ink bg-white p-4 text-ink"
+                className="reveal flex items-center gap-4 rounded-sheet border-2 border-line bg-surface p-4 text-ink"
                 style={{ ["--delay" as string]: `${index * 140}ms` }}
               >
                 <span
                   aria-hidden="true"
-                  className="font-display text-8xl font-extrabold leading-none text-cobalt"
+                  className="font-display text-8xl font-extrabold leading-none text-link"
                 >
                   {spot.letter}
                 </span>

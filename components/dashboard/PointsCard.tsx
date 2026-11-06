@@ -28,7 +28,7 @@ export function PointsCard() {
     >
       <section
         aria-labelledby="judul-poin"
-        className="reveal relative flex h-full flex-col justify-between gap-8 overflow-hidden rounded-sheet border-2 border-ink bg-cobalt p-6 text-white shadow-[8px_8px_0_var(--color-ink)] sm:p-8"
+        className="reveal relative flex h-full flex-col justify-between gap-8 overflow-hidden rounded-sheet border-2 border-line bg-cobalt p-6 text-white shadow-[8px_8px_0_var(--shadow-ink)] sm:p-8"
       >
         <div>
           <h2 id="judul-poin" className="text-3xl">
@@ -63,7 +63,7 @@ export function PointsCard() {
           </Link>
         </div>
 
-        <div className="absolute right-4 top-4 hidden w-56 rounded-plate border-2 border-ink bg-paper p-2 xl:block">
+        <div className="absolute right-4 top-4 hidden w-56 rounded-plate border-2 border-line bg-paper p-2 xl:block">
           <StationScene drops={false} className="block w-full" />
         </div>
       </section>

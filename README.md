@@ -11,7 +11,7 @@ cp .env.example .env.local   # isi kunci Firebase
 npm run dev
 ```
 
-Perintah lain: `npm run build`, `npm run lint`, `npm run seed`.
+Perintah lain: `npm run build`, `npm run lint`, `npm run seed`, `npm run qr` (membuat kode QR tong, lihat bagian Kode QR tong).
 
 ## Setup Firebase (sekali saja)
 
@@ -38,7 +38,29 @@ Sebelum `locations` terisi, peta menampilkan data contoh dengan label peringatan
 | `locations/{locationId}` | `locationId`, `name`, `coordinates` (`x`, `y` dalam persen pada denah), `statusCapacity` (`Kosong`, `Terisi`, `Penuh`), `imageUrl`, `routeSteps`                                                                                                              |
 | `scanPhotos/{scanId}`    | `scanId`, `userId`, `mime`, `dataUrl`, `timestamp`                                                                                                                                                                                                            |
 
+## Kode QR tong
+
+Ada dua lokasi (Spot A dekat Pantry Kantin, Spot B dekat Parkiran Motor) dan tiga tong di tiap lokasi (Organik, Plastik/Kertas, Residu), jadi ada enam kode QR. Satu kode menyatakan satu tong di satu lokasi. Mahasiswa tidak memilih apa pun: begitu QR dipindai, lokasi dan jenis tong terbaca dari kodenya.
+
+Isi QR adalah tautan ke halaman scan, misalnya `https://eco-waste-corner.vercel.app/scan?lokasi=spot-a&tong=organik`. `lokasi` adalah `locationId` di `lib/data/seed.json`, dan `tong` adalah `organik`, `plastik_kertas`, atau `residu`. Ada dua cara membacanya, dan keduanya memakai pembaca yang sama di `lib/qr.ts`:
+
+- Aplikasi kamera bawaan ponsel: tautannya langsung membuka halaman Scan dengan lokasi dan tong terisi. Kalau belum login, pengguna diarahkan ke halaman login dan kembali ke tautan yang sama setelah masuk.
+- Halaman Scan: kamera pemindai langsung menyala saat halaman dibuka (jsQR, diunduh hanya saat pemindai dibuka), jadi tidak ada tombol yang perlu ditekan dulu. Tombol "Tutup kamera" dan "Buka kamera lagi" tersedia kalau kamera perlu dimatikan.
+
+Membuat dan mencetak:
+
+1. Deploy aplikasi dulu, karena alamatnya tertanam di QR.
+2. Jalankan `npm run qr -- --base https://eco-waste-corner.vercel.app` (harus https, kecuali `localhost` untuk uji coba).
+3. Hasilnya ada di folder `qr-print/` (tidak ikut git): `index.html` berisi lembar cetak A4 satu halaman per lokasi (buka di browser, cetak dengan skala 100% dan "background graphics" aktif), ditambah file `.svg` (vektor, disarankan untuk percetakan) dan `.png` per kode.
+4. Tempel tiap kode di tong yang sesuai dengan lokasinya, lalu pindai satu per satu dengan ponsel untuk memastikan halaman Scan menampilkan lokasi dan tong yang benar.
+
+Kalau alamat aplikasi berubah, semua kode harus dicetak ulang. Untuk lokasi baru, tambahkan di `lib/data/seed.json` (id huruf kecil dan tanda hubung), jalankan `npm run seed`, lalu `npm run qr`.
+
+Batasan: kode QR bisa difoto lalu dipindai dari jauh, atau tautannya diketik manual. Penghalang yang ada: foto bukti hanya dari kamera, jeda 15 menit, dan penalti untuk jenis sampah yang tidak cocok dengan tong. Memastikan orangnya benar-benar berada di lokasi butuh pemeriksaan di server (misalnya kode yang berganti berkala), yang memerlukan Cloud Functions.
+
 ## Foto bukti
+
+Foto hanya bisa diambil langsung dari kamera. Tidak ada pemilih berkas, jadi foto dari galeri atau tangkapan layar tidak bisa dipakai (`components/scan/CameraCapture.tsx`). Browser hanya mengizinkan kamera di alamat https atau `localhost`, jadi saat menguji lewat IP jaringan lokal (misalnya `http://192.168.x.x:3000`) kamera tidak akan muncul. Batasan ini berlaku untuk jalur yang disediakan aplikasi: browser tidak bisa membuktikan bahwa gambar kamera itu asli (kamera virtual di komputer, misalnya).
 
 Foto disimpan di Firestore, bukan Storage. Satu dokumen maksimal 1 MiB, jadi `lib/photo.ts` mengecilkan foto di browser (sisi terpanjang maksimal 1024 px, JPEG, di bawah 300.000 karakter data URL) sebelum disimpan di `scanPhotos/{scanId}`. Dokumen `scans` hanya menyimpan `photoHash` dan, di field `photoUrl`, path dokumen fotonya (`scanPhotos/{scanId}`), supaya riwayat tidak ikut memuat gambar. Foto duplikat tidak disimpan lagi. Kualitas foto cukup untuk bukti, bukan untuk arsip. Di dashboard, tombol "Lihat foto" pada riwayat mengambil foto dari `scanPhotos` hanya saat diklik.
 
@@ -49,13 +71,14 @@ Foto disimpan di Firestore, bukan Storage. Satu dokumen maksimal 1 MiB, jadi `li
 | `app/`                    | Route: `/`, `/login`, `/dashboard`, `/scan`, `/map`                               |
 | `components/`             | `landing`, `auth`, `dashboard`, `scan`, `map`, `layout`, `ui`, `providers`        |
 | `store/`                  | Zustand: `useUserStore` (auth, poin, poin JSDP, cooldown)                         |
-| `hooks/`                  | `useCooldown`, `useRequireAuth`, `useRemoteList`, `useScanHistory`, `useExchangeHistory`, `useSignOut` |
-| `scripts/`                | `seed-firestore.mjs` (isi lokasi), `reset-accounts.mjs` (reset semua akun ke 0), `clear-history.mjs` (hapus riwayat pembuangan semua user) |
+| `hooks/`                  | `useCooldown`, `useRequireAuth`, `useRemoteList`, `useScanHistory`, `useExchangeHistory`, `useSignOut`, `useCameraStream` |
+| `scripts/`                | `seed-firestore.mjs` (isi lokasi), `generate-qr.mjs` (enam QR tong), `reset-accounts.mjs` (reset semua akun ke 0), `clear-history.mjs` (hapus riwayat pembuangan semua user) |
 | `DESIGN.md`               | Arah visual: identitas, palet dan kontras, tipografi, dial, komposisi halaman     |
 | `lib/firebase/`           | Config, auth, firestore, pemetaan error                                           |
 | `lib/validation/email.ts` | `isValidEmail`, panjang minimal kata sandi, pesan validasi                        |
 | `lib/scoring.ts`          | Poin berjenjang, penalti, cooldown 15 menit, kurs penukaran                       |
 | `lib/photo.ts`            | Validasi, hash, dan kompresi foto bukti                                           |
+| `lib/qr.ts`               | Format dan pembaca isi QR tong (lokasi dan jenis tong)                            |
 
 ## Aturan poin
 
@@ -109,7 +132,9 @@ Jika menu SMTP Settings tidak ada atau terkunci di paket Spark, fitur itu butuh 
 | "Login belum aktif" di halaman login    | `.env.local` belum terisi. Isi semua `NEXT_PUBLIC_FIREBASE_*`, lalu restart `npm run dev`.                                                 |
 | "Akses ditolak oleh aturan keamanan"    | Rules belum di-deploy, atau emailmu belum terverifikasi.                                                                                   |
 | Email verifikasi atau reset tidak sampai | Cek folder Junk atau Spam dan tunggu beberapa menit. Kirim ulang dari layar verifikasi (jeda 60 detik). Pengirim bawaan Firebase kadang ditahan penyedia email penerima: pasang SMTP sendiri (bagian "Login dan email verifikasi"). Email dari Gmail umumnya sampai. |
-| Foto ditolak atau gagal diproses        | Format harus JPG, PNG, atau WebP, maksimal 10 MB. Foto yang terlalu kompleks untuk dikecilkan di bawah batas akan ditolak, coba foto lain. |
+| Kamera tidak terbuka (pemindai QR atau foto bukti) | Izinkan kamera untuk situs ini di pengaturan browser. Kamera hanya jalan di https atau `localhost`, dan tidak jalan jika aplikasi lain sedang memakainya. Pemindaian QR tetap bisa lewat aplikasi kamera bawaan ponsel. Foto bukti bisa dilewati dengan poin lebih sedikit. |
+| Foto bukti gagal diproses               | Foto yang terlalu kompleks untuk dikecilkan di bawah batas akan ditolak, ambil ulang dengan latar yang lebih sederhana. |
+| QR terbaca "bukan kode tong" atau lokasinya tidak dikenal | QR bukan dari `npm run qr`, atau `locationId`-nya tidak ada di koleksi `locations`. Cetak ulang QR, dan pastikan `npm run seed` sudah dijalankan. |
 
 ## Batasan yang perlu kamu tahu
 

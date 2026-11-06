@@ -81,7 +81,7 @@ function BinGraphic({ id, bumpAt }: { id: BinCategory; bumpAt?: number }) {
       <rect x="38" y="76" width="44" height="46" rx="4" className="fill-white stroke-ink" strokeWidth="2.5" />
       <Glyph id={id} />
       <rect x="10" y="34" width="100" height="20" rx="6" className={cn(BODY_FILL[id], "stroke-ink")} strokeWidth="3" />
-      <rect x="42" y="41" width="36" height="6" rx="3" className="fill-ink" />
+      <rect x="42" y="41" width="36" height="6" rx="3" className="fill-night" />
       <circle cx="34" cy="146" r="5" className="fill-ink" />
       <circle cx="86" cy="146" r="5" className="fill-ink" />
     </g>

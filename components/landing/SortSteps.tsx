@@ -24,7 +24,7 @@ const STEPS: { lead: string; question: string; bin: BinCategory }[] = [
 // Pita putih dengan garis ink memisahkannya dari panduan tong di atas dan kolom kesalahan di bawah.
 export function SortSteps() {
   return (
-    <section aria-labelledby="judul-tiga-tanya" className="border-y-2 border-ink bg-white">
+    <section aria-labelledby="judul-tiga-tanya" className="border-y-2 border-line bg-surface">
       <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 md:py-20">
         <div className="reveal max-w-2xl">
           <h2 id="judul-tiga-tanya" className="text-5xl sm:text-6xl">
@@ -35,13 +35,13 @@ export function SortSteps() {
           </p>
         </div>
 
-        <ol className="mt-10 grid overflow-hidden rounded-sheet border-2 border-ink md:grid-cols-3">
+        <ol className="mt-10 grid overflow-hidden rounded-sheet border-2 border-line md:grid-cols-3">
           {STEPS.map((step, index) => (
             <li
               key={step.bin}
               className={cn(
                 "reveal flex flex-col justify-between gap-6 p-5 sm:p-6",
-                index > 0 && "border-t-2 border-ink md:border-l-2 md:border-t-0",
+                index > 0 && "border-t-2 border-line md:border-l-2 md:border-t-0",
               )}
               style={{
                 ["--delay" as string]: `${index * 140}ms`,
@@ -50,7 +50,7 @@ export function SortSteps() {
               <div>
                 <span
                   aria-hidden="true"
-                  className="font-display text-8xl font-extrabold leading-none text-cobalt"
+                  className="font-display text-8xl font-extrabold leading-none text-link"
                 >
                   {index + 1}
                 </span>

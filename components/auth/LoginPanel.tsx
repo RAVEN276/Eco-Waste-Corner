@@ -39,7 +39,7 @@ type Busy = "google" | "submit" | "resend" | "check" | null;
 const RESEND_SECONDS = 60;
 
 const INPUT_CLASS =
-  "mt-1.5 min-h-12 w-full rounded-ctl border-2 border-edge bg-white px-3 text-base placeholder:text-muted disabled:bg-paper aria-[invalid=true]:border-brick";
+  "mt-1.5 min-h-12 w-full rounded-ctl border-2 border-edge bg-surface px-3 text-base placeholder:text-muted disabled:bg-paper aria-[invalid=true]:border-brick-text";
 
 function safeNextPath(raw: string | null): string {
   if (raw && raw.startsWith("/") && !raw.startsWith("//")) return raw;
@@ -238,19 +238,19 @@ export function LoginPanel() {
 
   return (
     <div className="grid min-h-[calc(100dvh-4rem)] md:grid-cols-2">
-      <div className="flex flex-col justify-center gap-10 border-b-2 border-ink bg-cobalt px-4 py-10 text-white sm:px-8 md:border-b-0 md:border-r-2 md:px-12 md:py-16">
+      <div className="flex flex-col justify-center gap-10 border-b-2 border-line bg-cobalt px-4 py-10 text-white sm:px-8 md:border-b-0 md:border-r-2 md:px-12 md:py-16">
         <div className="fade-up">
           <h1 className="text-6xl sm:text-7xl">Masuk ke Eco Waste Corner</h1>
           <p className="mt-5 max-w-md text-lg">
-            Masuk dengan akun Google, atau daftar dan masuk dengan email dan kata sandi. Email apa
-            pun bisa dipakai, termasuk Gmail. Kamu tidak perlu memasukkan NIM.
+            Pakai akun Google, atau daftar dengan email dan kata sandi. Email apa saja boleh, tidak
+            harus email kampus, dan tidak perlu NIM.
           </p>
           <p className="mt-3 max-w-md text-sm text-mist">
-            Pendaftaran dengan email perlu verifikasi: kami mengirim tautan ke emailmu, dan akunnya
-            aktif setelah tautan itu dibuka.
+            Setelah daftar dengan email, kami kirim tautan verifikasi ke emailmu. Akunmu aktif
+            begitu tautan itu dibuka.
           </p>
         </div>
-        <div className="hidden max-w-md overflow-hidden rounded-sheet border-2 border-ink bg-paper p-3 md:block">
+        <div className="hidden max-w-md overflow-hidden rounded-sheet border-2 border-line bg-paper p-3 md:block">
           <StationScene className="block w-full" />
         </div>
       </div>
@@ -357,7 +357,7 @@ export function LoginPanel() {
                   <p
                     id="login-email-error"
                     role="alert"
-                    className="mt-1.5 text-sm font-bold text-brick"
+                    className="mt-1.5 text-sm font-bold text-brick-text"
                   >
                     {emailError}
                   </p>
@@ -400,8 +400,8 @@ export function LoginPanel() {
                     className={cn(
                       "min-h-11 rounded-ctl border-2 px-4 text-sm font-bold transition-colors duration-150 disabled:opacity-55",
                       mode === option
-                        ? "border-ink bg-ink text-white"
-                        : "border-edge bg-white hover:bg-cobalt-soft",
+                        ? "border-pick bg-pick text-on-pick"
+                        : "border-edge bg-surface hover:bg-cobalt-soft",
                     )}
                   >
                     {option === "masuk" ? "Masuk" : "Daftar"}
@@ -434,7 +434,7 @@ export function LoginPanel() {
                     <p
                       id="login-email-error"
                       role="alert"
-                      className="mt-1.5 text-sm font-bold text-brick"
+                      className="mt-1.5 text-sm font-bold text-brick-text"
                     >
                       {emailError}
                     </p>
@@ -474,7 +474,7 @@ export function LoginPanel() {
                     <p
                       id="login-password-error"
                       role="alert"
-                      className="mt-1.5 text-sm font-bold text-brick"
+                      className="mt-1.5 text-sm font-bold text-brick-text"
                     >
                       {passwordError}
                     </p>
@@ -482,7 +482,7 @@ export function LoginPanel() {
                   <label className="mt-2 flex min-h-11 items-center gap-2.5 text-sm">
                     <input
                       type="checkbox"
-                      className="size-5 accent-cobalt"
+                      className="size-5 accent-link"
                       checked={showPassword}
                       onChange={(event) => setShowPassword(event.target.checked)}
                     />

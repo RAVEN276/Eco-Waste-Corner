@@ -48,8 +48,8 @@ function Chip({ bin, kind }: { bin: BinCategory; kind: "wrong" | "right" }) {
   const label = BINS[bin].label;
   if (kind === "wrong") {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-ctl border-2 border-dashed border-edge bg-white px-2.5 py-1 text-sm font-bold text-muted">
-        <CloseIcon className="size-3.5 shrink-0 text-brick" />
+      <span className="inline-flex items-center gap-1.5 rounded-ctl border-2 border-dashed border-edge bg-surface px-2.5 py-1 text-sm font-bold text-muted">
+        <CloseIcon className="size-3.5 shrink-0 text-brick-text" />
         <span className="line-through">{label}</span>
       </span>
     );
@@ -81,10 +81,10 @@ export function CommonMistakes() {
         </p>
       </div>
 
-      <div className="mt-10 overflow-hidden rounded-sheet border-2 border-ink bg-white">
+      <div className="mt-10 overflow-hidden rounded-sheet border-2 border-line bg-surface">
         <div
           aria-hidden="true"
-          className="hidden bg-ink px-6 py-3 text-sm font-bold text-white md:grid md:grid-cols-[1.1fr_0.9fr_0.9fr_1.6fr] md:gap-6"
+          className="hidden bg-night px-6 py-3 text-sm font-bold text-white md:grid md:grid-cols-[1.1fr_0.9fr_0.9fr_1.6fr] md:gap-6"
         >
           <span>Barang</span>
           <span>Sering salah ke</span>
