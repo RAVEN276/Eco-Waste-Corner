@@ -73,6 +73,12 @@ export interface QuizQuestion {
   explanation: string;
 }
 
+/** Cara barang yang salah tong terlontar: `arah` 1 ke kanan atau -1 ke kiri, `putar` sudut rebahnya saat mendarat (derajat). */
+export interface Rejection {
+  arah: 1 | -1;
+  putar: number;
+}
+
 export interface WasteItem {
   id: string;
   label: string;

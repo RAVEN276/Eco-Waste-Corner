@@ -229,6 +229,84 @@ body {
   animation-delay: var(--delay, 0ms);
 }
 
+/*
+ * Barang yang salah tong ditolak: tong memipih sekilas, barang terlontar dari slot, memantul di
+ * lantai, lalu tergeletak di samping tong. --dir (1 kanan, -1 kiri) dan --turn (sudut rebah) dipasang
+ * oleh pemanggil supaya tiap jawaban salah berbeda. --reach dan --fit mengecilkan jarak dan ukuran di ponsel. Keadaan akhirnya sengaja terlihat (barang di luar
+ * tong), jadi pada prefers-reduced-motion hasilnya tetap terbaca tanpa gerak.
+ */
+@keyframes spit {
+  0% {
+    transform: scale(1, 1);
+  }
+  30% {
+    transform: scale(1.05, 0.92);
+  }
+  65% {
+    transform: scale(0.98, 1.04);
+  }
+  100% {
+    transform: scale(1, 1);
+  }
+}
+
+@keyframes eject {
+  0% {
+    transform: translate(0, 10px) rotate(0deg);
+    opacity: 0;
+    animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1);
+  }
+  8% {
+    opacity: 1;
+  }
+  34% {
+    transform: translate(calc(var(--dir, 1) * var(--reach, 1) * 58px), -46px) rotate(calc(var(--dir, 1) * 34deg)) scale(var(--fit, 1));
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0.5, 0, 0.9, 0.6);
+  }
+  70% {
+    transform: translate(calc(var(--dir, 1) * var(--reach, 1) * 70px), 113px) rotate(calc(var(--dir, 1) * var(--turn, 80deg))) scale(var(--fit, 1));
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1);
+  }
+  84% {
+    transform: translate(calc(var(--dir, 1) * var(--reach, 1) * 78px), 98px) rotate(calc(var(--dir, 1) * (var(--turn, 80deg) - 18deg))) scale(var(--fit, 1));
+    opacity: 1;
+    animation-timing-function: cubic-bezier(0.5, 0, 0.9, 0.6);
+  }
+  100% {
+    transform: translate(calc(var(--dir, 1) * var(--reach, 1) * 72px), 113px) rotate(calc(var(--dir, 1) * (var(--turn, 80deg) - 2deg))) scale(var(--fit, 1));
+    opacity: 1;
+  }
+}
+
+.spit {
+  animation: spit 0.4s ease-out both;
+  animation-delay: var(--delay, 0ms);
+}
+
+/* Kartu di ponsel sempit, jadi barang mendarat lebih dekat dan sedikit lebih kecil supaya tetap di dalam kartu. */
+.eject {
+  --reach: 0.72;
+  --fit: 0.88;
+  animation: eject 1.1s linear both;
+  animation-delay: var(--delay, 0ms);
+}
+
+@media (min-width: 31.25rem) {
+  .eject {
+    --reach: 0.8;
+    --fit: 0.94;
+  }
+}
+
+@media (min-width: 48rem) {
+  .eject {
+    --reach: 0.92;
+    --fit: 1;
+  }
+}
+
 .bump {
   animation: bump 0.3s ease-out both;
   animation-delay: var(--delay, 0ms);

@@ -1,4 +1,4 @@
-import type { BinCategory, WasteItem } from "@/lib/types";
+import type { BinCategory, Rejection, WasteItem } from "@/lib/types";
 
 /**
  * Every item the app knows: the dictionary on the landing page and the sorting
@@ -71,6 +71,17 @@ function shuffle<T>(list: T[]): T[] {
     [copy[i], copy[j]] = [copy[j], copy[i]];
   }
   return copy;
+}
+
+/**
+ * Picks the side and landing angle for an item rejected by the wrong bin. Given the previous side,
+ * it switches sides three times out of four, so a coin flip cannot repeat one side for long.
+ * Uses Math.random, so call it only from an event handler, never in render.
+ */
+export function pickRejection(previous?: Rejection["arah"]): Rejection {
+  const flip = Math.random() < 0.75;
+  const arah = previous === undefined ? (Math.random() < 0.5 ? -1 : 1) : flip ? (previous === 1 ? -1 : 1) : previous;
+  return { arah, putar: 64 + Math.floor(Math.random() * 36) };
 }
 
 /**
