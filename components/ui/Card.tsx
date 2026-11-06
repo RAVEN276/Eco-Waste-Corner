@@ -10,8 +10,8 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-plate border-2 bg-white p-5 sm:p-6",
-        strong ? "border-ink" : "border-rule",
+        "rounded-plate border-2 bg-surface p-5 sm:p-6",
+        strong ? "border-line" : "border-rule",
         className,
       )}
       {...props}
@@ -34,8 +34,8 @@ export function GlassCard({
       className={cn(
         "rounded-plate border-2 p-4 backdrop-blur-md sm:p-5",
         tone === "light"
-          ? "border-white/70 bg-white/75 text-ink"
-          : "border-white/30 bg-ink/80 text-white",
+          ? "border-white/70 bg-white/75 text-night"
+          : "border-white/30 bg-night/80 text-white",
         className,
       )}
       {...props}

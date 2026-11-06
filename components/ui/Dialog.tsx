@@ -72,7 +72,7 @@ export function Dialog({ open, onClose, title, children, className }: DialogProp
       {open ? (
         <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6">
           <motion.div
-            className="absolute inset-0 bg-ink/65"
+            className="absolute inset-0 bg-night/65"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -90,11 +90,11 @@ export function Dialog({ open, onClose, title, children, className }: DialogProp
             exit={{ opacity: 0, y: 32 }}
             transition={{ duration: 0.22, ease: "easeOut" }}
             className={cn(
-              "relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-sheet border-2 border-ink bg-white shadow-2xl sm:max-w-lg sm:rounded-sheet",
+              "relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-sheet border-2 border-line bg-surface shadow-2xl sm:max-w-lg sm:rounded-sheet",
               className,
             )}
           >
-            <div className="flex items-start justify-between gap-4 border-b-2 border-ink bg-paper px-5 py-3">
+            <div className="flex items-start justify-between gap-4 border-b-2 border-line bg-paper px-5 py-3">
               <h2 id={titleId} className="py-1 text-3xl">
                 {title}
               </h2>

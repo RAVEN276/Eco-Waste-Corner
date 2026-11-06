@@ -25,7 +25,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Navigasi bawah"
-      className="fixed inset-x-0 bottom-0 z-40 border-t-2 border-ink bg-paper pb-[env(safe-area-inset-bottom)] md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t-2 border-line bg-paper pb-[env(safe-area-inset-bottom)] md:hidden"
     >
       <ul className="grid grid-cols-4">
         {items.map((item) => {
@@ -40,7 +40,7 @@ export function BottomNav() {
                   item.primary
                     ? "bg-cobalt text-white active:bg-cobalt-deep"
                     : active
-                      ? "bg-ink text-white"
+                      ? "bg-pick text-on-pick"
                       : "active:bg-cobalt-soft",
                 )}
               >

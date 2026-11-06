@@ -6,6 +6,7 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ScrollMotion } from "@/components/layout/ScrollMotion";
+import { THEME_INIT_SCRIPT } from "@/lib/theme";
 
 // Tampilan: Big Shoulders, warisan papan penanda jalan, cocok untuk label tong dan
 // angka poin, dan sempit sehingga nama panjang muat di layar ponsel.
@@ -40,6 +41,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#2438A6",
+  colorScheme: "light dark",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -50,12 +52,18 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="id"
       data-scroll-behavior="smooth"
+      suppressHydrationWarning
       className={`${signage.variable} ${text.variable} h-full`}
     >
+      <head>
+        {/* Memasang data-theme sebelum cat pertama. suppressHydrationWarning di <html> karena
+            atributnya sengaja berbeda dari HTML server. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="flex min-h-full flex-col pb-[calc(3.75rem+env(safe-area-inset-bottom))] md:pb-0">
         <a
           href="#konten-utama"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-ctl focus:bg-ink focus:px-4 focus:py-3 focus:text-white"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-ctl focus:bg-pick focus:px-4 focus:py-3 focus:text-on-pick"
         >
           Lewati ke konten
         </a>

@@ -37,7 +37,7 @@ export const BINS: Record<BinCategory, BinInfo> = {
     avoid: ["Kemasan yang masih berisi minuman", "Kertas berminyak", "Tisu bekas"],
     tip: "Kosongkan dan bilas singkat wadah plastik sebelum dibuang.",
     tone: {
-      solid: "bg-kertas text-ink",
+      solid: "bg-kertas text-night",
       soft: "bg-kertas-soft text-ink",
     },
   },

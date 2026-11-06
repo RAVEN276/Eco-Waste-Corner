@@ -6,7 +6,7 @@ export function ExchangeRate({ className }: { className?: string }) {
   return (
     <div className={cn("flex items-center gap-2 sm:gap-3", className)}>
       <div
-        className="wipe rounded-plate bg-white px-4 py-3 text-ink"
+        className="wipe rounded-plate bg-white px-4 py-3 text-night"
         style={{ ["--delay" as string]: "250ms" }}
       >
         <span className="block font-display text-6xl font-extrabold leading-none">

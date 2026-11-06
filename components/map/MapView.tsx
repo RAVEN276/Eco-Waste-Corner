@@ -31,7 +31,7 @@ export function MapView() {
 
       {status === "ready" && source === "default" ? (
         <InlineNotice tone="warning">
-          Menampilkan data contoh. Koleksi <code className="rounded-sm bg-white px-1">locations</code>{" "}
+          Menampilkan data contoh. Koleksi <code className="rounded-sm bg-surface px-1">locations</code>{" "}
           di Firestore belum terisi, jadi status kapasitas belum real-time.
         </InlineNotice>
       ) : null}
@@ -69,11 +69,11 @@ export function MapView() {
                     type="button"
                     onClick={() => setSelectedId(location.locationId)}
                     aria-haspopup="dialog"
-                    className="flex w-full items-center gap-4 rounded-plate border-2 border-ink bg-white p-4 text-left hover:bg-cobalt-soft"
+                    className="flex w-full items-center gap-4 rounded-plate border-2 border-line bg-surface p-4 text-left hover:bg-cobalt-soft"
                   >
                     <span
                       aria-hidden="true"
-                      className="font-display text-6xl font-extrabold leading-none text-cobalt"
+                      className="font-display text-6xl font-extrabold leading-none text-link"
                     >
                       {String.fromCharCode(65 + index)}
                     </span>

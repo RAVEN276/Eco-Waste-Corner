@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 const VIEW: Record<CapacityStatus, { filled: number; tone: string }> = {
   Kosong: { filled: 0, tone: "border-organik bg-organik-soft text-ink" },
-  Terisi: { filled: 2, tone: "border-ink bg-kertas text-ink" },
+  Terisi: { filled: 2, tone: "border-line bg-kertas text-night" },
   Penuh: { filled: 3, tone: "border-brick bg-brick text-white" },
 };
 

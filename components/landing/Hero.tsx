@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { useUserStore } from "@/store/useUserStore";
 
 const STEPS = [
-  "Pilih slot yang kamu pindai",
+  "Pindai QR di tong",
   "Jawab 2 soal kuis",
   "Foto sampah yang kamu buang",
   `Tunggu jeda ${COOLDOWN_MINUTES} menit untuk scan berikutnya`,
@@ -29,7 +29,7 @@ export function Hero() {
     <section
       aria-labelledby="judul-hero"
       data-replay=""
-      className="border-b-2 border-ink bg-cobalt text-white"
+      className="border-b-2 border-line bg-cobalt text-white"
     >
       <div className="mx-auto grid max-w-6xl gap-10 px-4 pb-12 pt-10 sm:px-6 md:grid-cols-[1.05fr_1fr] md:items-center md:gap-12 md:pb-16 md:pt-14">
         <div className="fade-up">
@@ -43,7 +43,7 @@ export function Hero() {
             </mark>
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-relaxed">
-            Pindai slot tong, jawab 2 soal kuis, lalu unggah foto buktimu. Tukar {EXCHANGE_POIN} poin
+            Pindai QR di tong, jawab 2 soal kuis, lalu foto sampahmu langsung dengan kamera. Tukar {EXCHANGE_POIN} poin
             jadi {EXCHANGE_JSDP} poin JSDP, syarat kelulusanmu.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -66,13 +66,13 @@ export function Hero() {
             range="exit"
             originClassName="origin-top"
           >
-            <div className="overflow-hidden rounded-sheet border-2 border-ink bg-paper text-ink shadow-[8px_8px_0_var(--color-ink)]">
+            <div className="overflow-hidden rounded-sheet border-2 border-line bg-paper text-ink shadow-[8px_8px_0_var(--shadow-ink)]">
               <StationScene className="block w-full px-3 pt-2" />
-              <ul className="grid grid-cols-3 border-t-2 border-ink">
+              <ul className="grid grid-cols-3 border-t-2 border-line">
                 {BIN_LIST.map((bin, index) => (
                   <li
                     key={bin.id}
-                    className={cn("p-3 sm:p-4", bin.tone.solid, index > 0 && "border-l-2 border-ink")}
+                    className={cn("p-3 sm:p-4", bin.tone.solid, index > 0 && "border-l-2 border-line")}
                   >
                     <span className="block font-display text-5xl font-extrabold leading-none sm:text-6xl">
                       {BASE_POINTS[bin.id]}
@@ -87,13 +87,13 @@ export function Hero() {
         </div>
       </div>
 
-      <div className="border-t-2 border-ink bg-ink">
+      <div className="border-t-2 border-line bg-night">
         <h2 className="sr-only">Satu scan, empat langkah</h2>
         <ol className="mx-auto grid max-w-6xl grid-cols-2 gap-px bg-white/25 md:grid-cols-4">
           {STEPS.map((step, index) => (
             <li
               key={step}
-              className="fade-up flex items-start gap-3 bg-ink px-4 py-5 sm:px-6"
+              className="fade-up flex items-start gap-3 bg-night px-4 py-5 sm:px-6"
               style={delay(600 + index * 120)}
             >
               <span aria-hidden="true" className="font-display text-5xl font-extrabold leading-none">

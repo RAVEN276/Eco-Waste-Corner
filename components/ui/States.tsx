@@ -26,7 +26,7 @@ export function LoadingState({ label = "Memuat data", className }: { label?: str
         className,
       )}
     >
-      <Spinner className="size-7 text-cobalt" label={label} />
+      <Spinner className="size-7 text-link" label={label} />
       <p className="text-sm" aria-hidden="true">
         {label}
       </p>
@@ -54,7 +54,7 @@ export function EmptyState({
         className,
       )}
     >
-      {icon ? <div className="text-cobalt">{icon}</div> : null}
+      {icon ? <div className="text-link">{icon}</div> : null}
       <h3 className="text-3xl">{title}</h3>
       <p className="max-w-sm text-sm text-muted">{description}</p>
       {action}
@@ -77,11 +77,11 @@ export function ErrorState({
     <div
       role="alert"
       className={cn(
-        "flex flex-col items-center gap-3 rounded-plate border-2 border-brick bg-brick-soft px-6 py-10 text-center",
+        "flex flex-col items-center gap-3 rounded-plate border-2 border-brick-text bg-brick-soft px-6 py-10 text-center",
         className,
       )}
     >
-      <AlertIcon className="size-7 text-brick" />
+      <AlertIcon className="size-7 text-brick-text" />
       <h3 className="text-3xl text-ink">{title}</h3>
       <p className="max-w-md text-sm text-brick-ink">{message}</p>
       {onRetry ? (
@@ -103,9 +103,9 @@ export function InlineNotice({
   className?: string;
 }) {
   const tones = {
-    info: "border-cobalt bg-cobalt-soft text-ink",
-    warning: "border-ink bg-kertas-soft text-ink",
-    error: "border-brick bg-brick-soft text-brick-ink",
+    info: "border-link bg-cobalt-soft text-ink",
+    warning: "border-line bg-kertas-soft text-ink",
+    error: "border-brick-text bg-brick-soft text-brick-ink",
   } as const;
   return (
     <div

@@ -39,7 +39,7 @@ export function QuizStep({ questions, onFinish }: QuizStepProps) {
 
   return (
     <div className="space-y-6">
-      <p className="font-display text-2xl font-extrabold text-cobalt">
+      <p className="font-display text-2xl font-extrabold text-link">
         Pertanyaan {index + 1} dari {questions.length}
       </p>
 
@@ -56,20 +56,20 @@ export function QuizStep({ questions, onFinish }: QuizStepProps) {
               <label
                 key={option}
                 className={cn(
-                  "flex min-h-14 items-center gap-3 rounded-plate border-2 px-4 py-3 has-[:focus-visible]:outline has-[:focus-visible]:outline-[3px] has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-cobalt",
+                  "flex min-h-14 items-center gap-3 rounded-plate border-2 px-4 py-3 has-[:focus-visible]:outline has-[:focus-visible]:outline-[3px] has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-link",
                   showRight
                     ? "border-organik bg-organik-soft"
                     : showWrong
-                      ? "shake border-brick bg-brick-soft"
+                      ? "shake border-brick-text bg-brick-soft"
                       : isSelected
-                        ? "border-ink bg-cobalt-soft"
-                        : "border-edge bg-white hover:bg-cobalt-soft",
+                        ? "border-line bg-cobalt-soft"
+                        : "border-edge bg-surface hover:bg-cobalt-soft",
                 )}
               >
                 <input
                   type="radio"
                   name={`kuis-${question.id}`}
-                  className="size-5 shrink-0 accent-cobalt"
+                  className="size-5 shrink-0 accent-link"
                   checked={isSelected}
                   onChange={() => setSelected(optionIndex)}
                 />
@@ -82,7 +82,7 @@ export function QuizStep({ questions, onFinish }: QuizStepProps) {
                 ) : null}
                 {showWrong ? (
                   <>
-                    <CloseIcon className="pop size-5 shrink-0 text-brick" />
+                    <CloseIcon className="pop size-5 shrink-0 text-brick-text" />
                     <span className="sr-only">Jawabanmu salah</span>
                   </>
                 ) : null}
@@ -99,7 +99,7 @@ export function QuizStep({ questions, onFinish }: QuizStepProps) {
             "fade-up rounded-plate border-2 p-4 text-sm",
             isCorrect
               ? "border-organik bg-organik-soft text-ink"
-              : "border-brick bg-brick-soft text-brick-ink",
+              : "border-brick-text bg-brick-soft text-brick-ink",
           )}
         >
           <p className="font-bold">{isCorrect ? "Benar." : "Belum tepat."}</p>

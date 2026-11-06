@@ -17,11 +17,11 @@ import { cn } from "@/lib/utils";
 
 const STEPS = [
   {
-    title: "Pilih slot",
-    text: "Pilih lokasi dan slot tong yang kamu pindai: Organik, Plastik/Kertas, atau Residu.",
+    title: "Pindai QR",
+    text: "Pindai QR yang tertempel di tong. Lokasi dan jenis tong (Organik, Plastik/Kertas, atau Residu) terbaca otomatis.",
   },
-  { title: "Kuis kilat", text: "Jawab 2 pertanyaan acak tentang kategori slot itu." },
-  { title: "Foto bukti", text: "Unggah foto sampah yang dibuang dan pilih jenis sampahnya." },
+  { title: "Kuis kilat", text: "Jawab 2 pertanyaan acak tentang jenis tong itu." },
+  { title: "Foto bukti", text: "Foto sampah yang dibuang langsung dengan kamera, lalu pilih jenis sampahnya." },
   {
     title: "Poin masuk",
     text: `Poin dihitung otomatis. Scan berikutnya terbuka setelah jeda ${COOLDOWN_MINUTES} menit.`,
@@ -35,7 +35,7 @@ const STEPS = [
 // Bagian gelap: ritme halaman berganti dari panduan terang ke aturan yang harus dibaca teliti.
 export function PointRules() {
   return (
-    <section id="aturan-poin" className="bg-ink text-white" aria-labelledby="judul-aturan">
+    <section id="aturan-poin" className="bg-night text-white" aria-labelledby="judul-aturan">
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-12 px-4 py-14 sm:px-6 md:py-20 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
         <div>
           <h2 id="judul-aturan" className="text-5xl sm:text-6xl">
@@ -120,7 +120,7 @@ export function PointRules() {
                   key={key}
                   className="flex items-start gap-3 rounded-plate bg-brick-soft px-4 py-3 text-brick-ink"
                 >
-                  <span className="shrink-0 font-display text-3xl font-extrabold leading-none text-brick">
+                  <span className="shrink-0 font-display text-3xl font-extrabold leading-none text-brick-text">
                     -{PENALTY_POINTS[key]}
                   </span>
                   <span className="pt-0.5">{PENALTY_LABEL[key]}</span>

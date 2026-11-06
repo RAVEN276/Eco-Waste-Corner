@@ -4,12 +4,12 @@ const LINKS = [
   { href: "/#edukasi", label: "Panduan memilah" },
   { href: "/#aturan-poin", label: "Aturan poin" },
   { href: "/map", label: "Peta lokasi" },
-  { href: "/scan", label: "Scan slot tong" },
+  { href: "/scan", label: "Scan QR tong" },
 ];
 
 export function Footer() {
   return (
-    <footer className="bg-ink text-white">
+    <footer className="bg-night text-white">
       <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-10 sm:px-6 md:flex-row md:items-end md:justify-between">
         <div className="max-w-md">
           <p className="font-display text-3xl font-extrabold leading-none">Eco Waste Corner UPJ</p>
