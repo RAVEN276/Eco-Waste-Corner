@@ -80,7 +80,7 @@ export function BadgesPanel() {
               </span>
               <div>
                 <p className="font-bold">{badge.label}</p>
-                <p className={cn("text-sm", unlocked ? "text-on-pick/80" : "text-muted")}>
+                <p className={cn("text-sm", unlocked ? "text-on-pick/90" : "text-muted")}>
                   {badge.description}
                 </p>
                 <p className="mt-1 text-xs font-bold">

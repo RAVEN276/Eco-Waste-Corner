@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/Button";
 import { ScrollLinked } from "@/components/ui/ScrollLinked";
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import { useCooldown } from "@/hooks/useCooldown";
-import { useLocations } from "@/hooks/useRemoteList";
+import { useLocations, useQuizBank } from "@/hooks/useRemoteList";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useStepHistory } from "@/hooks/useStepHistory";
 import { pickQuestions } from "@/lib/data/quiz";
@@ -38,6 +38,7 @@ export function ScanFlow() {
   const retryProfile = useUserStore((s) => s.retryProfile);
   const cooldown = useCooldown();
   const locations = useLocations();
+  const quiz = useQuizBank();
 
   // Halaman dibuka dari QR lewat kamera bawaan ponsel: lokasi dan tong sudah ada di tautan.
   const linkHadParams = searchParams.has(QR_PARAM_LOCATION) || searchParams.has(QR_PARAM_BIN);
@@ -108,12 +109,19 @@ export function ScanFlow() {
     );
   }
 
+  let quizNotice: string | null = null;
+  if (quiz.status === "error") {
+    quizNotice = "Soal kuis dari server gagal dimuat, jadi kuis memakai soal bawaan aplikasi.";
+  } else if (quiz.status === "ready" && quiz.source === "default") {
+    quizNotice = "Bank soal di Firestore belum terisi lengkap, jadi kuis memakai soal bawaan aplikasi.";
+  }
+
   const category = target?.category ?? null;
   const location = locations.items.find((l) => l.locationId === target?.locationId) ?? null;
 
   const startQuiz = () => {
-    if (!category || !location || cooldown.active) return;
-    setQuestions(pickQuestions(category));
+    if (!category || !location || cooldown.active || quiz.status === "loading") return;
+    setQuestions(pickQuestions(quiz.items, category));
     setQuizCorrect(0);
     setSubmitError(null);
     stepHistory.enter();
@@ -222,6 +230,8 @@ export function ScanFlow() {
                 initialNotice={linkNotice}
                 onStart={startQuiz}
                 blocked={cooldown.active}
+                quizLoading={quiz.status === "loading"}
+                quizNotice={quizNotice}
               />
             ) : null}
 

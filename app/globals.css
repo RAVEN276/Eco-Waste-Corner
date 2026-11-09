@@ -11,20 +11,22 @@
  *  paper     latar halaman            surface  latar kartu, input, dialog
  *  ink       teks dan ikon            line     garis struktur (border-line, tegas di terang, sedang di gelap)
  *  night     blok gelap permanen (footer, aturan poin) dan teks gelap di atas warna terang
- *  pick      status terpilih (tab, saringan, badge, menu aktif): kebalikan dari permukaan sekitarnya,
- *            jadi gelap di tema terang dan terang di tema gelap, dengan teks on-pick
+ *  pick      status terpilih (tab, saringan, badge, menu aktif): menonjol dari permukaan sekitarnya
+ *            dan berbeda dari cobalt (tombol aksi), jadi gelap di tema terang dan biru langit di
+ *            tema gelap, dengan teks on-pick
  *  plate     plat hasil scan yang sah (night di terang, cobalt di gelap supaya tetap jadi titik fokus)
- *  link      teks aksi dan angka bermerek (cobalt di tema terang, cobalt muda di tema gelap)
+ *  link      teks aksi dan angka bermerek (cobalt di tema terang, biru langit di tema gelap)
+ *  cobalt    merek: bidang hero, tombol utama, plat. Sedikit lebih terang di tema gelap supaya tetap
+ *            menyala di atas dasar biru pekat, dan selalu dengan teks putih
  *  brick-text  teks dan ikon status galat (brick tetap hanya untuk blok terisi)
  *
- * Warna tetap di kedua tema: cobalt (merek, selalu dengan teks putih), organik, kertas (selalu
- * blok terisi dengan teks night), brick (blok terisi), mist (teks di atas night), tint (hover
- * tombol putih permanen).
+ * Warna tetap di kedua tema: organik, kertas (selalu blok terisi dengan teks night), brick (blok
+ * terisi), mist (teks di atas night dan cobalt), tint (hover tombol putih permanen).
  *
- * Tema gelap ("stasiun pilah di malam hari"): alasan tiap keputusan ada di DESIGN.md. Ringkasnya,
- * latarnya arang netral (bukan navy) dan teksnya putih hangat dari kertas tema terang, supaya satu-
- * satunya rona dingin adalah cobalt merek dan warna tong tetap jadi kode data. Garis struktur
- * dibuat sedang (bukan lavender terang) supaya kartu tidak tampak seperti kerangka kawat.
+ * Tema gelap ("papan stasiun di malam hari"): alasan tiap keputusan ada di DESIGN.md. Ringkasnya,
+ * dasarnya biru-tinta pekat dengan beberapa tingkat lapisan, cobalt terang sebagai bidang warna,
+ * teks putih hangat, dan warna tong sebagai tanda (kuning dan hijau di atas biru pekat, seperti
+ * papan penanda stasiun). Aksen tunggalnya cobalt, jadi tidak ada ungu atau lavender.
  */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
@@ -40,6 +42,8 @@
   --c-edge: #747b8f;
   --c-rule: #d6d4cb;
   --c-link: #2438a6;
+  --c-cobalt: #2438a6;
+  --c-cobalt-deep: #18277c;
   --c-cobalt-soft: #e4e8f8;
   --c-cobalt-press: #cfd6f2;
   --c-organik-soft: #ddf1e5;
@@ -66,36 +70,38 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --c-paper: #0f1217;
-  --c-surface: #171b22;
-  --c-ink: #f0eee7;
-  --c-line: #6a7080;
-  --c-night: #07080b;
-  --c-muted: #aeb2bd;
-  --c-edge: #868b99;
-  --c-rule: #272b34;
-  --c-link: #86a2ff;
-  --c-cobalt-soft: #151a33;
-  --c-cobalt-press: #1d2548;
-  --c-organik-soft: #11291b;
-  --c-kertas-soft: #35290a;
-  --c-residu: #4d5361;
-  --c-residu-soft: #21242c;
-  --c-brick-soft: #3a1917;
-  --c-brick-ink: #ffc9c3;
-  --c-brick-text: #ff9a90;
-  --c-map-ground: #171b22;
-  --c-map-green: #12301f;
-  --c-map-building: #232831;
-  --c-map-road: #2e343f;
-  --c-pick: #f0eee7;
-  --c-on-pick: #0f1217;
-  --c-pick-hover: #d9d6cc;
-  --c-plate: #2438a6;
+  --c-paper: #0a0f22;
+  --c-surface: #141c3a;
+  --c-ink: #f4f1e8;
+  --c-line: #5d6b9a;
+  --c-night: #050816;
+  --c-muted: #a9b2cf;
+  --c-edge: #7886b3;
+  --c-rule: #1f2a52;
+  --c-link: #7fb2ff;
+  --c-cobalt: #2d43c8;
+  --c-cobalt-deep: #2438a6;
+  --c-cobalt-soft: #0f1a52;
+  --c-cobalt-press: #18267a;
+  --c-organik-soft: #0f2d27;
+  --c-kertas-soft: #33290f;
+  --c-residu: #505769;
+  --c-residu-soft: #1b2340;
+  --c-brick-soft: #331420;
+  --c-brick-ink: #ffcfd0;
+  --c-brick-text: #ff9aa0;
+  --c-map-ground: #141c3a;
+  --c-map-green: #0f2d27;
+  --c-map-building: #1d2750;
+  --c-map-road: #2a3566;
+  --c-pick: #7fb2ff;
+  --c-on-pick: #050816;
+  --c-pick-hover: #a3c7ff;
+  --c-plate: #2d43c8;
 
-  --shadow-ink: #04050a;
-  --focus-ring: #86a2ff;
-  --focus-halo: #0f1217;
+  --shadow-ink: #1c2c80;
+  --focus-ring: #7fb2ff;
+  --focus-halo: #0a0f22;
 }
 
 @theme inline {
@@ -114,8 +120,8 @@
   --color-pick-hover: var(--c-pick-hover);
   --color-plate: var(--c-plate);
 
-  --color-cobalt: #2438a6;
-  --color-cobalt-deep: #18277c;
+  --color-cobalt: var(--c-cobalt);
+  --color-cobalt-deep: var(--c-cobalt-deep);
   --color-cobalt-soft: var(--c-cobalt-soft);
   --color-cobalt-press: var(--c-cobalt-press);
   --color-tint: #e4e8f8;
@@ -371,22 +377,6 @@ body {
 
 .reveal-r {
   animation: reveal-in-right 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-  animation-delay: var(--delay, 0ms);
-}
-
-/* Batang meter kapasitas tumbuh dari bawah, jadi tinggi-rendahnya terbaca sebagai "terisi". */
-@keyframes grow-y {
-  from {
-    transform: scaleY(0);
-  }
-  to {
-    transform: scaleY(1);
-  }
-}
-
-.grow-y {
-  transform-origin: bottom;
-  animation: grow-y 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
   animation-delay: var(--delay, 0ms);
 }
 

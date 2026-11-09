@@ -2,9 +2,16 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { isFirebaseConfigured } from "@/lib/firebase/config";
-import { DEFAULT_LOCATIONS, fetchLocations, type CollectionResult } from "@/lib/firebase/firestore";
+import { DEFAULT_QUIZ_BANK } from "@/lib/data/quiz";
+import {
+  DEFAULT_LOCATIONS,
+  clearQuizCache,
+  fetchLocations,
+  fetchQuizQuestions,
+  type CollectionResult,
+} from "@/lib/firebase/firestore";
 import { describeFirebaseError } from "@/lib/firebase/errors";
-import type { CampusLocation, DataSource } from "@/lib/types";
+import type { CampusLocation, DataSource, QuizQuestion } from "@/lib/types";
 
 export type ListStatus = "loading" | "ready" | "error";
 
@@ -90,4 +97,15 @@ function useRemoteList<T>(
 
 export function useLocations(): ListState<CampusLocation> {
   return useRemoteList(fetchLocations, DEFAULT_LOCATIONS);
+}
+
+/** Bank soal kuis. Muat ulang melewati cache 15 menitnya, supaya tombol coba lagi benar-benar membaca ulang. */
+export function useQuizBank(): ListState<QuizQuestion> {
+  const list = useRemoteList(fetchQuizQuestions, DEFAULT_QUIZ_BANK);
+  const { reload } = list;
+  const reloadFresh = useCallback(() => {
+    clearQuizCache();
+    reload();
+  }, [reload]);
+  return { ...list, reload: reloadFresh };
 }

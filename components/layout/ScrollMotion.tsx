@@ -19,7 +19,6 @@ const ENTRANCES = new Set([
   "reveal-in-left",
   "reveal-in-right",
   "fill-x",
-  "grow-y",
 ]);
 
 // Animasi mulai sedikit sebelum bagian terlihat (10% tinggi layar di bawah tepi bawah), supaya

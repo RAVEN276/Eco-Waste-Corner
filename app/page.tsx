@@ -38,7 +38,7 @@ export default function HomePage() {
             <h2 id="judul-lokasi" className="text-5xl sm:text-6xl">
               Dua titik Eco Waste Corner di kampus
             </h2>
-            <p className="mt-4 max-w-md text-lg">Cek kapasitas tong sebelum berjalan ke sana.</p>
+            <p className="mt-4 max-w-md text-lg">Lihat letaknya di denah, foto areanya, dan rute jalan kaki ke tiap titik.</p>
             <Link href="/map" className={buttonClasses("light", "lg", "mt-6")}>
               Lihat peta lokasi
             </Link>

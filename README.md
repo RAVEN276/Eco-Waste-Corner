@@ -21,12 +21,27 @@ Perintah lain: `npm run build`, `npm run lint`, `npm run seed`, `npm run qr` (me
    Deploy dengan Firebase CLI: `npx firebase-tools login`, lalu `npx firebase-tools deploy --only firestore:rules` (proyek sudah diatur di `.firebaserc`). Kamu juga bisa menempel isi file itu di tab _Rules_ pada Console.
 
 3. **Firebase Storage tidak dipakai** (berbayar). Foto bukti disimpan di Firestore, lihat bagian Foto bukti.
-4. **Data awal** (`locations`):
+4. **Data awal** (`locations` dan `quizQuestions`):
    - Firebase Console > Project settings > Service accounts > _Generate new private key_, simpan di luar repo.
    - PowerShell: `$env:GOOGLE_APPLICATION_CREDENTIALS="C:\path\key.json"; npm run seed`
-   - Data awal ada di `lib/data/seed.json`. Ganti status kapasitas, `imageUrl`, dan `routeSteps` lewat Firestore Console.
+   - Lokasi ada di `lib/data/seed.json`, soal kuis di `lib/data/quiz-bank.json`. Ganti `imageUrl` dan `routeSteps` lewat Firestore Console.
+   - `npm run seed` menimpa dokumen lokasi dengan isi `seed.json`.
+   - Soal kuis hanya dibuat bila belum ada, jadi soal yang kamu sunting di Console tidak tertimpa. Tambahkan `-- --overwrite-quiz` untuk mengganti semuanya dengan soal bawaan.
+   - Tanpa service account key, data bisa diisi lewat Firebase CLI: `npx firebase-tools login`, lalu server MCP-nya (`npx firebase-tools mcp --only firestore`) punya alat `firestore_add_document` dan `firestore_update_document`.
 
 Sebelum `locations` terisi, peta menampilkan data contoh dengan label peringatan.
+
+### Bank soal kuis
+
+Soal kuis dibaca dari koleksi `quizQuestions`, satu dokumen per soal, dengan id yang stabil (misalnya `org-1`). Rules mengizinkan baca untuk semua orang dan menolak semua tulis dari aplikasi, jadi soal hanya diubah lewat Firestore Console atau Admin SDK. Tiap dokumen berisi:
+
+- `category`: `organik`, `plastik_kertas`, atau `residu`.
+- `question`: teks pertanyaan.
+- `options`: array berisi minimal dua pilihan jawaban.
+- `answerIndex`: nomor pilihan yang benar, dihitung dari 0.
+- `explanation`: penjelasan yang tampil setelah menjawab.
+
+Dokumen yang rusak (kategori tak dikenal, pilihan kurang, `answerIndex` di luar pilihan) dilewati. Kalau tiap tong tidak punya setidaknya 2 soal yang valid, kuis memakai soal bawaan dari `lib/data/quiz-bank.json` dan menampilkan pemberitahuan. Aplikasi membaca seluruh bank sekali per 15 menit per tab, jadi soal yang baru disunting bisa butuh beberapa menit untuk muncul.
 
 ## Skema Firestore
 
@@ -35,7 +50,8 @@ Sebelum `locations` terisi, peta menampilkan data contoh dengan label peringatan
 | `users/{uid}`            | `uid`, `email`, `nama`, `prodi`, `poin` (hasil scan, bisa ditukar), `poinJSDP` (hasil penukaran, syarat kelulusan), `totalScan`, `cooldownUntil`, `createdAt`                                                                                                 |
 | `exchanges/{exchangeId}` | `exchangeId`, `userId`, `poinSpent`, `jsdpGained`, `timestamp`                                                                                                                                                                                                |
 | `scans/{scanId}`         | `scanId`, `userId`, `categoryBin`, `location`, `locationName`, `photoUrl`, `photoHash`, `itemType`, `quizAnswered`, `quizCorrect`, `quizTotal`, `pointsEarned` (bisa negatif), `status` (`verified`, `unverified`, `penalized`), `penaltyReason`, `timestamp` |
-| `locations/{locationId}` | `locationId`, `name`, `coordinates` (`x`, `y` dalam persen pada denah), `statusCapacity` (`Kosong`, `Terisi`, `Penuh`), `imageUrl`, `routeSteps`                                                                                                              |
+| `locations/{locationId}` | `locationId`, `name`, `coordinates` (`x`, `y` dalam persen pada denah), `imageUrl`, `routeSteps`                                                                                                              |
+| `quizQuestions/{questionId}` | `category`, `question`, `options`, `answerIndex`, `explanation` |
 | `scanPhotos/{scanId}`    | `scanId`, `userId`, `mime`, `dataUrl`, `timestamp`                                                                                                                                                                                                            |
 
 ## Kode QR tong
@@ -72,7 +88,7 @@ Foto disimpan di Firestore, bukan Storage. Satu dokumen maksimal 1 MiB, jadi `li
 | `components/`             | `landing`, `auth`, `dashboard`, `scan`, `map`, `layout`, `ui`, `providers`        |
 | `store/`                  | Zustand: `useUserStore` (auth, poin, poin JSDP, cooldown)                         |
 | `hooks/`                  | `useCooldown`, `useRequireAuth`, `useRemoteList`, `useScanHistory`, `useExchangeHistory`, `useSignOut`, `useCameraStream` |
-| `scripts/`                | `seed-firestore.mjs` (isi lokasi), `generate-qr.mjs` (enam QR tong), `reset-accounts.mjs` (reset semua akun ke 0), `clear-history.mjs` (hapus riwayat pembuangan semua user) |
+| `scripts/`                | `seed-firestore.mjs` (isi lokasi dan soal kuis), `generate-qr.mjs` (enam QR tong), `reset-accounts.mjs` (reset semua akun ke 0), `clear-history.mjs` (hapus riwayat pembuangan semua user) |
 | `DESIGN.md`               | Arah visual: identitas, palet dan kontras, tipografi, dial, komposisi halaman     |
 | `lib/firebase/`           | Config, auth, firestore, pemetaan error                                           |
 | `lib/validation/email.ts` | `isValidEmail`, panjang minimal kata sandi, pesan validasi                        |

@@ -33,18 +33,18 @@ export function Hero() {
     >
       <div className="mx-auto grid max-w-6xl gap-10 px-4 pb-12 pt-10 sm:px-6 md:grid-cols-[1.05fr_1fr] md:items-center md:gap-12 md:pb-16 md:pt-14">
         <div className="fade-up">
-          <h1 id="judul-hero" className="text-6xl sm:text-7xl lg:text-8xl">
-            Pilah sampah di kampus, kumpulkan{" "}
+          <h1 id="judul-hero" className="text-5xl sm:text-6xl lg:text-7xl">
+            Buang sampah sambil belajar, tukar jadi{" "}
             <mark
-              className="wipe mt-[0.3em] inline-block bg-white px-2 leading-none text-cobalt"
+              className="wipe mt-[0.3em] inline-block rounded-ctl bg-night px-3 pb-1 leading-none text-white"
               style={delay(450)}
             >
-              poin.
+              poin JSDP.
             </mark>
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-relaxed">
-            Pindai QR di tong, jawab 2 soal kuis, lalu foto sampahmu langsung dengan kamera. Tukar {EXCHANGE_POIN} poin
-            jadi {EXCHANGE_JSDP} poin JSDP, syarat kelulusanmu.
+            Pindai QR di tong, jawab 2 soal kuis, lalu foto sampahmu langsung dengan kamera. Scan yang benar menambah
+            poin, dan setiap {EXCHANGE_POIN} poin bisa ditukar jadi {EXCHANGE_JSDP} poin JSDP, syarat kelulusanmu.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Button href={signedIn ? "/scan" : "/login?next=/scan"} variant="light" size="lg">

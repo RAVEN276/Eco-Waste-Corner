@@ -1,7 +1,5 @@
 export type BinCategory = "organik" | "plastik_kertas" | "residu";
 
-export type CapacityStatus = "Kosong" | "Terisi" | "Penuh";
-
 export type ScanStatus = "verified" | "unverified" | "penalized";
 
 export type PenaltyReason = "item_mismatch" | "duplicate_photo" | "cooldown_violation";
@@ -59,7 +57,6 @@ export interface CampusLocation {
   locationId: string;
   name: string;
   coordinates: LocationCoordinates;
-  statusCapacity: CapacityStatus;
   imageUrl: string;
   routeSteps: string[];
 }

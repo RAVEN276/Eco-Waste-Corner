@@ -145,6 +145,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Quiz bank. The correct answers already ship in the client bundle, so reading
+    // is public. Managers edit questions in the Firebase Console or through the
+    // Admin SDK (npm run seed), never from the app.
+    match /quizQuestions/{questionId} {
+      allow read: if true;
+      allow write: if false;
+    }
 
   }
 }
