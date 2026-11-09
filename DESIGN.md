@@ -44,7 +44,7 @@ Inti: `cobalt` (merek dan aksi utama) dan `ink` (teks dan permukaan gelap) di at
 | `kertas-soft` | #FCEFC4 | latar lembut plastik/kertas | ink 15.4:1 |
 | `residu` | #363C4A | tong residu | putih 11.0:1 |
 | `residu-soft` | #E4E6EB | latar lembut residu | ink 14.1:1 |
-| `brick` | #B42318 | status saja: penuh, penalti | putih 6.6:1 |
+| `brick` | #B42318 | status saja: galat, penalti | putih 6.6:1 |
 | `brick-soft` | #FBE9E7 | latar peringatan | brick-ink 9.1:1 |
 | `brick-ink` | #7A1810 | teks di atas brick-soft | 9.1:1 |
 
@@ -52,32 +52,35 @@ Teks kecil di latar terang memakai `ink`, `muted`, `cobalt`, atau `organik`. `ke
 
 ## Tema gelap
 
-Arahnya: stasiun pilah di malam hari. Dial sama dengan tema terang (ENERGY 3 / RHYTHM 3 / MOTION 3). Pengguna memilih lewat tombol di navbar; selama belum memilih, tema mengikuti pengaturan sistem (`lib/theme.ts`, `components/layout/ThemeToggle.tsx`). Nilainya ada di blok `:root[data-theme="dark"]` di `app/globals.css`, dan komponen memakainya lewat token yang sama, tanpa varian `dark:` untuk warna. Alasan tema ini ada: tidak ada alasan produk untuk mengunci satu tema, dan mahasiswa membuka aplikasi di ponsel pada jam kampus yang berbeda-beda, jadi pilihannya diserahkan ke pengguna.
+Arahnya: papan stasiun di malam hari. Dial sama dengan tema terang (ENERGY 3 / RHYTHM 3 / MOTION 3). Pengguna memilih lewat tombol di navbar, dan selama belum memilih tema mengikuti sistem (`lib/theme.ts`, `components/layout/ThemeToggle.tsx`). Nilainya ada di blok `:root[data-theme="dark"]` di `app/globals.css`, dan komponen memakai token yang sama tanpa varian `dark:` untuk warna. Tidak ada alasan produk untuk mengunci satu tema, dan mahasiswa membuka aplikasi pada jam yang berbeda-beda, jadi pilihannya diserahkan ke pengguna.
 
-Versi pertama serba navy dengan aksen periwinkle. Itu dibuang karena cobalt merek hilang di tengah rona yang sama, semua kartu berbingkai lavender yang sama sehingga tampak seperti kerangka kawat, dan paletnya terbaca sebagai biru-ungu bawaan. Keputusan sekarang, satu alasan per baris:
+Dua versi sebelumnya dibuang. Yang pertama serba navy dengan aksen periwinkle dan garis lavender: generik (biru-ungu bawaan) dan kartunya tampak seperti kerangka kawat. Yang kedua arang netral: satu lempeng abu-abu (lapisan hanya berbeda 1,09:1), cobalt terasa asing di atas abu netral, dan status terpilih berupa blok krem yang menyilaukan seperti potongan tema terang yang tertempel.
+
+Konsepnya sekarang: dasar biru-tinta pekat (rona yang sama dengan `ink` merek), cobalt terang sebagai bidang warna, putih hangat sebagai teks, dan kuning serta hijau tong sebagai tanda. Biru pekat dengan putih dan kuning adalah bahasa papan penanda stasiun dan jalan, dan warna tong justru paling menonjol di atasnya. Aksen tunggalnya cobalt, jadi tidak ada ungu atau lavender (rona dijaga sekitar 225 derajat, biru langit sekitar 215).
 
 | Token | Hex | Alasan | Kontras |
 | --- | --- | --- | --- |
-| `paper` | #0F1217 | Latar arang netral, bukan navy, supaya cobalt jadi satu-satunya rona dingin dan warna tong tetap kode data | ink 16.2:1 |
-| `surface` | #171B22 | Kartu, input, dialog: satu tingkat di atas paper, ketinggian dibaca dari permukaan yang lebih terang | ink 14.9:1 |
-| `night` | #07080B | Blok permanen paling dalam (footer, aturan poin) dan teks gelap di atas kertas atau putih | ink 17.3:1 |
-| `ink` | #F0EEE7 | Putih hangat dari kertas tema terang, bukan putih biru | |
-| `muted` | #AEB2BD | Teks sekunder | 8.9:1 di paper, 8.1:1 di surface |
-| `line` | #6A7080 | Garis struktur sedang, bukan lavender terang. Kartu tidak tampak kerangka kawat, tetap lolos 3:1 untuk batas komponen | 3.8:1 di paper, 3.5:1 di surface |
-| `edge` | #868B99 | Batas kontrol (input, radio), lebih terang dari `line` | 5.5:1 di paper |
-| `rule` | #272B34 | Pemisah dekoratif saja | tidak untuk batas kontrol |
-| `link` | #86A2FF | Cobalt tidak bisa jadi teks di latar gelap (2.0:1), jadi versi muda untuk wordmark, angka besar, tautan, menu aktif. Rona digeser sedikit ke biru langit supaya tidak jadi lavender | 7.7:1 di paper, 7.1:1 di surface |
-| `cobalt-soft` | #151A33 | Pita bergaris cobalt (latihan memilah, judul peta): bagian tetap berganti latar seperti di tema terang | ink 14.7:1 |
-| `organik-soft` `kertas-soft` `residu-soft` | #11291B, #35290A, #21242C | Latar lembut kategori | ink 12.3:1 sampai 13.4:1 |
-| `residu` | #4D5361 | Dinaikkan dari tema terang supaya tong residu terbaca di atas arang | putih 7.7:1 |
-| `brick-soft` `brick-text` `brick-ink` | #3A1917, #FF9A90, #FFC9C3 | Galat dan penalti | 7.7:1 dan 10.8:1 |
-| `pick` `on-pick` | #F0EEE7, #0F1217 | Status terpilih (tab, saringan, badge, menu aktif, poin di navbar) adalah kebalikan permukaan sekitarnya: gelap di terang, terang di gelap. `bg-night` hampir hitam di atas hampir hitam tidak terbaca sebagai terpilih | 16.2:1 |
-| `plate` | #2438A6 | Plat hasil scan yang sah: cobalt di gelap supaya momen poin masuk tetap jadi titik fokus (di terang tetap night) | putih 9.6:1 |
-| `--shadow-ink` | #04050A | Bayangan solid hitam. Jelas di atas cobalt (2.1:1, hero dan plat latihan), samar di atas cobalt-soft (1.2:1), nyaris tak terlihat di atas arang (1.1:1), dan itu disengaja: di tema gelap ketinggian dibaca dari permukaan yang lebih terang, bukan bayangan | |
+| `paper` | #0A0F22 | Dasar biru-tinta pekat, satu rona dengan cobalt supaya hero tidak terasa asing | ink 16.8:1 |
+| `surface` | #141C3A | Kartu, input, dialog: satu tingkat di atas paper | ink 14.8:1 |
+| `night` | #050816 | Lapisan paling dalam (footer, aturan poin, baris judul tabel) dan teks gelap di atas kuning atau putih | ink 17.7:1 |
+| `cobalt-soft` | #0F1A52 | Pita biru royal pekat (latihan memilah, judul peta, pilihan terpilih): memberi ritme antarbagian tanpa warna baru | ink 14.4:1 |
+| `ink` | #F4F1E8 | Putih hangat dari kertas tema terang, bukan putih biru | |
+| `muted` | #A9B2CF | Teks sekunder | 9.0:1 di paper, 7.9:1 di surface |
+| `line` | #5D6B9A | Garis struktur sedang, bukan putih tebal: kartu tidak tampak seperti kerangka kawat, tetap lolos 3:1 | 3.7:1 di paper, 3.2:1 di surface, 3.1:1 di cobalt-soft |
+| `edge` | #7886B3 | Batas kontrol (input, radio), lebih terang dari `line` | 5.3:1 di paper, 4.7:1 di surface |
+| `rule` | #1F2A52 | Pemisah dekoratif saja | tidak untuk batas kontrol |
+| `link` | #7FB2FF | Biru langit untuk tautan, wordmark, angka besar, dan menu aktif. Cobalt tidak bisa jadi teks di latar gelap (2.5:1) | 8.8:1 di paper, 7.7:1 di surface |
+| `cobalt` | #2D43C8 | Merek di tema gelap, lebih terang dari #2438A6 supaya menyala di atas dasar pekat. Hover memakai `cobalt-deep` #2438A6 | putih 7.6:1, mist 4.7:1 |
+| `pick` dan `on-pick` | #7FB2FF dan #050816 | Status terpilih (tab, saringan, badge yang diraih, menu aktif, poin di navbar): biru langit dengan teks hampir hitam. Sengaja berbeda dari cobalt (tombol aksi), supaya menu aktif tidak tertukar dengan tombol utama | 9.2:1 |
+| `plate` | #2D43C8 | Plat hasil scan yang sah: cobalt supaya momen poin masuk tetap jadi titik fokus | putih 7.6:1 |
+| `organik-soft`, `kertas-soft`, `residu-soft` | #0F2D27, #33290F, #1B2340 | Latar lembut kategori | ink 13.1:1, 12.7:1, 13.7:1 |
+| `residu` | #505769 | Tong residu dinaikkan dari tema terang supaya terbaca di atas biru pekat | putih 7.2:1 |
+| `brick-soft`, `brick-text`, `brick-ink` | #331420, #FF9AA0, #FFCFD0 | Galat dan penalti: merah-tinta gelap, bukan marun keruh | 8.2:1 dan 12.0:1 |
+| `--shadow-ink` | #1C2C80 | Bayangan solid cobalt gelap. Hampir hitam tidak terlihat di atas biru pekat (1.05:1), sehingga plat utama tidak lagi terasa terangkat | 1.6:1 di atas paper dan cobalt |
 
-Tidak berubah di kedua tema: `cobalt` (blok terisi dengan teks putih), `organik`, `kertas` (blok terisi dengan teks `night`), `brick` (blok terisi), `mist` (teks di atas `night` dan cobalt), dan `tint` (hover tombol putih permanen). Ilustrasi tong memakai `stroke-ink`, jadi garisnya otomatis putih hangat di tema gelap.
+Tidak berubah di kedua tema: `organik` (#1E7A4B), `kertas` (#F4B81E, selalu blok terisi dengan teks `night`), `brick` (blok terisi), `mist` (teks di atas `night` dan cobalt), dan `tint` (hover tombol putih permanen). Ilustrasi tong dan barang memakai `stroke-ink`, jadi garisnya otomatis putih hangat; detail di atas isian putih atau kuning memakai `stroke-night` (lihat `ItemArt`).
 
-Aturan saat menambah komponen: jangan menulis hex atau `bg-night text-white` untuk status terpilih, pakai `bg-pick text-on-pick`. Periksa kontras di kedua tema dan di semua keadaan (terpilih, hover, galat, dialog), bukan hanya keadaan awal.
+Aturan saat menambah komponen: jangan menulis hex atau `bg-night text-white` untuk status terpilih, pakai `bg-pick text-on-pick`. Jangan menaruh dua biru yang hampir sama berdampingan untuk fungsi berbeda (pilihan terpilih versus tombol aksi). Periksa kontras di kedua tema dan di semua keadaan (terpilih, hover, galat, dialog, kamera), bukan hanya keadaan awal.
 
 ## Tipografi
 
@@ -97,7 +100,7 @@ Aturan saat menambah komponen: jangan menulis hex atau `bg-night text-white` unt
 - Beranda (urutan dan ritme sengaja berganti): hero cobalt penuh dengan panggung tong, baris ink empat langkah scan, lalu bagian Edukasi (satu pembungkus `#edukasi`, lima bagian berganti latar supaya tidak monoton: panduan tiga kolom di paper dengan tong mencuat dari kepala kolom, tiga pertanyaan penentu di pita putih, tabel kesalahan umum di paper, kamus sampah yang bisa dicari di pita putih, latihan memilah interaktif di cobalt-soft), dua bidang SDG 12 (cobalt dan paper), bagian gelap aturan poin, penutup cobalt dengan titik A dan B. Belajar dulu, baru berlatih: latihan sengaja di ujung Edukasi.
 - Login: dua bidang penuh, cobalt dengan panggung tong di kiri dan formulir di kanan.
 - Scan: pita cobalt berisi judul dan tiga tong kecil, lalu satu kolom fokus dan penanda langkah. Langkah pertama bukan memilih, tapi memindai QR di tong: kamera yang langsung menyala tanpa tombol buka atau tutup (mati sendiri saat QR terbaca atau pengguna pergi), dengan bingkai bidik, selebar plat di desktop dan menempel ke tepi plat dengan rasio 3:4 di ponsel (halaman digeser sampai kamera terlihat penuh), lalu kartu hasil bacaan berwarna tong (tong, lokasi, poin dasar) dengan tombol mulai kuis dan pindai ulang. Bingkai kamera selalu gelap di kedua tema (isinya gambar kamera), dengan penjelasan dan langkah berikutnya saat kamera ditolak, tidak ada, atau bukan https. Foto bukti memakai kamera ponsel lewat input berkas, bukan bingkai kamera. Kuis dan foto punya tombol "Kembali ke pindai QR", dan tombol Back browser melakukan hal yang sama.
-- Peta: pita cobalt-soft untuk judul, lalu denah dan daftar titik.
+- Peta: pita cobalt-soft untuk judul, lalu denah di kiri dan satu kartu per titik di kanan. Kartu memuat huruf titik, nama, tiga tong dengan namanya (informasi tetap, tanpa status), dan tombol ke foto area dan rute. Di ponsel urutannya denah lalu kartu. Penanda denah berwarna cobalt karena ia tombol aksi, bukan penanda kondisi.
 - Dashboard: papan skor cobalt dengan angka poin raksasa dan satu tombol (scan), lalu panel tukar poin (kolom ink berisi kurs, kolom putih berisi jumlah paket, pratinjau saldo, dan dialog konfirmasi karena tidak bisa dibatalkan), lalu jalur badge, lalu riwayat. Panel tukar di dashboard karena di sanalah saldo dan riwayat berada. Dari hasil scan ada pintasan ke panel itu saat poin sudah cukup. Dashboard punya satu tombol scan saja (di papan skor), jangan menambah tombol scan lain di panel tukar atau riwayat.
 - Mobile: bilah navigasi bawah (Beranda, Peta, Scan, Dashboard atau Masuk), ruang di bawah konten disisakan setinggi bilah itu.
 
@@ -113,11 +116,10 @@ Kosakata gerak sengaja pendek supaya terasa seperti satu sistem, bukan tumpukan 
 | Mengulang | `ScrollMotion` (`components/layout/ScrollMotion.tsx`), penanda `data-replay` | semua halaman | Supaya halaman tetap terasa hidup selama dibaca, bukan hanya saat dibuka. Bagian yang sudah jauh di luar layar (30% tinggi layar) dijeda di awal animasinya (tidak terlihat), lalu diputar dari awal saat masuk lagi dari bawah (dimulai 10% tinggi layar sebelum terlihat, supaya pada gulir pelan animasinya sudah jalan saat tampak). Bagian yang masuk dari atas (digulir naik) langsung tampil penuh: isinya sudah dibaca, dan memutarnya dari kosong membuatnya berkedip di tepi layar. Berlaku untuk `.reveal*`, `.fade-up`, `.land`, dan elemen `data-replay`, termasuk gerak di dalamnya. |
 | Bilah progres | `ScrollProgress` di `Navbar` | semua halaman | Halaman panjang (beranda belasan layar, dashboard beberapa layar), jadi bilah di tepi atas navbar memberi tahu sudah sejauh mana membaca. Dijalankan CSS (linimasa gulir akar halaman), jadi mulus dan tidak tertinggal dari gulir. Kosong di halaman yang muat dalam satu layar, dan tidak tampil di browser tanpa linimasa gulir. |
 | Plat utama mundur | `ScrollLinked` | panggung hero, papan skor dashboard, judul peta, pita scan | Saat plat utama sebuah halaman digulir lewat, ia mengecil sedikit (0,94 sampai 0,97) dan turun pelan. Perhatian berpindah dari plat itu ke isi di bawahnya (Edukasi, panel tukar, denah, form), dan ada kesan kedalaman. Satu perilaku yang sama di tiap halaman supaya terasa sebagai satu sistem. Dijalankan CSS (`animation-timeline`), bukan JavaScript: nilai yang dihitung JavaScript tertinggal satu bingkai dari gulir dan elemennya bergetar saat digulir pelan. |
-| Tumbuh | `.grow-y` di `CapacityBadge` | daftar titik peta, dialog lokasi | Batang meter kapasitas tumbuh dari bawah satu per satu, jadi tinggi-rendahnya terbaca sebagai "terisi". |
 | Menempel | `sticky` di pembungkus `Stepper` | scan | Form foto bukti cukup panjang, jadi penanda langkah tetap terlihat tepat di bawah navbar saat digulir. |
 | Tong naik | `ScrollLinked` | kepala tiga kolom panduan | Tong naik dari bawah kepala kolom seiring digulir (digeser 44 ke -28 px, dipotong tepi kepala kolom), jadi kode warna tiap kolom "muncul" tepat saat kolomnya dibaca. |
 | Hitung naik | `CountUp`, `AnimatedCounter` | angka poin dasar, skor latihan, poin hasil scan, saldo | Menarik mata ke angka inti produk. `CountUp` menghitung ulang dari 0 tiap kali angkanya kembali ke layar. Nilai akhir selalu ada di HTML dan teks pembaca layar. |
-| Sapu sorotan | `.wipe` | "poin." di judul hero | Menekankan konsep kunci tepat setelah judul tampil. |
+| Sapu sorotan | `.wipe` | "poin JSDP." di judul hero | Menekankan hasil akhir yang dicari mahasiswa (syarat kelulusan) tepat setelah judul tampil. Sorotannya plat `night` bertulisan putih, seperti papan penanda, bukan blok putih berteks biru. |
 | Berurutan | `.fade-up` dengan `--delay` | empat langkah di hero, baris riwayat, kartu login, panel umpan balik | Urutan gerak meniru urutan isi (langkah 1 sampai 4, baris dari atas). |
 | Isi bilah | `.fill-x` | penanda langkah scan, progres badge | Menunjukkan kemajuan. Bilah badge terisi tiap kali panelnya masuk layar. |
 | Getar dan membal | `.shake`, `.pop` | kuis, ikon jawaban di latihan memilah | Umpan balik jawaban yang tidak bergantung pada warna: jawaban kuis yang salah bergetar, ikon benar atau salah membal. |

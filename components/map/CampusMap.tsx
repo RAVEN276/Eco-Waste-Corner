@@ -1,14 +1,8 @@
 "use client";
 
 import { GlassCard } from "@/components/ui/Card";
-import type { CampusLocation, CapacityStatus } from "@/lib/types";
+import type { CampusLocation } from "@/lib/types";
 import { cn } from "@/lib/utils";
-
-const MARKER_TONE: Record<CapacityStatus, string> = {
-  Kosong: "bg-organik text-white",
-  Terisi: "bg-kertas text-night",
-  Penuh: "bg-brick text-white",
-};
 
 interface CampusMapProps {
   locations: CampusLocation[];
@@ -18,7 +12,8 @@ interface CampusMapProps {
 
 /**
  * Denah skematik, bukan hasil ukur: hanya menunjukkan posisi dua titik Eco Waste
- * Corner satu terhadap yang lain. Posisi penanda dari `coordinates` (persen).
+ * Corner satu terhadap yang lain. Posisi penanda dari `coordinates` (persen). Penanda berwarna cobalt karena
+ * ia tombol yang membuka detail titik.
  */
 export function CampusMap({ locations, selectedId, onSelect }: CampusMapProps) {
   return (
@@ -49,7 +44,7 @@ export function CampusMap({ locations, selectedId, onSelect }: CampusMapProps) {
             key={location.locationId}
             type="button"
             onClick={() => onSelect(location.locationId)}
-            aria-label={`${location.name}, kapasitas ${location.statusCapacity}. Buka detail`}
+            aria-label={`${location.name}. Buka detail`}
             aria-haspopup="dialog"
             style={{
               left: `${location.coordinates.x}%`,
@@ -58,7 +53,7 @@ export function CampusMap({ locations, selectedId, onSelect }: CampusMapProps) {
             }}
             className={cn(
               "land absolute flex size-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-ctl border-2 border-line font-display text-3xl font-extrabold leading-none transition-transform hover:scale-110",
-              MARKER_TONE[location.statusCapacity],
+              "bg-cobalt text-white",
               selected && "scale-110 ring-4 ring-ink ring-offset-2 ring-offset-surface",
             )}
           >

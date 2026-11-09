@@ -2,15 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CapacityBadge } from "@/components/map/CapacityBadge";
 import { buttonClasses } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
-import { InlineNotice } from "@/components/ui/States";
-import type { CampusLocation, DataSource } from "@/lib/types";
+import type { CampusLocation } from "@/lib/types";
 
 interface LocationDialogProps {
   location: CampusLocation | null;
-  source: DataSource;
   onClose: () => void;
 }
 
@@ -39,23 +36,13 @@ function LocationPhoto({ location }: { location: CampusLocation }) {
   );
 }
 
-export function LocationDialog({ location, source, onClose }: LocationDialogProps) {
+export function LocationDialog({ location, onClose }: LocationDialogProps) {
   return (
     <Dialog open={location !== null} onClose={onClose} title={location?.name ?? "Detail lokasi"}>
       {location ? (
         <div className="space-y-6">
           {/* key resets the image-failed state when switching locations */}
           <LocationPhoto key={location.locationId} location={location} />
-
-          <div>
-            <p className="text-sm font-bold text-muted">Status kapasitas tong</p>
-            <CapacityBadge status={location.statusCapacity} className="mt-1.5" />
-            {source === "default" ? (
-              <InlineNotice tone="warning" className="mt-3">
-                Status ini data contoh dan belum terhubung ke pembaruan langsung dari pengelola.
-              </InlineNotice>
-            ) : null}
-          </div>
 
           <div>
             <h3 className="text-3xl">Petunjuk rute jalan kaki</h3>

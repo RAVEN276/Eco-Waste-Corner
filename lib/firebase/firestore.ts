@@ -17,7 +17,9 @@ import {
 } from "firebase/firestore";
 import { getDb } from "@/lib/firebase/config";
 import { compressPhoto, hashFile } from "@/lib/photo";
+import { BIN_LIST } from "@/lib/data/bins";
 import { findWasteItem } from "@/lib/data/items";
+import { DEFAULT_QUIZ_BANK, QUESTIONS_PER_SCAN } from "@/lib/data/quiz";
 import seed from "@/lib/data/seed.json";
 import {
   COOLDOWN_MS,
@@ -32,16 +34,14 @@ import {
 import type {
   BinCategory,
   CampusLocation,
-  CapacityStatus,
   DataSource,
   ExchangeRecord,
+  QuizQuestion,
   ScanRecord,
   UserProfile,
 } from "@/lib/types";
 
 export const DEFAULT_LOCATIONS = seed.locations as CampusLocation[];
-
-const CAPACITY_VALUES: CapacityStatus[] = ["Kosong", "Terisi", "Penuh"];
 
 function toMillis(value: unknown): number | null {
   if (value instanceof Timestamp) return value.toMillis();
@@ -94,7 +94,6 @@ function mapExchange(id: string, data: DocumentData): ExchangeRecord {
 }
 
 function mapLocation(id: string, data: DocumentData): CampusLocation {
-  const capacity = CAPACITY_VALUES.includes(data.statusCapacity) ? data.statusCapacity : "Kosong";
   return {
     locationId: id,
     name: String(data.name ?? id),
@@ -102,7 +101,6 @@ function mapLocation(id: string, data: DocumentData): CampusLocation {
       x: Number(data.coordinates?.x ?? 50),
       y: Number(data.coordinates?.y ?? 50),
     },
-    statusCapacity: capacity,
     imageUrl: String(data.imageUrl ?? ""),
     routeSteps: Array.isArray(data.routeSteps) ? data.routeSteps.map(String) : [],
   };
@@ -380,8 +378,17 @@ export interface CollectionResult<T> {
   source: DataSource;
 }
 
+/**
+ * Tanpa koneksi, getDocs tidak menolak: ia mengembalikan hasil kosong dari cache. Itu bukan koleksi kosong,
+ * jadi dilaporkan sebagai server tidak terjangkau supaya pesannya tidak menyesatkan.
+ */
+function assertReachable(snap: { empty: boolean; metadata: { fromCache: boolean } }): void {
+  if (snap.empty && snap.metadata.fromCache) throw { code: "unavailable" };
+}
+
 export async function fetchLocations(): Promise<CollectionResult<CampusLocation>> {
   const snap = await getDocs(collection(getDb(), "locations"));
+  assertReachable(snap);
   if (snap.empty) return { items: DEFAULT_LOCATIONS, source: "default" };
   return {
     items: snap.docs
@@ -389,4 +396,54 @@ export async function fetchLocations(): Promise<CollectionResult<CampusLocation>
       .sort((a, b) => a.name.localeCompare(b.name)),
     source: "firestore",
   };
+}
+
+/* ------------------------------ quiz bank (read) --------------------------- */
+
+/** Dokumen yang rusak (kategori tak dikenal, opsi kurang, indeks jawaban di luar opsi) dilewati, bukan ditampilkan separuh. */
+function mapQuiz(id: string, data: DocumentData): QuizQuestion | null {
+  const category = BIN_LIST.find((bin) => bin.id === data.category)?.id;
+  const question = typeof data.question === "string" ? data.question.trim() : "";
+  const options = Array.isArray(data.options) ? data.options.map(String) : [];
+  const answerIndex = Number(data.answerIndex);
+  const valid =
+    category !== undefined &&
+    question !== "" &&
+    options.length >= 2 &&
+    Number.isInteger(answerIndex) &&
+    answerIndex >= 0 &&
+    answerIndex < options.length;
+  if (!valid) return null;
+  return { id, category, question, options, answerIndex, explanation: String(data.explanation ?? "") };
+}
+
+function coversEveryBin(questions: QuizQuestion[]): boolean {
+  return BIN_LIST.every((bin) => questions.filter((q) => q.category === bin.id).length >= QUESTIONS_PER_SCAN);
+}
+
+// Seluruh bank dibaca sekali per 15 menit per tab, bukan tiap membuka /scan.
+const QUIZ_CACHE_MS = 15 * 60 * 1000;
+let quizCache: { at: number; result: CollectionResult<QuizQuestion> } | null = null;
+
+export function clearQuizCache(): void {
+  quizCache = null;
+}
+
+/**
+ * Soal kuis dari koleksi `quizQuestions`. Bila koleksinya kosong atau ada tong yang soalnya kurang dari satu scan,
+ * hasilnya bank bawaan dengan `source: "default"`, supaya langkah kuis tidak pernah kosong.
+ */
+export async function fetchQuizQuestions(): Promise<CollectionResult<QuizQuestion>> {
+  if (quizCache && Date.now() - quizCache.at < QUIZ_CACHE_MS) return quizCache.result;
+  const snap = await getDocs(collection(getDb(), "quizQuestions"));
+  assertReachable(snap);
+  const questions = snap.docs
+    .map((d) => mapQuiz(d.id, d.data()))
+    .filter((q): q is QuizQuestion => q !== null)
+    .sort((a, b) => a.id.localeCompare(b.id));
+  const result: CollectionResult<QuizQuestion> = coversEveryBin(questions)
+    ? { items: questions, source: "firestore" }
+    : { items: DEFAULT_QUIZ_BANK, source: "default" };
+  quizCache = { at: Date.now(), result };
+  return result;
 }

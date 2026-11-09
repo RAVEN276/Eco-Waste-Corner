@@ -30,6 +30,9 @@ export function Footer() {
           ))}
         </ul>
       </div>
+      <div className="border-t border-white/25">
+        <p className="mx-auto max-w-6xl px-4 py-4 text-sm text-mist sm:px-6">Dibuat oleh Kelompok 1 dari ADV-E.</p>
+      </div>
     </footer>
   );
 }

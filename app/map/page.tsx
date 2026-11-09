@@ -19,8 +19,8 @@ export default function MapPage() {
           >
             <h1 className="fade-up text-6xl sm:text-7xl lg:text-8xl">Peta Eco Waste Corner</h1>
             <p className="fade-up mt-4 max-w-2xl text-lg" style={{ ["--delay" as string]: "120ms" }}>
-              Spot A dekat Pantry Kantin dan Spot B dekat Parkiran Motor. Ketuk titik pada denah
-              untuk melihat kapasitas tong dan rute jalan kaki.
+              Tiap titik punya tiga tong: Organik, Plastik / Kertas, dan Residu. Ketuk titik di denah, atau
+              pilih dari daftar, untuk melihat foto area dan rute jalan kaki.
             </p>
           </ScrollLinked>
         </div>

@@ -24,13 +24,27 @@ interface ScanStepProps {
   initialNotice: string | null;
   onStart: () => void;
   blocked: boolean;
+  /** Soal kuis masih dimuat dari Firestore, jadi kuis belum bisa dimulai. */
+  quizLoading: boolean;
+  /** Dipakai saat kuis jatuh ke soal bawaan aplikasi, atau null bila soal berasal dari Firestore. */
+  quizNotice: string | null;
 }
 
 const NOT_OURS = "QR itu bukan kode tong Eco Waste Corner. Pindai QR yang tertempel di tong.";
 const NATIVE_CAMERA_HINT =
   "Bisa juga lewat aplikasi kamera bawaan ponsel. Pindai QR di tong, dan tautannya membuka halaman ini dengan lokasi dan tong yang sudah terisi.";
 
-export function ScanStep({ locations, locationsStatus, target, onTarget, initialNotice, onStart, blocked }: ScanStepProps) {
+export function ScanStep({
+  locations,
+  locationsStatus,
+  target,
+  onTarget,
+  initialNotice,
+  onStart,
+  blocked,
+  quizLoading,
+  quizNotice,
+}: ScanStepProps) {
   const [scannerKey, setScannerKey] = useState(0);
   const [notice, setNotice] = useState<string | null>(initialNotice);
   const pageVisible = usePageVisible();
@@ -99,9 +113,11 @@ export function ScanStep({ locations, locationsStatus, target, onTarget, initial
             <InlineNotice tone="warning">Scan baru bisa dimulai setelah jeda selesai. Hitung mundur ada di atas.</InlineNotice>
           ) : null}
 
+          {quizNotice ? <InlineNotice tone="warning">{quizNotice}</InlineNotice> : null}
+
           <div className="flex flex-wrap gap-3">
-            <Button size="lg" className="w-full sm:w-auto" disabled={blocked} onClick={onStart}>
-              Mulai kuis
+            <Button size="lg" className="w-full sm:w-auto" disabled={blocked || quizLoading} onClick={onStart}>
+              {quizLoading ? "Memuat soal kuis" : "Mulai kuis"}
             </Button>
             <Button size="lg" variant="outline" className="w-full sm:w-auto" onClick={rescan}>
               Pindai ulang
