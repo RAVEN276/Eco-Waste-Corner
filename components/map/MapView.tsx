@@ -46,12 +46,15 @@ export function MapView() {
           }
         />
       ) : (
-        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[1.2fr_1fr]">
-          <CampusMap locations={items} selectedId={selectedId} onSelect={setSelectedId} />
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1.3fr_1fr] lg:gap-8">
+          {/* Menempel di bawah navbar: bila titiknya bertambah dan daftar lebih tinggi dari layar, denah tetap terlihat. */}
+          <div className="lg:sticky lg:top-[5.25rem]">
+            <CampusMap locations={items} selectedId={selectedId} onSelect={setSelectedId} />
+          </div>
 
           <div>
-            <h2 className="reveal-r text-4xl">Titik di kampus</h2>
-            <ul className="mt-3 space-y-4">
+            <h2 className="reveal-r text-3xl">Titik di kampus</h2>
+            <ul className="mt-3 space-y-3">
               {items.map((location, index) => (
                 <li
                   key={location.locationId}
