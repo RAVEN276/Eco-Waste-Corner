@@ -4,25 +4,44 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { CameraIcon } from "@/components/ui/Icons";
 import { InlineNotice, Spinner } from "@/components/ui/States";
-import { SCAN_ITEMS } from "@/lib/data/items";
+import { BINS } from "@/lib/data/bins";
+import { SCAN_ITEMS, findWasteItem } from "@/lib/data/items";
+import { SUGGEST_THRESHOLD, guessWasteItem } from "@/lib/ml/classify";
 import { ACCEPTED_PHOTO_TYPES, validatePhoto } from "@/lib/photo";
+import type { BinCategory, MlSuggestion } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface PhotoStepProps {
+  /** Tong yang dipindai dari QR. */
+  category: BinCategory;
   submitting: boolean;
 
   error: string | null;
-  onSubmit: (values: { photo: File | null; itemId: string }) => void;
+  onSubmit: (values: { photo: File | null; itemId: string; mlSuggestion: MlSuggestion | null }) => void;
 }
 
-export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
+type Guess =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "done"; result: Omit<MlSuggestion, "accepted"> }
+  | { status: "error" };
+
+export function PhotoStep({ category, submitting, error, onSubmit }: PhotoStepProps) {
   const [photo, setPhoto] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [itemId, setItemId] = useState("");
   const [skipPhoto, setSkipPhoto] = useState(false);
   const [itemError, setItemError] = useState<string | null>(null);
+  const [guess, setGuess] = useState<Guess>({ status: "idle" });
+  // True selama pilihan jenis sampah berasal dari tebakan dan belum diubah pengguna.
+  const [autoPicked, setAutoPicked] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Salinan itemId untuk dibaca saat tebakan selesai (setelah render berikutnya).
+  const itemIdRef = useRef("");
+  const autoPickedRef = useRef(false);
+  // Tebakan lama diabaikan bila foto diganti atau komponen dilepas sebelum tebakan selesai.
+  const guessToken = useRef(0);
 
   useEffect(() => {
     if (!photo) return;
@@ -35,6 +54,43 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
     };
   }, [photo]);
 
+  useEffect(() => {
+    const tokens = guessToken;
+    return () => {
+      tokens.current += 1;
+    };
+  }, []);
+
+  const chooseItem = (id: string, auto: boolean) => {
+    itemIdRef.current = id;
+    autoPickedRef.current = auto;
+    setItemId(id);
+    setAutoPicked(auto);
+  };
+
+  const startGuess = (file: File) => {
+    const token = ++guessToken.current;
+    // Pilihan dari tebakan foto sebelumnya tidak berlaku untuk foto baru.
+    if (autoPickedRef.current) chooseItem("", false);
+    setGuess({ status: "loading" });
+    guessWasteItem(file)
+      .then((result) => {
+        if (token !== guessToken.current) return;
+        setGuess({ status: "done", result });
+        // Saran hanya mengisi pilihan yang masih kosong, tidak pernah menimpa pilihan pengguna, dan hanya
+        // dengan barang dari tong yang dipindai. Barang dari tong lain akan kena penalti salah slot saat
+        // dikirim, dan tebakan tidak boleh menjadi penyebab penalti. Untuk itu ada pengingat di GuessNotice.
+        const suggestedItem = result.suggested && result.itemId ? findWasteItem(result.itemId) : undefined;
+        if (suggestedItem && suggestedItem.category === category && !itemIdRef.current) {
+          chooseItem(suggestedItem.id, true);
+          setItemError(null);
+        }
+      })
+      .catch(() => {
+        if (token === guessToken.current) setGuess({ status: "error" });
+      });
+  };
+
   const onFile = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
     if (!file) return;
@@ -42,12 +98,15 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
     if (problem) {
       setPhotoError(problem);
       setPhoto(null);
+      guessToken.current += 1;
+      setGuess({ status: "idle" });
       event.target.value = "";
       return;
     }
     setPhotoError(null);
     setSkipPhoto(false);
     setPhoto(file);
+    startGuess(file);
   };
 
   const submit = () => {
@@ -60,7 +119,12 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
       return;
     }
     setItemError(null);
-    onSubmit({ photo: skipPhoto ? null : photo, itemId });
+    const usePhoto = skipPhoto ? null : photo;
+    const mlSuggestion =
+      usePhoto && guess.status === "done"
+        ? { ...guess.result, accepted: guess.result.suggested && guess.result.itemId === itemId }
+        : null;
+    onSubmit({ photo: usePhoto, itemId, mlSuggestion });
   };
 
   return (
@@ -87,7 +151,7 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
                 className="size-5 shrink-0 accent-link"
                 checked={itemId === item.id}
                 onChange={() => {
-                  setItemId(item.id);
+                  chooseItem(item.id, false);
                   setItemError(null);
                 }}
               />
@@ -164,6 +228,7 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
             {photoError}
           </p>
         ) : null}
+        {photo && !skipPhoto ? <GuessNotice guess={guess} itemId={itemId} autoPicked={autoPicked} category={category} /> : null}
       </fieldset>
 
       {error ? <InlineNotice tone="error">{error}</InlineNotice> : null}
@@ -179,5 +244,76 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
         Kirim dan klaim poin
       </Button>
     </div>
+  );
+}
+
+/** Status pengenal foto. Hanya saran: pilihan jenis sampah tetap bisa diganti dan scan tidak menunggu tebakan. */
+function GuessNotice({
+  guess,
+  itemId,
+  autoPicked,
+  category,
+}: {
+  guess: Guess;
+  itemId: string;
+  autoPicked: boolean;
+  category: BinCategory;
+}) {
+  if (guess.status === "idle") return null;
+  if (guess.status === "loading") {
+    return (
+      <div role="status" className="mt-3 flex items-center gap-3 text-sm text-muted">
+        <Spinner className="text-link" label="Mengenali" />
+        Mengenali sampah di foto. Pertama kali bisa agak lama karena pengenalnya diunduh dulu.
+      </div>
+    );
+  }
+  if (guess.status === "error") {
+    return (
+      <InlineNotice className="mt-3">
+        Pengenal otomatis tidak bisa dimuat. Pilih jenis sampah sendiri di atas.
+      </InlineNotice>
+    );
+  }
+
+  const { result } = guess;
+  const suggestion = result.itemId ? findWasteItem(result.itemId) : undefined;
+  const percent = Math.round(result.confidence * 100);
+  const chosen = itemId ? findWasteItem(itemId) : undefined;
+
+  // Pengingat tong: hanya informasi, tidak memberi penalti dan tidak mengubah pilihan.
+  const otherBin = result.binId && result.binId !== category && result.confidence >= SUGGEST_THRESHOLD ? result.binId : null;
+  if (otherBin) {
+    const looksLike = result.suggested && suggestion ? suggestion.label : `sampah ${BINS[otherBin].label}`;
+    return (
+      <InlineNotice tone="warning" className="mt-3">
+        {`Foto terlihat seperti ${looksLike} (yakin ${percent}%), yang masuk tong ${BINS[otherBin].label}. `}
+        {`Kamu memindai tong ${BINS[category].label}, jadi cek lagi sampahmu sebelum dibuang.`}
+        {chosen ? ` Pilihanmu tetap ${chosen.label}.` : " Pilih jenis sampah di atas."}
+      </InlineNotice>
+    );
+  }
+
+  if (!result.suggested || !suggestion) {
+    return (
+      <InlineNotice className="mt-3">
+        Jenis sampah di foto belum bisa dikenali dengan yakin. Pilih sendiri di atas.
+      </InlineNotice>
+    );
+  }
+  if (itemId === suggestion.id) {
+    return (
+      <InlineNotice className="mt-3">
+        {autoPicked
+          ? `Tebakan otomatis: ${suggestion.label} (yakin ${percent}%). Pilihan di atas sudah diisi, ganti kalau salah.`
+          : `Foto cocok dengan pilihanmu: ${suggestion.label} (yakin ${percent}%).`}
+      </InlineNotice>
+    );
+  }
+  return (
+    <InlineNotice className="mt-3">
+      {`Foto terlihat seperti ${suggestion.label} (yakin ${percent}%).`}
+      {chosen ? ` Pilihanmu tetap ${chosen.label}.` : " Pilih jenis sampah di atas."}
+    </InlineNotice>
   );
 }

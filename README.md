@@ -49,7 +49,7 @@ Dokumen yang rusak (kategori tak dikenal, pilihan kurang, `answerIndex` di luar 
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `users/{uid}`            | `uid`, `email`, `nama`, `prodi`, `poin` (hasil scan, bisa ditukar), `poinJSDP` (hasil penukaran, syarat kelulusan), `totalScan`, `cooldownUntil`, `createdAt`                                                                                                 |
 | `exchanges/{exchangeId}` | `exchangeId`, `userId`, `poinSpent`, `jsdpGained`, `timestamp`                                                                                                                                                                                                |
-| `scans/{scanId}`         | `scanId`, `userId`, `categoryBin`, `location`, `locationName`, `photoUrl`, `photoHash`, `itemType`, `quizAnswered`, `quizCorrect`, `quizTotal`, `pointsEarned` (bisa negatif), `status` (`verified`, `unverified`, `penalized`), `penaltyReason`, `timestamp` |
+| `scans/{scanId}`         | `scanId`, `userId`, `categoryBin`, `location`, `locationName`, `photoUrl`, `photoHash`, `itemType`, `quizAnswered`, `quizCorrect`, `quizTotal`, `pointsEarned` (bisa negatif), `status` (`verified`, `unverified`, `penalized`), `penaltyReason`, `timestamp`, `mlSuggestion` (tebakan pengenal foto atau `null`, lihat Saran jenis sampah dari foto) |
 | `locations/{locationId}` | `locationId`, `name`, `coordinates` (`x`, `y` dalam persen pada denah), `imageUrl`, `routeSteps`                                                                                                              |
 | `quizQuestions/{questionId}` | `category`, `question`, `options`, `answerIndex`, `explanation` |
 | `scanPhotos/{scanId}`    | `scanId`, `userId`, `mime`, `dataUrl`, `timestamp`                                                                                                                                                                                                            |
@@ -80,6 +80,18 @@ Foto bukti diambil lewat kamera ponsel: tombolnya memicu `<input type="file" acc
 
 Foto disimpan di Firestore, bukan Storage. Satu dokumen maksimal 1 MiB, jadi `lib/photo.ts` mengecilkan foto di browser (sisi terpanjang maksimal 1024 px, JPEG, di bawah 300.000 karakter data URL) sebelum disimpan di `scanPhotos/{scanId}`. Dokumen `scans` hanya menyimpan `photoHash` dan, di field `photoUrl`, path dokumen fotonya (`scanPhotos/{scanId}`), supaya riwayat tidak ikut memuat gambar. Foto duplikat tidak disimpan lagi. Kualitas foto cukup untuk bukti, bukan untuk arsip. Di dashboard, tombol "Lihat foto" pada riwayat mengambil foto dari `scanPhotos` hanya saat diklik.
 
+## Saran jenis sampah dari foto
+
+Setelah foto bukti diambil, aplikasi menebak barang dan tongnya langsung di browser (model EfficientNet-B0 lewat onnxruntime-web, tanpa server). Model punya tujuh kelas, masing-masing dengan satu tong (`bin_of` di berkas label): organik ke tong Organik; botol plastik, plastik bersih, kertas, dan kardus ke tong Plastik / Kertas; residu ke tong Residu; lainnya (kaca, logam, baterai, pakaian, sepatu) tanpa tong. Tebakan hanya saran:
+
+- Pilihan jenis sampah diisi otomatis hanya bila masih kosong, keyakinan minimal 60% (`SUGGEST_THRESHOLD`), kelasnya punya padanan barang (botol plastik ke "Botol plastik kosong", plastik bersih ke "Gelas plastik bersih", kertas dan kardus ke "Kardus atau kertas kering"), dan barang itu milik tong yang dipindai. Barang dari tong lain tidak diisi otomatis karena akan kena penalti salah slot, dan tebakan tidak boleh menjadi penyebab penalti.
+- Bila foto cukup yakin milik tong lain, muncul pengingat untuk mengecek sampahnya. Pengingat ini hanya informasi: tidak memblokir, tidak mengubah pilihan, dan tidak memberi penalti. Kelas tanpa tong belum diberi pesan.
+- Pilihan yang sudah dibuat pengguna tidak pernah ditimpa, dan tebakan tidak memengaruhi poin atau penalti.
+- Model (`public/models/sampah-v3.onnx`, sekitar 17 MB) diunduh saat foto pertama diambil dan disimpan cache browser. Runtime WASM (sekitar 3 MB terkompresi) diambil dari jsDelivr. Kalau gagal dimuat, form tetap bisa diisi manual.
+- Tebakan dicatat di field `mlSuggestion` pada dokumen `scans` (kelas, tong tebakan `binId`, keyakinan, versi model, apakah saran dipakai, lama muat, lama menebak), untuk mengukur akurasi dan kecepatan di ponsel mahasiswa. Setelah mengubah bagian ini, deploy ulang `firestore.rules`.
+
+Model dilatih di luar repo dari dataset publik Garbage Dataset (Kaggle `sumn2u/garbage-classification-v2`). Kelas plastic dipecah per foto menjadi botol plastik, plastik bersih, dan kemasan multilayer (yang digabung ke residu karena hanya 10 foto), dengan label hasil pemilahan visual yang belum dicek ulang manusia. Pada 977 foto uji, tong yang benar tertebak 94,4% dan botol plastik dikenali 98,4%. Kelemahan yang diketahui: botol dan toples kaca sering dikira botol plastik dengan keyakinan tinggi, baterai kadang dikira kardus atau botol, kemasan multilayer belum dikenali, dan model belum pernah dilatih dengan foto dari tong kampus. Untuk mengganti model, beri nama berkas baru (misalnya `sampah-v4.onnx` dan `sampah-v4.labels.json`) lalu ubah `ML_MODEL_VERSION` di `lib/ml/classify.ts`, karena `/models/*` di-cache permanen.
+
 ## Struktur
 
 | Folder                    | Isi                                                                               |
@@ -95,6 +107,7 @@ Foto disimpan di Firestore, bukan Storage. Satu dokumen maksimal 1 MiB, jadi `li
 | `lib/scoring.ts`          | Poin berjenjang, penalti, cooldown 15 menit, kurs penukaran                       |
 | `lib/photo.ts`            | Validasi, hash, dan kompresi foto bukti                                           |
 | `lib/qr.ts`               | Format dan pembaca isi QR tong (lokasi dan jenis tong)                            |
+| `lib/ml/classify.ts`      | Pengenal jenis sampah dari foto (saran saja), model di `public/models/`           |
 
 ## Aturan poin
 
