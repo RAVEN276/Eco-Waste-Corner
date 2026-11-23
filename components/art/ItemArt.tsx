@@ -6,8 +6,8 @@ import type { BinCategory } from "@/lib/types";
  * kotak 30 x 38 dengan garis tebal ink dan bidang rata seperti tong. Warna isinya hanya warna tong
  * tempat barang itu seharusnya masuk (hijau, kuning, abu), ditambah putih dan hitam, supaya kode warna
  * tong tetap bermakna. Semua dekoratif; nama barangnya selalu ada sebagai teks di dekatnya.
- * Garis detail di atas isian tetap (putih, kuning) memakai `stroke-night`, karena `ink` menjadi terang di
- * tema gelap dan hilang di atas putih. Di atas isian yang ikut tema (`-soft`) detail memakai `ink`.
+ * Garis detail di atas isian tetap (putih, kuning) memakai `stroke-night`. Di atas isian lembut
+ * (`-soft`) detail memakai `ink`.
  */
 
 const LINE = { strokeWidth: 2.5, strokeLinecap: "round", strokeLinejoin: "round" } as const;

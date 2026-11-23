@@ -15,6 +15,8 @@ interface UserState {
   /** Mirrors `profile.cooldownUntil`, epoch millis. */
   cooldownUntil: number | null;
   photoURL: string | null;
+  /** Akun ini admin: masuk lewat Google dan emailnya terverifikasi. Hanya untuk tampilan, aturan Firestore yang melindungi data. */
+  isAdmin: boolean;
   error: string | null;
   /** Bumped to make the auth provider re-subscribe after a profile error. */
   retryToken: number;
@@ -22,7 +24,7 @@ interface UserState {
   retryProfile: () => void;
   setAuthInitializing: () => void;
   setSignedOut: () => void;
-  setSignedIn: (photoURL: string | null) => void;
+  setSignedIn: (photoURL: string | null, isAdmin: boolean) => void;
   setProfileLoading: () => void;
   setProfile: (profile: UserProfile) => void;
   setError: (message: string) => void;
@@ -37,6 +39,7 @@ export const useUserStore = create<UserState>((set) => ({
   poinJSDP: 0,
   cooldownUntil: null,
   photoURL: null,
+  isAdmin: false,
   error: null,
   retryToken: 0,
 
@@ -51,8 +54,9 @@ export const useUserStore = create<UserState>((set) => ({
       poinJSDP: 0,
       cooldownUntil: null,
       photoURL: null,
+      isAdmin: false,
     }),
-  setSignedIn: (photoURL) => set({ authStatus: "authenticated", photoURL, error: null }),
+  setSignedIn: (photoURL, isAdmin) => set({ authStatus: "authenticated", photoURL, isAdmin, error: null }),
   setProfileLoading: () => set({ profileStatus: "loading" }),
   setProfile: (profile) =>
     set({

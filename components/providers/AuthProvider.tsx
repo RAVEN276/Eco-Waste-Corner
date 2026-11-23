@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { onIdTokenChanged, type User } from "firebase/auth";
+import { isAdminUser } from "@/lib/admin";
 import { getFirebaseAuth, isFirebaseConfigured } from "@/lib/firebase/config";
 import { ensureUserProfile, subscribeUser } from "@/lib/firebase/firestore";
 import { describeFirebaseError } from "@/lib/firebase/errors";
@@ -51,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      state.setSignedIn(user.photoURL);
+      state.setSignedIn(user.photoURL, isAdminUser(user));
       state.setProfileLoading();
 
       try {

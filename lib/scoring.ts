@@ -1,7 +1,10 @@
 import type { BinCategory, PenaltyReason, ScanStatus } from "@/lib/types";
 
-export const COOLDOWN_MINUTES = 15;
+export const COOLDOWN_MINUTES = 5;
 export const COOLDOWN_MS = COOLDOWN_MINUTES * 60 * 1000;
+
+export const PENALTY_COOLDOWN_MINUTES = 15;
+export const PENALTY_COOLDOWN_MS = PENALTY_COOLDOWN_MINUTES * 60 * 1000;
 
 export const BASE_POINTS: Record<BinCategory, number> = {
   organik: 3,
@@ -38,7 +41,7 @@ export const PENALTY_POINTS: Record<PenaltyReason, number> = {
 export const PENALTY_LABEL: Record<PenaltyReason, string> = {
   item_mismatch: "Sampah yang dilaporkan tidak sesuai dengan slot yang dipindai",
   duplicate_photo: "Foto yang sama pernah dipakai pada scan sebelumnya",
-  cooldown_violation: "Scan dikirim saat cooldown 15 menit masih berjalan",
+  cooldown_violation: "Scan dikirim saat jeda antar scan masih berjalan",
 };
 
 export interface ScoreInput {
