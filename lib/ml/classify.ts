@@ -2,25 +2,12 @@ import type { InferenceSession } from "onnxruntime-web/wasm";
 import { isBinCategory } from "@/lib/data/bins";
 import type { BinCategory, MlSuggestion } from "@/lib/types";
 
-/**
- * Pengenal jenis sampah dari foto bukti, dijalankan di browser dengan onnxruntime-web (WASM).
- * Hasilnya hanya SARAN untuk pilihan jenis sampah: tidak mengubah poin dan tidak memberi penalti.
- *
- * Model dan urutan kelasnya ada di public/models/. Mengganti model berarti menaikkan versi di nama
- * berkas (ML_MODEL_VERSION), karena /models/* disajikan dengan cache immutable (next.config.ts).
- */
 export const ML_MODEL_VERSION = "sampah-v3";
 const MODEL_URL = `/models/${ML_MODEL_VERSION}.onnx`;
 const LABELS_URL = `/models/${ML_MODEL_VERSION}.labels.json`;
 
-/** Keyakinan minimum sebelum saran dipakai untuk mengisi pilihan. Nilai awal, disesuaikan dari data lapangan. */
 export const SUGGEST_THRESHOLD = 0.6;
 
-/**
- * Kelas model yang punya padanan barang di SCAN_ITEMS. Kelas lain (biological, trash, lainnya) mencakup
- * banyak barang berbeda, jadi hanya tongnya yang dipakai, barangnya tidak disarankan. plastik-bersih
- * (gelas, wadah, kantong plastik) disarankan sebagai gelas plastik, satu-satunya padanannya di form scan.
- */
 const CLASS_TO_ITEM: Record<string, string> = {
   "botol-plastik": "botol-plastik",
   "plastik-bersih": "gelas-plastik",
@@ -28,12 +15,10 @@ const CLASS_TO_ITEM: Record<string, string> = {
   cardboard: "kardus-kertas",
 };
 
-// Cadangan bila env.versions.web tidak tersedia. Samakan dengan versi onnxruntime-web di package.json.
 const ORT_VERSION_FALLBACK = "1.31.1";
 
 interface ModelLabels {
   classes: string[];
-  /** Tong kampus per kelas. Nilai selain tiga tong (misalnya "tidak-ada" untuk kaca dan logam) berarti tanpa tong. */
   bin_of?: Record<string, string>;
   preprocess: { resize_shorter_side: number; center_crop: number; mean: number[]; std: number[] };
 }
@@ -47,13 +32,12 @@ interface LoadedModel {
 
 let loading: Promise<LoadedModel> | null = null;
 
+/** Memuat runtime, model, dan labelnya sekali, lalu memakai ulang hasilnya untuk foto berikutnya. */
 function loadModel(): Promise<LoadedModel> {
   if (!loading) {
     loading = (async () => {
       const start = performance.now();
       const ort = await import("onnxruntime-web/wasm");
-      // Berkas WASM diambil dari jsDelivr dengan versi yang sama persis dengan paket JS,
-      // karena dokumentasi onnxruntime-web mewajibkan keduanya dari build yang sama.
       ort.env.wasm.wasmPaths = `https://cdn.jsdelivr.net/npm/onnxruntime-web@${ort.env.versions.web ?? ORT_VERSION_FALLBACK}/dist/`;
       const [labels, session] = await Promise.all([
         fetch(LABELS_URL).then((res) => {
@@ -64,7 +48,6 @@ function loadModel(): Promise<LoadedModel> {
       ]);
       return { ort, session, labels, loadMs: performance.now() - start };
     })().catch((error: unknown) => {
-      // Boleh dicoba lagi pada foto berikutnya (misalnya setelah koneksi kembali).
       loading = null;
       throw error;
     });

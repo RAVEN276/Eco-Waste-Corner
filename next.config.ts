@@ -6,8 +6,7 @@ const nextConfig: NextConfig = {
     agentFeedback: true,
   },
   cacheComponents: true,
-  // File di public/ dikirim dengan max-age=0. Model pengenal sampah besar (sekitar 17 MB) dan namanya
-  // memuat versi (sampah-v2), jadi aman di-cache lama. Ganti nama berkas setiap model diperbarui.
+  /** Menyajikan berkas model pengenal sampah di /models dengan cache permanen. */
   async headers() {
     return [
       {
@@ -18,8 +17,6 @@ const nextConfig: NextConfig = {
   },
   partialPrefetching: true,
   turbopack: {
-    // Export bawaan onnxruntime-web/wasm adalah varian "bundle" yang ikut memaketkan berkas WASM 15 MB
-    // ke build. Varian eksternal memuat WASM dari env.wasm.wasmPaths (jsDelivr, lihat lib/ml/classify.ts).
     resolveAlias: {
       "onnxruntime-web/wasm": "./node_modules/onnxruntime-web/dist/ort.wasm.min.mjs",
     },

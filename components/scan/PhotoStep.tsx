@@ -12,7 +12,6 @@ import type { BinCategory, MlSuggestion } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface PhotoStepProps {
-  /** Tong yang dipindai dari QR. */
   category: BinCategory;
   submitting: boolean;
 
@@ -34,13 +33,10 @@ export function PhotoStep({ category, submitting, error, onSubmit }: PhotoStepPr
   const [skipPhoto, setSkipPhoto] = useState(false);
   const [itemError, setItemError] = useState<string | null>(null);
   const [guess, setGuess] = useState<Guess>({ status: "idle" });
-  // True selama pilihan jenis sampah berasal dari tebakan dan belum diubah pengguna.
   const [autoPicked, setAutoPicked] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  // Salinan itemId untuk dibaca saat tebakan selesai (setelah render berikutnya).
   const itemIdRef = useRef("");
   const autoPickedRef = useRef(false);
-  // Tebakan lama diabaikan bila foto diganti atau komponen dilepas sebelum tebakan selesai.
   const guessToken = useRef(0);
 
   useEffect(() => {
@@ -70,16 +66,12 @@ export function PhotoStep({ category, submitting, error, onSubmit }: PhotoStepPr
 
   const startGuess = (file: File) => {
     const token = ++guessToken.current;
-    // Pilihan dari tebakan foto sebelumnya tidak berlaku untuk foto baru.
     if (autoPickedRef.current) chooseItem("", false);
     setGuess({ status: "loading" });
     guessWasteItem(file)
       .then((result) => {
         if (token !== guessToken.current) return;
         setGuess({ status: "done", result });
-        // Saran hanya mengisi pilihan yang masih kosong, tidak pernah menimpa pilihan pengguna, dan hanya
-        // dengan barang dari tong yang dipindai. Barang dari tong lain akan kena penalti salah slot saat
-        // dikirim, dan tebakan tidak boleh menjadi penyebab penalti. Untuk itu ada pengingat di GuessNotice.
         const suggestedItem = result.suggested && result.itemId ? findWasteItem(result.itemId) : undefined;
         if (suggestedItem && suggestedItem.category === category && !itemIdRef.current) {
           chooseItem(suggestedItem.id, true);
@@ -281,7 +273,6 @@ function GuessNotice({
   const percent = Math.round(result.confidence * 100);
   const chosen = itemId ? findWasteItem(itemId) : undefined;
 
-  // Pengingat tong: hanya informasi, tidak memberi penalti dan tidak mengubah pilihan.
   const otherBin = result.binId && result.binId !== category && result.confidence >= SUGGEST_THRESHOLD ? result.binId : null;
   if (otherBin) {
     const looksLike = result.suggested && suggestion ? suggestion.label : `sampah ${BINS[otherBin].label}`;

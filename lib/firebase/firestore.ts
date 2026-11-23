@@ -358,7 +358,6 @@ export interface SubmitScanInput {
   /** Jawaban per soal, supaya admin bisa memeriksanya. Dilaporkan klien, jadi bukan bukti. */
   quizAnswers: QuizAnswerRecord[];
   photo: File | null;
-  /** Tebakan pengenal foto, hanya dicatat. Tidak dipakai untuk menghitung poin. */
   mlSuggestion: MlSuggestion | null;
 }
 
