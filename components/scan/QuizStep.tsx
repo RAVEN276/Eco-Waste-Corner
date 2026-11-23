@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { CheckIcon, CloseIcon } from "@/components/ui/Icons";
-import type { QuizQuestion } from "@/lib/types";
+import type { QuizAnswerRecord, QuizQuestion } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface QuizStepProps {
   questions: QuizQuestion[];
-  onFinish: (correctCount: number) => void;
+  onFinish: (correctCount: number, answers: QuizAnswerRecord[]) => void;
 }
 
 export function QuizStep({ questions, onFinish }: QuizStepProps) {
@@ -16,6 +16,7 @@ export function QuizStep({ questions, onFinish }: QuizStepProps) {
   const [selected, setSelected] = useState<number | null>(null);
   const [checked, setChecked] = useState(false);
   const [correct, setCorrect] = useState(0);
+  const [answers, setAnswers] = useState<QuizAnswerRecord[]>([]);
 
   const question = questions[index];
   const isLast = index === questions.length - 1;
@@ -24,12 +25,23 @@ export function QuizStep({ questions, onFinish }: QuizStepProps) {
   const check = () => {
     if (selected === null) return;
     setChecked(true);
-    if (selected === question.answerIndex) setCorrect((n) => n + 1);
+    const right = selected === question.answerIndex;
+    if (right) setCorrect((n) => n + 1);
+    setAnswers((list) => [
+      ...list,
+      {
+        questionId: question.id,
+        question: question.question,
+        chosen: question.options[selected],
+        correct: question.options[question.answerIndex],
+        isCorrect: right,
+      },
+    ]);
   };
 
   const next = () => {
     if (isLast) {
-      onFinish(correct);
+      onFinish(correct, answers);
       return;
     }
     setIndex((n) => n + 1);

@@ -1,9 +1,14 @@
 "use client";
 
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, useSyncExternalStore, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { CloseIcon } from "@/components/ui/Icons";
 import { cn } from "@/lib/utils";
+
+const emptySubscribe = () => () => {};
+const getClient = () => true;
+const getServer = () => false;
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -21,6 +26,7 @@ export function Dialog({ open, onClose, title, children, className }: DialogProp
   const panelRef = useRef<HTMLDivElement>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
   const onCloseRef = useRef(onClose);
+  const mounted = useSyncExternalStore(emptySubscribe, getClient, getServer);
 
   useEffect(() => {
     onCloseRef.current = onClose;
@@ -67,10 +73,12 @@ export function Dialog({ open, onClose, title, children, className }: DialogProp
     };
   }, [open]);
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {open ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6">
+        <div className="fixed inset-0 z-50 flex items-end justify-center pt-20 sm:items-center sm:px-6 sm:pt-20 sm:pb-6">
           <motion.div
             className="absolute inset-0 bg-night/65"
             initial={{ opacity: 0 }}
@@ -90,7 +98,7 @@ export function Dialog({ open, onClose, title, children, className }: DialogProp
             exit={{ opacity: 0, y: 32 }}
             transition={{ duration: 0.22, ease: "easeOut" }}
             className={cn(
-              "relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-sheet border-2 border-line bg-surface shadow-2xl sm:max-w-lg sm:rounded-sheet",
+              "relative flex max-h-[calc(100dvh-5rem)] w-full flex-col overflow-hidden rounded-t-sheet border-2 border-line bg-surface shadow-2xl sm:max-h-[calc(100dvh-6.5rem)] sm:max-w-lg sm:rounded-sheet",
               className,
             )}
           >
@@ -111,6 +119,7 @@ export function Dialog({ open, onClose, title, children, className }: DialogProp
           </motion.div>
         </div>
       ) : null}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

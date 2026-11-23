@@ -9,6 +9,7 @@ import {
   EXCHANGE_JSDP,
   EXCHANGE_POIN,
   FULL_PROOF_BONUS,
+  PENALTY_COOLDOWN_MINUTES,
   PENALTY_LABEL,
   PENALTY_POINTS,
   SCORE_TABLE_ROWS,
@@ -23,8 +24,8 @@ const STEPS = [
   { title: "Kuis kilat", text: "Jawab 2 pertanyaan acak tentang jenis tong itu." },
   { title: "Foto bukti", text: "Foto sampah yang dibuang langsung dengan kamera, lalu pilih jenis sampahnya." },
   {
-    title: "Poin masuk",
-    text: `Poin dihitung otomatis. Scan berikutnya terbuka setelah jeda ${COOLDOWN_MINUTES} menit.`,
+    title: "Tinjauan admin dan poin masuk",
+    text: `Cek otomatis tahap 1 menghitung poin, lalu poin baru masuk ke saldo setelah disetujui admin di tahap 2. Jeda scan berikutnya ${COOLDOWN_MINUTES} menit (${PENALTY_COOLDOWN_MINUTES} menit jika terjadi pelanggaran).`,
   },
   {
     title: "Tukar jadi JSDP",
@@ -127,7 +128,10 @@ export function PointRules() {
                 </li>
               ))}
             </ul>
-            <p className="mt-3 text-sm text-mist">Saldo poin tidak pernah turun di bawah 0.</p>
+            <p className="mt-3 text-sm text-mist">
+              Saldo poin tidak pernah turun di bawah 0, dan pelanggaran memperpanjang jeda scan menjadi{" "}
+              {PENALTY_COOLDOWN_MINUTES} menit.
+            </p>
           </div>
 
           <div>

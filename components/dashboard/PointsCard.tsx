@@ -38,7 +38,7 @@ export function PointsCard() {
             <CountUp value={poin} duration={1.1} />
           </p>
           <p className="mt-4 max-w-md text-sm">
-            Dari {totalScan} scan pemilahan yang lolos pemeriksaan. Poin ini bisa ditukar jadi poin
+            Dari {totalScan} scan pemilahan yang sudah disetujui admin. Poin ini bisa ditukar jadi poin
             JSDP di panel tukar poin di bawah.
           </p>
         </div>

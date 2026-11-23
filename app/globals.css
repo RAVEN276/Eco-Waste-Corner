@@ -1,35 +1,20 @@
 @import "tailwindcss";
 
 /*
- * Palet terang dan gelap. Arah lengkap dan rasio kontras ada di DESIGN.md.
+ * Palet terang. Arah lengkap dan rasio kontras ada di DESIGN.md.
  *
- * Nilai per tema ada di variabel --c-* (satu blok untuk terang, satu untuk gelap), lalu @theme
- * inline memetakannya ke nama kelas Tailwind. Tema gelap dipasang lewat atribut data-theme="dark"
- * di <html> (skrip kecil di layout memasangnya sebelum halaman tampil, dan ThemeToggle
- * mengubahnya). Peran warna dipisah supaya tema bisa membaliknya:
+ * Nilai warna ada di variabel --c-* lalu dipetakan ke nama kelas Tailwind melalui @theme inline:
  *
  *  paper     latar halaman            surface  latar kartu, input, dialog
- *  ink       teks dan ikon            line     garis struktur (border-line, tegas di terang, sedang di gelap)
+ *  ink       teks dan ikon            line     garis struktur
  *  night     blok gelap permanen (footer, aturan poin) dan teks gelap di atas warna terang
- *  pick      status terpilih (tab, saringan, badge, menu aktif): menonjol dari permukaan sekitarnya
- *            dan berbeda dari cobalt (tombol aksi), jadi gelap di tema terang dan biru langit di
- *            tema gelap, dengan teks on-pick
- *  plate     plat hasil scan yang sah (night di terang, cobalt di gelap supaya tetap jadi titik fokus)
- *  link      teks aksi dan angka bermerek (cobalt di tema terang, biru langit di tema gelap)
- *  cobalt    merek: bidang hero, tombol utama, plat. Sedikit lebih terang di tema gelap supaya tetap
- *            menyala di atas dasar biru pekat, dan selalu dengan teks putih
+ *  pick      status terpilih (tab, saringan, badge, menu aktif): gelap dengan teks on-pick
+ *  plate     plat hasil scan yang sah
+ *  link      teks aksi dan angka bermerek
+ *  cobalt    merek: bidang hero, tombol utama, plat, selalu dengan teks putih
  *  brick-text  teks dan ikon status galat (brick tetap hanya untuk blok terisi)
  *
- * Warna tetap di kedua tema: organik, kertas (selalu blok terisi dengan teks night), brick (blok
- * terisi), mist (teks di atas night dan cobalt), tint (hover tombol putih permanen).
- *
- * Tema gelap ("papan stasiun di malam hari"): alasan tiap keputusan ada di DESIGN.md. Ringkasnya,
- * dasarnya biru-tinta pekat dengan beberapa tingkat lapisan, cobalt terang sebagai bidang warna,
- * teks putih hangat, dan warna tong sebagai tanda (kuning dan hijau di atas biru pekat, seperti
- * papan penanda stasiun). Aksen tunggalnya cobalt, jadi tidak ada ungu atau lavender.
  */
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
-
 :root {
   color-scheme: light;
 
@@ -65,43 +50,6 @@
   --shadow-ink: #12182b;
   --focus-ring: #2438a6;
   --focus-halo: #ffffff;
-}
-
-:root[data-theme="dark"] {
-  color-scheme: dark;
-
-  --c-paper: #0a0f22;
-  --c-surface: #141c3a;
-  --c-ink: #f4f1e8;
-  --c-line: #5d6b9a;
-  --c-night: #050816;
-  --c-muted: #a9b2cf;
-  --c-edge: #7886b3;
-  --c-rule: #1f2a52;
-  --c-link: #7fb2ff;
-  --c-cobalt: #2d43c8;
-  --c-cobalt-deep: #2438a6;
-  --c-cobalt-soft: #0f1a52;
-  --c-cobalt-press: #18267a;
-  --c-organik-soft: #0f2d27;
-  --c-kertas-soft: #33290f;
-  --c-residu: #505769;
-  --c-residu-soft: #1b2340;
-  --c-brick-soft: #331420;
-  --c-brick-ink: #ffcfd0;
-  --c-brick-text: #ff9aa0;
-  --c-map-ground: #141c3a;
-  --c-map-green: #0f2d27;
-  --c-map-building: #1d2750;
-  --c-map-road: #2a3566;
-  --c-pick: #7fb2ff;
-  --c-on-pick: #050816;
-  --c-pick-hover: #a3c7ff;
-  --c-plate: #2d43c8;
-
-  --shadow-ink: #1c2c80;
-  --focus-ring: #7fb2ff;
-  --focus-halo: #0a0f22;
 }
 
 @theme inline {
@@ -185,7 +133,7 @@ body {
   }
 
   /* Cincin dua lapis: lingkaran terang atau gelap di dalam, warna aksi di luar, terlihat di atas
-     paper, cobalt, dan blok gelap di kedua tema. */
+     paper, cobalt, dan blok gelap. */
   :focus-visible {
     outline: 3px solid var(--focus-ring);
     outline-offset: 2px;

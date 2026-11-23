@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { ScrollProgress } from "@/components/layout/ScrollProgress";
 import { SectionLink } from "@/components/layout/SectionLink";
-import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { useSignOut } from "@/hooks/useSignOut";
 import { cn } from "@/lib/utils";
 import { useUserStore } from "@/store/useUserStore";
@@ -127,7 +126,6 @@ export function Navbar() {
         </ul>
 
         <div className="flex items-center gap-2">
-          <ThemeToggle />
           {signedIn ? (
             <>
               <PointsChip poin={poin} />

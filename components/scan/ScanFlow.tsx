@@ -20,8 +20,8 @@ import { pickQuestions } from "@/lib/data/quiz";
 import { describeFirebaseError } from "@/lib/firebase/errors";
 import { submitScan, type SubmitScanResult } from "@/lib/firebase/firestore";
 import { QR_PARAM_BIN, QR_PARAM_LOCATION, scanTargetFromParams, type ScanTarget } from "@/lib/qr";
-import { COOLDOWN_MINUTES } from "@/lib/scoring";
-import type { QuizQuestion } from "@/lib/types";
+import { COOLDOWN_MINUTES, PENALTY_COOLDOWN_MINUTES } from "@/lib/scoring";
+import type { QuizAnswerRecord, QuizQuestion } from "@/lib/types";
 import { useUserStore } from "@/store/useUserStore";
 
 type Step = "scan" | "quiz" | "photo" | "result";
@@ -47,6 +47,7 @@ export function ScanFlow() {
   const [target, setTarget] = useState<ScanTarget | null>(() => scanTargetFromParams(searchParams));
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [quizCorrect, setQuizCorrect] = useState(0);
+  const [quizAnswers, setQuizAnswers] = useState<QuizAnswerRecord[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [session, setSession] = useState(0);
 
@@ -58,6 +59,7 @@ export function ScanFlow() {
     setStep("scan");
     setQuestions([]);
     setQuizCorrect(0);
+    setQuizAnswers([]);
     setResult(null);
     setScannedItem(null);
     setSubmitError(null);
@@ -123,6 +125,7 @@ export function ScanFlow() {
     if (!category || !location || cooldown.active || quiz.status === "loading") return;
     setQuestions(pickQuestions(quiz.items, category));
     setQuizCorrect(0);
+    setQuizAnswers([]);
     setSubmitError(null);
     stepHistory.enter();
     setStep("quiz");
@@ -142,6 +145,7 @@ export function ScanFlow() {
         itemId,
         quizCorrect,
         quizTotal: questions.length,
+        quizAnswers,
         photo,
       });
       setResult(outcome);
@@ -193,8 +197,8 @@ export function ScanFlow() {
             {cooldown.label}
           </span>
           <p className="text-sm">
-            <strong className="sr-only">Jeda scan {cooldown.label}. </strong>Jeda {COOLDOWN_MINUTES} menit mencegah scan
-            berulang berurutan. Kamu bisa menyiapkan pilihan sambil menunggu.
+            <strong className="sr-only">Jeda scan {cooldown.label}. </strong>Jeda {COOLDOWN_MINUTES} menit untuk scan
+            biasa ({PENALTY_COOLDOWN_MINUTES} menit bila ada pelanggaran). Kamu bisa menyiapkan pilihan sambil menunggu.
           </p>
         </div>
       ) : null}
@@ -239,8 +243,9 @@ export function ScanFlow() {
               <QuizStep
                 key={questions.map((q) => q.id).join("-")}
                 questions={questions}
-                onFinish={(correct) => {
+                onFinish={(correct, answers) => {
                   setQuizCorrect(correct);
+                  setQuizAnswers(answers);
                   setStep("photo");
                 }}
               />

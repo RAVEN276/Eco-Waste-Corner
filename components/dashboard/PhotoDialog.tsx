@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ReviewBadge, USER_REVIEW_LABELS } from "@/components/admin/ReviewBadge";
+import { reviewState } from "@/components/admin/adminLabels";
+import { ReviewNote } from "@/components/dashboard/ReviewNote";
 import { Dialog } from "@/components/ui/Dialog";
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import { BINS } from "@/lib/data/bins";
@@ -54,13 +57,22 @@ function PhotoContent({ scan }: { scan: ScanRecord }) {
         <img
           src={state.dataUrl}
           alt={`Foto bukti scan ${BINS[scan.categoryBin]?.label ?? scan.categoryBin}, ${formatDateTime(scan.timestamp)}`}
-          className="max-h-[60dvh] w-full rounded-plate bg-paper object-contain"
+          className="max-h-[calc(100dvh-16rem)] w-full rounded-plate bg-paper object-contain"
         />
       )}
-      <p className="text-sm text-muted">
-        {BINS[scan.categoryBin]?.label ?? scan.categoryBin}, {scan.locationName || scan.location},{" "}
-        {formatDateTime(scan.timestamp)}
-      </p>
+      <div className="space-y-2">
+        <p className="text-sm text-muted">
+          {BINS[scan.categoryBin]?.label ?? scan.categoryBin}, {scan.locationName || scan.location},{" "}
+          {formatDateTime(scan.timestamp)}
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <ReviewBadge state={reviewState(scan)} labels={USER_REVIEW_LABELS} />
+          {scan.review?.reviewedAt ? (
+            <span className="text-xs text-muted">{formatDateTime(scan.review.reviewedAt)}</span>
+          ) : null}
+        </div>
+        <ReviewNote review={scan.review} className="text-sm" />
+      </div>
     </div>
   );
 }
