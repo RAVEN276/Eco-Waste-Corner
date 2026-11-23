@@ -49,10 +49,25 @@ Dokumen yang rusak (kategori tak dikenal, pilihan kurang, `answerIndex` di luar 
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `users/{uid}`            | `uid`, `email`, `nama`, `prodi`, `poin` (hasil scan, bisa ditukar), `poinJSDP` (hasil penukaran, syarat kelulusan), `totalScan`, `cooldownUntil`, `createdAt`                                                                                                 |
 | `exchanges/{exchangeId}` | `exchangeId`, `userId`, `poinSpent`, `jsdpGained`, `timestamp`                                                                                                                                                                                                |
-| `scans/{scanId}`         | `scanId`, `userId`, `categoryBin`, `location`, `locationName`, `photoUrl`, `photoHash`, `itemType`, `quizAnswered`, `quizCorrect`, `quizTotal`, `pointsEarned` (bisa negatif), `status` (`verified`, `unverified`, `penalized`), `penaltyReason`, `timestamp`, `mlSuggestion` (tebakan pengenal foto atau `null`, lihat Saran jenis sampah dari foto) |
+| `scans/{scanId}`         | `scanId`, `userId`, `categoryBin`, `location`, `locationName`, `photoUrl`, `photoHash`, `itemType`, `quizAnswered`, `quizCorrect`, `quizTotal`, `pointsEarned` (bisa negatif), `status` (`verified`, `unverified`, `penalized`), `penaltyReason`, `timestamp`, `quizAnswers` (jawaban per soal, hanya scan baru), `review` (keputusan admin), `mlSuggestion` (tebakan pengenal foto atau `null`, lihat Saran jenis sampah dari foto) |
 | `locations/{locationId}` | `locationId`, `name`, `coordinates` (`x`, `y` dalam persen pada denah), `imageUrl`, `routeSteps`                                                                                                              |
 | `quizQuestions/{questionId}` | `category`, `question`, `options`, `answerIndex`, `explanation` |
 | `scanPhotos/{scanId}`    | `scanId`, `userId`, `mime`, `dataUrl`, `timestamp`                                                                                                                                                                                                            |
+
+## Halaman admin
+
+Admin membuka `/admin` (diketik di alamat, tidak ada tautannya di menu) untuk meninjau hasil scan pengguna. Halaman itu hanya bisa dipakai akun Google `lintararyadwi@gmail.com`. Akun lain melihat pesan "khusus admin", dan pengunjung yang belum login diarahkan ke halaman masuk.
+
+Yang terlihat per scan: foto bukti, pengguna dan lokasi, barang dan tong yang dipakai (dengan penanda sesuai atau tidak), jawaban kuis per soal, serta poin dan status otomatis. Daftar bisa disaring menurut keputusan (menunggu, disetujui, ditolak), dan foto yang sama dipakai ulang ditandai "Foto ganda" dengan tautan ke scan aslinya.
+
+Keputusannya disimpan di kolom `review` pada dokumen scan: `status` (`approved` atau `rejected`), `note` (wajib bila menolak, maksimal 500 karakter), `reviewedBy`, dan `reviewedAt`. Saat admin menyetujui scan bernilai poin positif, poin asli scan dan `totalScan` baru masuk ke akun pengguna; jika ditolak, pengguna tidak mendapatkan poin tersebut dan catatan penolakannya muncul di riwayat dashboard.
+
+Dua catatan keamanan:
+
+- **Yang melindungi data adalah aturan Firestore, bukan halamannya.** `isAdmin()` di `firestore.rules` mensyaratkan token Google dengan email terverifikasi `lintararyadwi@gmail.com`, dan hanya admin yang boleh membaca scan, foto, dan profil semua pengguna, serta mengubah kolom `review` saja. Penjaga di halaman hanya mengatur tampilan. Setelah mengubah `firestore.rules`, deploy: `firebase deploy --only firestore:rules`. Sebelum dideploy, halaman admin menampilkan "Akses ke data scan ditolak".
+- **Mengganti admin** berarti mengubah alamat di dua tempat: `ADMIN_EMAIL` di `lib/admin.ts` dan `isAdmin()` di `firestore.rules`, lalu deploy aturannya. Alamat itu ikut tersimpan di repositori, jadi perlakukan sebagai informasi yang bisa dibaca orang lain.
+
+Jawaban kuis per soal (`quizAnswers`) baru tersimpan dari scan setelah fitur ini. Scan lama hanya punya skor, dan halaman admin menyatakannya terus terang. Jawaban dan poin dikirim dari ponsel pengguna, jadi admin sebaiknya menganggapnya keterangan, bukan bukti: fotonya yang paling bisa dipegang.
 
 ## Kode QR tong
 
@@ -72,7 +87,7 @@ Membuat dan mencetak:
 
 Kalau alamat aplikasi berubah, semua kode harus dicetak ulang. Untuk lokasi baru, tambahkan di `lib/data/seed.json` (id huruf kecil dan tanda hubung), jalankan `npm run seed`, lalu `npm run qr`.
 
-Batasan: kode QR bisa difoto lalu dipindai dari jauh, atau tautannya diketik manual. Penghalang yang ada: foto bukti hanya dari kamera, jeda 15 menit, dan penalti untuk jenis sampah yang tidak cocok dengan tong. Memastikan orangnya benar-benar berada di lokasi butuh pemeriksaan di server (misalnya kode yang berganti berkala), yang memerlukan Cloud Functions.
+Batasan: kode QR bisa difoto lalu dipindai dari jauh, atau tautannya diketik manual. Penghalang yang ada: foto bukti hanya dari kamera, jeda 5 menit (15 menit bila pelanggaran), dan penalti untuk jenis sampah yang tidak cocok dengan tong. Memastikan orangnya benar-benar berada di lokasi butuh pemeriksaan di server (misalnya kode yang berganti berkala), yang memerlukan Cloud Functions.
 
 ## Foto bukti
 
@@ -104,7 +119,7 @@ Model dilatih di luar repo dari dataset publik Garbage Dataset (Kaggle `sumn2u/g
 | `DESIGN.md`               | Arah visual: identitas, palet dan kontras, tipografi, dial, komposisi halaman     |
 | `lib/firebase/`           | Config, auth, firestore, pemetaan error                                           |
 | `lib/validation/email.ts` | `isValidEmail`, panjang minimal kata sandi, pesan validasi                        |
-| `lib/scoring.ts`          | Poin berjenjang, penalti, cooldown 15 menit, kurs penukaran                       |
+| `lib/scoring.ts`          | Poin berjenjang, penalti, cooldown 5 menit (15 menit pelanggaran), kurs penukaran |
 | `lib/photo.ts`            | Validasi, hash, dan kompresi foto bukti                                           |
 | `lib/qr.ts`               | Format dan pembaca isi QR tong (lokasi dan jenis tong)                            |
 | `lib/ml/classify.ts`      | Pengenal jenis sampah dari foto (saran saja), model di `public/models/`           |
@@ -167,7 +182,7 @@ Jika menu SMTP Settings tidak ada atau terkunci di paket Spark, fitur itu butuh 
 
 ## Batasan yang perlu kamu tahu
 
-- Perhitungan poin berjalan di klien. `firestore.rules` membatasi kenaikan poin (maks +7 per scan, hanya setelah cooldown selesai) dan menjaga kurs penukaran, tetapi untuk produksi sebaiknya perhitungan dan penukaran dipindah ke Cloud Function.
+- Perhitungan poin awal berjalan di klien, lalu poin positif baru masuk ke saldo pengguna setelah admin menyetujui scan di `/admin` (aturan `firestore.rules` menahan kenaikan poin langsung dari klien, membatasi penyesuaian admin maks +-7 per scan, serta menjaga kurs penukaran). Untuk produksi skala penuh sebaiknya perhitungan tetap dipindah ke Cloud Function.
 - Siapa pun dengan email apa pun bisa mendaftar, jadi aplikasi tidak bisa memastikan seseorang mahasiswa UPJ. Nama dan program studi diisi sendiri oleh pengguna di dashboard. Jika poin JSDP nanti harus dicocokkan dengan data mahasiswa resmi, perlu langkah tambahan di luar aplikasi ini.
-- Status "Terverifikasi" berarti lolos pemeriksaan otomatis (kuis, kecocokan jenis sampah, foto unik). Belum ada review manual oleh admin.
+- Cek otomatis tahap 1 memeriksa kuis, kecocokan jenis sampah, dan foto unik; poin baru masuk ke saldo setelah verifikasi tahap 2 oleh admin (`approved`). Jika ditolak (`rejected`), poin tidak diberikan dan alasannya tampil di riwayat dashboard pengguna.
 - Denah di `/map` bersifat skematik. Foto area dan petunjuk rute diisi pengelola lewat Firestore.

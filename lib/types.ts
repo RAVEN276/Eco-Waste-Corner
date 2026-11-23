@@ -38,6 +38,10 @@ export interface ScanRecord {
   timestamp: number;
   /** Tebakan pengenal foto saat scan. Hanya catatan, tidak memengaruhi poin. Null bila tidak ada. */
   mlSuggestion: MlSuggestion | null;
+  /** Jawaban per soal yang dilaporkan klien. Null untuk scan lama yang hanya menyimpan skor. */
+  quizAnswers: QuizAnswerRecord[] | null;
+  /** Keputusan admin. Null berarti belum ditinjau. */
+  review: ScanReview | null;
 }
 
 /** Tebakan model pengenal sampah (lib/ml/classify.ts) untuk satu foto bukti. */
@@ -62,6 +66,26 @@ export interface MlSuggestion {
   loadMs: number;
   /** Lama satu tebakan, dalam milidetik. */
   inferMs: number;
+}
+
+/** Satu jawaban kuis. Teksnya disalin, supaya tetap terbaca bila bank soal berubah. */
+export interface QuizAnswerRecord {
+  questionId: string;
+  question: string;
+  chosen: string;
+  correct: string;
+  isCorrect: boolean;
+}
+
+export type ReviewDecision = "approved" | "rejected";
+
+/** Keputusan admin atas satu scan. Hanya mencatat tinjauan: tidak mengubah poin pengguna. */
+export interface ScanReview {
+  status: ReviewDecision;
+  note: string;
+  reviewedBy: string;
+  /** Epoch millis. Null sesaat setelah disimpan, sebelum server menetapkan waktunya. */
+  reviewedAt: number | null;
 }
 
 export interface ExchangeRecord {

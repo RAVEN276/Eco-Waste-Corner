@@ -5,9 +5,10 @@ import { BinArt, BinDrop } from "@/components/art/BinArt";
 import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
 import { Button, buttonClasses } from "@/components/ui/Button";
 import { AlertIcon, CheckIcon } from "@/components/ui/Icons";
+import { InlineNotice } from "@/components/ui/States";
 import { useCooldown } from "@/hooks/useCooldown";
 import type { SubmitScanResult } from "@/lib/firebase/firestore";
-import { EXCHANGE_JSDP, maxExchangePackages } from "@/lib/scoring";
+import { EXCHANGE_JSDP, PENALTY_COOLDOWN_MINUTES, maxExchangePackages } from "@/lib/scoring";
 import type { BinCategory } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -24,8 +25,9 @@ export function ResultStep({
   onAgain: () => void;
 }) {
   const cooldown = useCooldown();
-  const { breakdown, applied } = result;
+  const { breakdown, applied, pendingPoints } = result;
   const penalized = breakdown.status === "penalized";
+  const shownPoints = penalized ? applied : pendingPoints;
   const packages = maxExchangePackages(result.balance);
 
   return (
@@ -54,15 +56,25 @@ export function ResultStep({
           <h2 className="text-4xl">{penalized ? "Pelanggaran terdeteksi" : "Scan tercatat"}</h2>
         </div>
         <p className="mt-4 font-display text-8xl font-extrabold leading-none">
-          {applied > 0 ? "+" : ""}
-          <AnimatedCounter value={applied} />
-          <span className="ml-3 text-3xl font-bold">poin</span>
+          {shownPoints > 0 ? "+" : ""}
+          <AnimatedCounter value={shownPoints} />
+          <span className="ml-3 text-3xl font-bold">
+            {penalized ? "poin" : pendingPoints > 0 ? "poin menunggu admin" : "poin"}
+          </span>
         </p>
         <p className="mt-3 text-sm">{breakdown.tierLabel}</p>
         {penalized && applied === 0 ? (
           <p className="mt-1 text-sm">Saldo sudah 0, jadi tidak ada poin yang dipotong.</p>
         ) : null}
       </div>
+
+      <InlineNotice tone={penalized ? "warning" : "info"}>
+        {penalized
+          ? `Pelanggaran tercatat pada cek otomatis tahap 1. Jeda scan berikutnya diperpanjang menjadi ${PENALTY_COOLDOWN_MINUTES} menit.`
+          : pendingPoints > 0
+            ? `Cek otomatis tahap 1 selesai. Poin sebesar +${pendingPoints} baru masuk ke saldo setelah scan ini disetujui oleh admin. Jika ditolak, kamu tidak menerima poin tersebut dan bisa melihat alasannya di riwayat dashboard.`
+            : "Cek otomatis tahap 1 selesai tanpa poin karena jawaban kuis belum memenuhi syarat. Scan tetap tercatat untuk ditinjau admin."}
+      </InlineNotice>
 
       <dl className="fade-up grid grid-cols-2 gap-3 text-sm" style={{ ["--delay" as string]: "300ms" }}>
         <div className="rounded-plate border-2 border-rule bg-surface p-4">

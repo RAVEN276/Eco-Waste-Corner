@@ -1,21 +1,25 @@
 import {
   collection,
   doc,
+  documentId,
   getDoc,
   getDocs,
   limit,
   onSnapshot,
+  orderBy,
   query,
   runTransaction,
   serverTimestamp,
   setDoc,
+  startAfter,
   Timestamp,
   updateDoc,
   where,
   type DocumentData,
+  type QueryDocumentSnapshot,
   type Unsubscribe,
 } from "firebase/firestore";
-import { getDb } from "@/lib/firebase/config";
+import { getDb, getFirebaseAuth } from "@/lib/firebase/config";
 import { compressPhoto, hashFile } from "@/lib/photo";
 import { BIN_LIST, isBinCategory } from "@/lib/data/bins";
 import { findWasteItem } from "@/lib/data/items";
@@ -23,6 +27,7 @@ import { DEFAULT_QUIZ_BANK, QUESTIONS_PER_SCAN } from "@/lib/data/quiz";
 import seed from "@/lib/data/seed.json";
 import {
   COOLDOWN_MS,
+  PENALTY_COOLDOWN_MS,
   PENALTY_LABEL,
   PENALTY_POINTS,
   applyToBalance,
@@ -37,8 +42,11 @@ import type {
   DataSource,
   ExchangeRecord,
   MlSuggestion,
+  QuizAnswerRecord,
   QuizQuestion,
+  ReviewDecision,
   ScanRecord,
+  ScanReview,
   UserProfile,
 } from "@/lib/types";
 
@@ -64,6 +72,36 @@ function mapUser(uid: string, data: DocumentData): UserProfile {
   };
 }
 
+/** Jawaban per soal. Entri yang bentuknya salah dilewati, dan tanpa satu pun yang valid hasilnya null. */
+function mapQuizAnswers(raw: unknown): QuizAnswerRecord[] | null {
+  if (!Array.isArray(raw)) return null;
+  const answers: QuizAnswerRecord[] = [];
+  for (const item of raw) {
+    if (item === null || typeof item !== "object") continue;
+    const a = item as Record<string, unknown>;
+    answers.push({
+      questionId: String(a.questionId ?? ""),
+      question: String(a.question ?? ""),
+      chosen: String(a.chosen ?? ""),
+      correct: String(a.correct ?? ""),
+      isCorrect: Boolean(a.isCorrect),
+    });
+  }
+  return answers.length > 0 ? answers : null;
+}
+
+function mapReview(raw: unknown): ScanReview | null {
+  if (raw === null || typeof raw !== "object") return null;
+  const r = raw as Record<string, unknown>;
+  if (r.status !== "approved" && r.status !== "rejected") return null;
+  return {
+    status: r.status,
+    note: String(r.note ?? ""),
+    reviewedBy: String(r.reviewedBy ?? ""),
+    reviewedAt: toMillis(r.reviewedAt),
+  };
+}
+
 function mapScan(id: string, data: DocumentData): ScanRecord {
   return {
     scanId: id,
@@ -82,6 +120,8 @@ function mapScan(id: string, data: DocumentData): ScanRecord {
     penaltyReason: data.penaltyReason ?? null,
     timestamp: toMillis(data.timestamp) ?? 0,
     mlSuggestion: mapMlSuggestion(data.mlSuggestion),
+    quizAnswers: mapQuizAnswers(data.quizAnswers),
+    review: mapReview(data.review),
   };
 }
 
@@ -199,6 +239,102 @@ export async function fetchScanPhoto(scanId: string): Promise<string | null> {
   return typeof dataUrl === "string" && dataUrl.startsWith("data:image/") ? dataUrl : null;
 }
 
+/* ----------------------------- admin: tinjauan scan ----------------------------- */
+
+export const ADMIN_PAGE_SIZE = 50;
+
+export interface AdminScanPage {
+  scans: ScanRecord[];
+  /** Penanda untuk halaman berikutnya, dipakai sebagai argumen `fetchAdminScans`. */
+  cursor: QueryDocumentSnapshot | null;
+  hasMore: boolean;
+}
+
+/**
+ * Scan semua pengguna, terbaru dulu, satu halaman per panggilan. Hanya akun admin yang diizinkan
+ * aturan Firestore. Foto tidak ikut dimuat: ukurannya besar, jadi diambil satu per satu lewat `fetchScanPhoto`.
+ */
+export async function fetchAdminScans(after: QueryDocumentSnapshot | null): Promise<AdminScanPage> {
+  const scans = collection(getDb(), "scans");
+  const snap = await getDocs(
+    after
+      ? query(scans, orderBy("timestamp", "desc"), startAfter(after), limit(ADMIN_PAGE_SIZE))
+      : query(scans, orderBy("timestamp", "desc"), limit(ADMIN_PAGE_SIZE)),
+  );
+  assertReachable(snap);
+  return {
+    scans: snap.docs.map((d) => mapScan(d.id, d.data({ serverTimestamps: "estimate" }))),
+    cursor: snap.docs[snap.docs.length - 1] ?? after,
+    hasMore: snap.docs.length === ADMIN_PAGE_SIZE,
+  };
+}
+
+const IN_QUERY_LIMIT = 10;
+
+/** Profil beberapa pengguna sekaligus, untuk menampilkan nama di daftar scan. Yang tidak ditemukan tidak ikut. */
+export async function fetchUsersByIds(uids: string[]): Promise<Map<string, UserProfile>> {
+  const users = new Map<string, UserProfile>();
+  for (let i = 0; i < uids.length; i += IN_QUERY_LIMIT) {
+    const chunk = uids.slice(i, i + IN_QUERY_LIMIT);
+    const snap = await getDocs(query(collection(getDb(), "users"), where(documentId(), "in", chunk)));
+    snap.forEach((d) => users.set(d.id, mapUser(d.id, d.data())));
+  }
+  return users;
+}
+
+/**
+ * Menyimpan keputusan admin pada satu scan sekaligus memperbarui saldo poin dan `totalScan`
+ * pengguna dalam satu transaksi. Poin positif dari scan baru masuk ke saldo saat `approved`;
+ * jika `rejected`, pengguna tidak mendapat poin tersebut (atau ditarik kembali bila sebelumnya
+ * pernah disetujui). Scan penalti tidak berubah poinnya saat ditinjau.
+ */
+export async function saveScanReview(
+  scanId: string,
+  decision: ReviewDecision,
+  note: string,
+): Promise<ScanReview> {
+  const email = getFirebaseAuth().currentUser?.email;
+  if (!email) throw new Error("Sesi login tidak ditemukan. Masuk lagi lalu coba lagi.");
+  const trimmed = note.trim();
+  const db = getDb();
+  const scanRef = doc(db, "scans", scanId);
+
+  await runTransaction(db, async (tx) => {
+    const scanSnap = await tx.get(scanRef);
+    if (!scanSnap.exists()) throw new Error("Data scan tidak ditemukan.");
+    const scan = mapScan(scanSnap.id, scanSnap.data());
+    const userRef = doc(db, "users", scan.userId);
+    const userSnap = await tx.get(userRef);
+    if (!userSnap.exists()) throw new Error("Profil pengguna tidak ditemukan.");
+    const profile = mapUser(scan.userId, userSnap.data());
+
+    const wasApproved = scan.review?.status === "approved";
+    const willBeApproved = decision === "approved";
+    const countsAsValidScan = scan.status !== "penalized";
+
+    let nextPoin = profile.poin;
+    let nextTotalScan = profile.totalScan;
+
+    if (!wasApproved && willBeApproved) {
+      if (scan.pointsEarned > 0) nextPoin = profile.poin + scan.pointsEarned;
+      if (countsAsValidScan) nextTotalScan = profile.totalScan + 1;
+    } else if (wasApproved && !willBeApproved) {
+      if (scan.pointsEarned > 0) nextPoin = Math.max(0, profile.poin - scan.pointsEarned);
+      if (countsAsValidScan) nextTotalScan = Math.max(0, profile.totalScan - 1);
+    }
+
+    tx.update(scanRef, {
+      review: { status: decision, note: trimmed, reviewedBy: email, reviewedAt: serverTimestamp() },
+    });
+
+    if (nextPoin !== profile.poin || nextTotalScan !== profile.totalScan) {
+      tx.update(userRef, { poin: nextPoin, totalScan: nextTotalScan });
+    }
+  });
+
+  return { status: decision, note: trimmed, reviewedBy: email, reviewedAt: Date.now() };
+}
+
 async function photoHashExists(uid: string, hash: string): Promise<boolean> {
   const snap = await getDocs(
     query(
@@ -219,6 +355,8 @@ export interface SubmitScanInput {
   itemId: string;
   quizCorrect: number;
   quizTotal: number;
+  /** Jawaban per soal, supaya admin bisa memeriksanya. Dilaporkan klien, jadi bukan bukti. */
+  quizAnswers: QuizAnswerRecord[];
   photo: File | null;
   /** Tebakan pengenal foto, hanya dicatat. Tidak dipakai untuk menghitung poin. */
   mlSuggestion: MlSuggestion | null;
@@ -227,8 +365,10 @@ export interface SubmitScanInput {
 export interface SubmitScanResult {
   scanId: string;
   breakdown: ScoreBreakdown;
-  /** Points actually applied after the zero-balance floor. */
+  /** Immediate point delta applied to balance (negative on penalty, 0 while waiting for admin approval). */
   applied: number;
+  /** Original positive points recorded on the scan, awarded once admin approves. */
+  pendingPoints: number;
   balance: number;
   cooldownUntil: number;
 }
@@ -284,9 +424,15 @@ export async function submitScan(input: SubmitScanInput): Promise<SubmitScanResu
       };
     }
 
-    const { balance, applied } = applyToBalance(profile.poin, breakdown.net);
-    const cooldownUntil = violatedCooldown ? (profile.cooldownUntil as number) : now + COOLDOWN_MS;
-    const countsAsScan = breakdown.status !== "penalized";
+    const isPenalized = breakdown.status === "penalized";
+    const { balance, applied } = isPenalized
+      ? applyToBalance(profile.poin, breakdown.net)
+      : { balance: profile.poin, applied: 0 };
+    const pendingPoints = isPenalized ? 0 : breakdown.net;
+    const pointsRecorded = isPenalized ? applied : breakdown.net;
+    const cooldownUntil = isPenalized
+      ? Math.max(profile.cooldownUntil ?? 0, now + PENALTY_COOLDOWN_MS)
+      : now + COOLDOWN_MS;
 
     tx.set(scanRef, {
       scanId: scanRef.id,
@@ -300,7 +446,8 @@ export async function submitScan(input: SubmitScanInput): Promise<SubmitScanResu
       quizAnswered: true,
       quizCorrect: input.quizCorrect,
       quizTotal: input.quizTotal,
-      pointsEarned: applied,
+      quizAnswers: input.quizAnswers,
+      pointsEarned: pointsRecorded,
       status: breakdown.status,
       penaltyReason: breakdown.penalty,
       timestamp: serverTimestamp(),
@@ -319,11 +466,11 @@ export async function submitScan(input: SubmitScanInput): Promise<SubmitScanResu
 
     tx.update(userRef, {
       poin: balance,
-      totalScan: profile.totalScan + (countsAsScan ? 1 : 0),
+      totalScan: profile.totalScan,
       cooldownUntil: Timestamp.fromMillis(cooldownUntil),
     });
 
-    return { scanId: scanRef.id, breakdown, applied, balance, cooldownUntil };
+    return { scanId: scanRef.id, breakdown, applied, pendingPoints, balance, cooldownUntil };
   });
 }
 

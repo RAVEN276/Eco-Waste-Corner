@@ -5,6 +5,7 @@ import { ExchangePanel } from "@/components/dashboard/ExchangePanel";
 import { HistoryList } from "@/components/dashboard/HistoryList";
 import { PointsCard } from "@/components/dashboard/PointsCard";
 import { ProfileCard } from "@/components/dashboard/ProfileCard";
+import { Button } from "@/components/ui/Button";
 
 import { ErrorState, LoadingState } from "@/components/ui/States";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
@@ -14,6 +15,7 @@ export default function DashboardPage() {
   const authStatus = useRequireAuth();
   const profileStatus = useUserStore((s) => s.profileStatus);
   const profile = useUserStore((s) => s.profile);
+  const isAdmin = useUserStore((s) => s.isAdmin);
   const error = useUserStore((s) => s.error);
   const retryProfile = useUserStore((s) => s.retryProfile);
 
@@ -51,13 +53,20 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-14 px-4 py-10 sm:px-6 md:py-14">
-      <div>
-        <h1 className="fade-up text-6xl sm:text-7xl">
-          Halo, {profile.nama.split(" ")[0] || "Mahasiswa UPJ"}
-        </h1>
-        <p className="fade-up mt-3 text-lg text-muted" style={{ ["--delay" as string]: "120ms" }}>
-          Ringkasan poin, poin JSDP, dan aktivitas pemilahanmu.
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="fade-up text-6xl sm:text-7xl">
+            Halo, {profile.nama.split(" ")[0] || "Mahasiswa UPJ"}
+          </h1>
+          <p className="fade-up mt-3 text-lg text-muted" style={{ ["--delay" as string]: "120ms" }}>
+            Ringkasan poin, poin JSDP, dan aktivitas pemilahanmu.
+          </p>
+        </div>
+        {isAdmin ? (
+          <Button href="/admin" variant="dark" size="lg" className="w-full shrink-0 sm:w-auto">
+            Buka dashboard admin
+          </Button>
+        ) : null}
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.5fr_1fr]">
