@@ -1,175 +1,335 @@
+<div align="center">
+
+<img src="./public/brand-logo.png" alt="Logo Eco Waste Corner UPJ" width="112" />
+
 # Eco Waste Corner UPJ
 
-Aplikasi web edukasi dan pemilahan sampah untuk mahasiswa Universitas Pembangunan Jaya.
-Next.js (App Router), TypeScript, Tailwind CSS 4, Framer Motion, Zustand, Firebase.
+**Ruang edukasi dan pemilahan sampah untuk mahasiswa Universitas Pembangunan Jaya.**
 
-## Menjalankan
+Pilah sampah di stasiun pilah kampus, pindai kode QR pada tong, jawab kuis singkat, unggah foto bukti dari kamera, kumpulkan poin, lalu tukarkan menjadi poin JSDP.
+
+<p>
+  <a href="#apa-itu-eco-waste-corner-upj">Tentang</a> •
+  <a href="#tech-stack">Tech Stack</a> •
+  <a href="#aturan-poin-dan-penukaran-jsdp">Aturan Poin</a> •
+  <a href="#menjalankan-secara-lokal">Instalasi</a> •
+  <a href="#setup-firebase">Setup Firebase</a> •
+  <a href="#saran-pengembangan">Saran</a>
+</p>
+
+<p>
+  <img src="https://img.shields.io/badge/Next.js-16.4.5-12182B?style=flat-square&logo=nextdotjs&logoColor=white" alt="Next.js 16.4.5" />
+  <img src="https://img.shields.io/badge/React-19.3.0-2438A6?style=flat-square&logo=react&logoColor=white" alt="React 19.3.0" />
+  <img src="https://img.shields.io/badge/TypeScript-5-2438A6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript 5" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-4-1E7A4B?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind CSS 4" />
+  <img src="https://img.shields.io/badge/Firebase-13.2.0-F4B81E?style=flat-square&logo=firebase&logoColor=12182B" alt="Firebase 13.2.0" />
+</p>
+
+</div>
+
+---
+
+## Apa itu Eco Waste Corner UPJ?
+
+**Eco Waste Corner UPJ** adalah aplikasi web edukasi sekaligus sistem pencatatan aktivitas pemilahan sampah di lingkungan kampus Universitas Pembangunan Jaya (UPJ). Aplikasi ini menghubungkan kebiasaan memilah sampah secara fisik di kampus dengan pencatatan **poin JSDP**, salah satu syarat kelulusan mahasiswa UPJ.
+
+Di dalam aplikasi, terdapat dua jenis poin yang fungsinya dipisahkan secara tegas:
+
+| Jenis Poin | Sumber | Fungsi |
+| :--- | :--- | :--- |
+| **Poin** | Aktivitas pindai QR, kuis, dan foto bukti yang disetujui admin | Saldo sementara hasil memilah sampah (dapat berkurang jika terkena penalti) |
+| **Poin JSDP** | Penukaran satu arah dari saldo `poin` (`10 poin = 5 poin JSDP`) | Poin syarat kelulusan yang dikumpulkan di akun mahasiswa |
+
+> [!NOTE]
+> Penukaran hanya berlaku satu arah dari **poin** ke **poin JSDP**. Tidak ada katalog hadiah, keranjang belanja, maupun penukaran balik ke saldo awal.
+
+### Alur Penggunaan di Kampus
+
+Di kampus tersedia dua titik stasiun pilah (**Spot A: Dekat Pantry Kantin** dan **Spot B: Dekat Parkiran Motor**). Masing-masing lokasi memiliki tiga tong (**Organik**, **Plastik/Kertas**, dan **Residu**), sehingga total terdapat enam kode QR unik.
+
+```text
+[1] Datang ke Stasiun Pilah (Spot A / Spot B)
+       │
+       ▼
+[2] Pindai QR di Tong (lokasi & kategori tong terbaca otomatis, tanpa pilihan manual)
+       │
+       ▼
+[3] Jawab Kuis Singkat & Pilih Jenis Sampah
+       │
+       ▼
+[4] Ambil Foto Bukti Langsung via Kamera Ponsel
+       │
+       ▼
+[5] Verifikasi Admin (/admin) ──► Poin Masuk ke Saldo ──► Tukar ke Poin JSDP (/dashboard)
+```
+
+1. **Pindai QR tong**: Mahasiswa memindai QR memakai kamera bawaan ponsel atau pemindai langsung di halaman `/scan`. Lokasi dan jenis tong langsung terkunci dari URL QR (`/scan?lokasi=...&tong=...`).
+2. **Jawab kuis**: Sistem memilih soal acak sesuai kategori tong yang dipindai.
+3. **Pilih barang dan ambil foto bukti**: Foto diambil langsung melalui kamera ponsel (tanpa unggah file bebas dari galeri desktop) sebagai bukti pembuangan sesuai kategori tong.
+4. **Tinjauan admin**: Hasil pemindaian bersaldo positif dicatat sebagai tertunda hingga admin menyetujuinya di `/admin`. Pelanggaran otomatis (sampah tidak sesuai tong, foto duplikat via hash SHA-256, atau scan saat jeda aktif) langsung mengurangi saldo.
+5. **Tukar ke poin JSDP**: Setelah poin terkumpul, mahasiswa menukarnya per paket kelipatan `10 poin` menjadi `5 poin JSDP` di `/dashboard`.
+
+### Halaman dan Fitur Aplikasi
+
+| Route | Peran | Ringkasan Fitur |
+| :--- | :--- | :--- |
+| `/` | Beranda | Penjelasan aturan poin, kamus jenis sampah, dan latihan memilah interaktif |
+| `/login` | Autentikasi | Masuk dengan Google atau Email/Password, daftar langsung aktif, dan lupa kata sandi |
+| `/scan` | Alur Pemilahan | Pemindai QR kamera otomatis (`jsQR`), kuis per kategori, pemilihan barang, dan kamera bukti |
+| `/map` | Peta Kampus | Denah skematik lokasi stasiun pilah lengkap dengan koordinat dan panduan rute jalan kaki |
+| `/dashboard` | Dasbor Pengguna | Profil mahasiswa (nama & prodi), saldo `poin` & `poin JSDP`, panel penukaran, riwayat scan, dan riwayat penukaran |
+| `/admin` | Konsol Admin | Tinjauan foto bukti, deteksi foto ganda, jawaban kuis per soal, dan persetujuan/penolakan poin (khusus akun Google admin, tanpa tautan di menu publik) |
+
+---
+
+## Tech Stack
+
+Seluruh bagian aplikasi dibangun di atas arsitektur React Server/Client Components modern dengan Firebase sebagai backend autentikasi dan basis data.
+
+### Inti Framework dan Antarmuka
+
+| Teknologi | Versi | Peran di Proyek |
+| :--- | :--- | :--- |
+| **Next.js (App Router + Turbopack)** | `16.4.5` | Kerangka aplikasi web dengan `cacheComponents: true` dan optimasi `next/font` |
+| **React & React DOM** | `19.3.0` | Pustaka antarmuka komponen interaktif |
+| **TypeScript** | `5` | Pengetikan statis strict di seluruh halaman, hooks, store, dan lapisan Firebase |
+| **Tailwind CSS** | `4` (`@tailwindcss/turbopack`) | Utilitas styling berbasis design token pada `app/globals.css` (tanpa `postcss.config`) |
+| **Tipografi & Aset Visual** | Kustom (`next/font` & SVG) | **Big Shoulders** untuk judul/angka, **Atkinson Hyperlegible Next** untuk teks isi, serta ikon (`Icons.tsx`) dan ilustrasi (`BinArt.tsx`, `ItemArt.tsx`) buatan sendiri |
+
+### State, Animasi, dan Utilitas Browser
+
+| Teknologi | Versi | Peran di Proyek |
+| :--- | :--- | :--- |
+| **Zustand** | `5.0.16` | State management global (`useUserStore`) untuk sesi auth, profil, `poin`, `poinJSDP`, dan `cooldownUntil` |
+| **Framer Motion** | `14.9.1` | Transisi alur langkah dan animasi UI dengan `MotionConfig` yang menghormati `prefers-reduced-motion` |
+| **jsQR** | `1.4.0` | Pembacaan kode QR langsung di browser via `getUserMedia` (dimuat dinamis hanya saat langkah pindai dibuka) |
+| **Web Crypto & Canvas API** | Bawaan Browser | Kompresi foto bukti JPEG (maksimal sisi `1024 px`) dan hashing SHA-256 di `lib/photo.ts` untuk deteksi foto duplikat |
+
+### Backend, Basis Data, dan Perkakas CLI
+
+| Teknologi | Versi | Peran di Proyek |
+| :--- | :--- | :--- |
+| **Firebase Auth** | `13.2.0` | Login Google dan Email/Password, manajemen masa sesi kustom (`session.ts`), serta reset kata sandi dengan `continueUrl` |
+| **Cloud Firestore** | `13.2.0` | Penyimpanan dokumen pengguna, riwayat scan, foto bukti terkompresi (`scanPhotos`), penukaran, lokasi, dan bank soal kuis dengan aturan keamanan `firestore.rules` |
+| **Firebase Admin SDK** | `14.5.0` | Utilitas CLI untuk pengisian data awal (`seed`), reset akun, dan pembersihan riwayat |
+| **qrcode** | `1.5.4` | Generator kode QR siap cetak A4 (`.html`, `.svg`, dan `.png`) pada skrip `scripts/generate-qr.mjs` |
+
+---
+
+## Aturan Poin dan Penukaran JSDP
+
+Perhitungan poin didefinisikan terpusat di [lib/scoring.ts](file:///D:/test/Personal/eco-waste-corner/lib/scoring.ts) dan dikawal batasannya di [firestore.rules](file:///D:/test/Personal/eco-waste-corner/firestore.rules).
+
+### Perolehan Poin per Scan
+
+| Hasil Kuis | Foto Bukti | Perhitungan Poin |
+| :--- | :--- | :--- |
+| Semua benar | Ada | Poin dasar + `2` |
+| Semua benar | Tidak ada | Setengah poin dasar (dibulatkan ke atas) |
+| Separuh benar | Ada | Setengah poin dasar (dibulatkan ke atas) |
+| Lainnya | Apa pun | `0` |
+
+- **Poin dasar kategori tong**: Organik `3`, Plastik/Kertas `5`, Residu `2`.
+- **Penalti otomatis**: sampah tidak cocok dengan kategori tong (`-3`), foto duplikat terdeteksi via SHA-256 (`-3`), atau mengirim scan saat masa jeda masih berjalan (`-2`). Saldo tidak pernah turun di bawah `0`.
+- **Jeda antar scan (cooldown)**: `5 menit` untuk scan normal, dan `15 menit` apabila terjadi pelanggaran.
+
+### Kurs Penukaran Poin JSDP
+
+- `10 poin` ditukar menjadi `5 poin JSDP` (berlaku kelipatan `10`).
+- Sisa poin di bawah `10` tetap tersimpan di akun pengguna.
+- Penukaran bersifat final dan diproses melalui transaksi Firestore (`submitExchange`).
+
+> [!IMPORTANT]
+> Jika mengubah nilai `EXCHANGE_POIN` atau `EXCHANGE_JSDP` di `lib/scoring.ts`, pastikan angka pada fungsi `isExchangeUpdate` dan aturan koleksi `exchanges` di `firestore.rules` ikut diperbarui, lalu deploy ulang aturan Firestore.
+
+---
+
+## Menjalankan Secara Lokal
+
+### Prasyarat
+
+- Node.js dan npm
+- Proyek Firebase (Authentication dan Cloud Firestore aktif)
+
+### Langkah Instalasi
 
 ```bash
 npm install
-cp .env.example .env.local   # isi kunci Firebase
+cp .env.example .env.local   # isi seluruh variabel NEXT_PUBLIC_FIREBASE_*
 npm run dev
 ```
 
-Perintah lain: `npm run build`, `npm run lint`, `npm run seed`, `npm run qr` (membuat kode QR tong, lihat bagian Kode QR tong).
+Setelah server berjalan, buka `http://localhost:3000`.
 
-## Setup Firebase (sekali saja)
+### Daftar Perintah npm
 
-1. **Authentication**: aktifkan provider **Google** dan **Email/Password** (tidak perlu mengaktifkan _Email link_). Tambahkan `localhost` dan domain produksi di _Authorized domains_.
-2. **Firestore**: buat database, lalu deploy `firestore.rules`.
+| Perintah | Kegunaan |
+| :--- | :--- |
+| `npm run dev` | Menjalankan server pengembangan Next.js |
+| `npm run build` | Membuat build produksi (memvalidasi TypeScript dan prerender Cache Components) |
+| `npm run lint` | Menjalankan ESLint di seluruh proyek |
+| `npm run qr -- --base <URL>` | Membuat enam kode QR siap cetak di folder `qr-print/` |
+| `npm run seed` | Mengisi koleksi `locations` dan `quizQuestions` ke Firestore |
+| `npm run reset:accounts` | Mengembalikan saldo akun ke 0 (mode dry-run; tambahkan `-- --apply` untuk eksekusi dan `--history` untuk hapus riwayat) |
+| `npm run clear:history` | Menghapus seluruh dokumen `scans` dan `scanPhotos` serta mereset `totalScan` ke 0 tanpa mengubah poin (tambahkan `-- --apply` untuk eksekusi) |
 
-   Deploy dengan Firebase CLI: `npx firebase-tools login`, lalu `npx firebase-tools deploy --only firestore:rules` (proyek sudah diatur di `.firebaserc`). Kamu juga bisa menempel isi file itu di tab _Rules_ pada Console.
+---
 
-3. **Firebase Storage tidak dipakai** (berbayar). Foto bukti disimpan di Firestore, lihat bagian Foto bukti.
-4. **Data awal** (`locations` dan `quizQuestions`):
-   - Firebase Console > Project settings > Service accounts > _Generate new private key_, simpan di luar repo.
-   - PowerShell: `$env:GOOGLE_APPLICATION_CREDENTIALS="C:\path\key.json"; npm run seed`
-   - Lokasi ada di `lib/data/seed.json`, soal kuis di `lib/data/quiz-bank.json`. Ganti `imageUrl` dan `routeSteps` lewat Firestore Console.
-   - `npm run seed` menimpa dokumen lokasi dengan isi `seed.json`.
-   - Soal kuis hanya dibuat bila belum ada, jadi soal yang kamu sunting di Console tidak tertimpa. Tambahkan `-- --overwrite-quiz` untuk mengganti semuanya dengan soal bawaan.
-   - Tanpa service account key, data bisa diisi lewat Firebase CLI: `npx firebase-tools login`, lalu server MCP-nya (`npx firebase-tools mcp --only firestore`) punya alat `firestore_add_document` dan `firestore_update_document`.
+## Setup Firebase
 
-Sebelum `locations` terisi, peta menampilkan data contoh dengan label peringatan.
+1. **Authentication**:
+   Aktifkan provider **Google** dan **Email/Password** (login tautan email tidak digunakan). Daftarkan `localhost` serta domain produksi (misalnya `eco-waste-corner.vercel.app`) pada **Authentication > Settings > Authorized domains**.
+2. **Firestore Security Rules**:
+   Buat database Firestore, lalu deploy aturan keamanan menggunakan Firebase CLI (proyek sudah ditautkan lewat `.firebaserc`):
+   ```bash
+   npx firebase-tools login
+   npx firebase-tools deploy --only firestore:rules
+   ```
+3. **Firebase Storage tidak digunakan**:
+   Foto bukti disimpan langsung sebagai data URL JPEG terkompresi di koleksi `scanPhotos` agar proyek tetap berjalan pada paket gratis tanpa Storage.
+4. **Isi Data Awal (`locations` dan `quizQuestions`)**:
+   - Buat Service Account key di **Firebase Console > Project settings > Service accounts > Generate new private key**, lalu simpan di luar repositori.
+   - Jalankan di PowerShell:
+     ```powershell
+     $env:GOOGLE_APPLICATION_CREDENTIALS="C:\path\key.json"; npm run seed
+     ```
+   - `npm run seed` menimpa dokumen lokasi dengan `lib/data/seed.json`, sementara soal kuis dari `lib/data/quiz-bank.json` hanya ditambahkan jika dokumen belum ada (tambahkan `-- --overwrite-quiz` untuk menimpa soal).
+   - Tanpa service account key, data dapat diisi melalui Firebase CLI MCP (`npx firebase-tools mcp --only firestore`). Sebelum `locations` terisi, peta menampilkan data contoh dengan label peringatan.
 
-### Bank soal kuis
+---
 
-Soal kuis dibaca dari koleksi `quizQuestions`, satu dokumen per soal, dengan id yang stabil (misalnya `org-1`). Rules mengizinkan baca untuk semua orang dan menolak semua tulis dari aplikasi, jadi soal hanya diubah lewat Firestore Console atau Admin SDK. Tiap dokumen berisi:
+<details>
+<summary><strong>Detail Teknis: Bank Soal Kuis, Skema Firestore, dan Halaman Admin</strong></summary>
 
-- `category`: `organik`, `plastik_kertas`, atau `residu`.
-- `question`: teks pertanyaan.
-- `options`: array berisi minimal dua pilihan jawaban.
-- `answerIndex`: nomor pilihan yang benar, dihitung dari 0.
-- `explanation`: penjelasan yang tampil setelah menjawab.
+### Bank Soal Kuis (`quizQuestions`)
 
-Dokumen yang rusak (kategori tak dikenal, pilihan kurang, `answerIndex` di luar pilihan) dilewati. Kalau tiap tong tidak punya setidaknya 2 soal yang valid, kuis memakai soal bawaan dari `lib/data/quiz-bank.json` dan menampilkan pemberitahuan. Aplikasi membaca seluruh bank sekali per 15 menit per tab, jadi soal yang baru disunting bisa butuh beberapa menit untuk muncul.
+Soal dibaca dari koleksi `quizQuestions` (di-cache 15 menit per tab). Rules mengizinkan akses baca publik dan menolak penulisan dari aplikasi klien, sehingga pengelolaan soal dilakukan lewat Firestore Console atau Admin SDK.
 
-## Skema Firestore
+Setiap dokumen soal memiliki struktur:
+- `category`: `organik`, `plastik_kertas`, atau `residu`
+- `question`: teks pertanyaan
+- `options`: array berisi minimal 2 pilihan jawaban
+- `answerIndex`: indeks jawaban benar (dimulai dari `0`)
+- `explanation`: penjelasan yang tampil setelah pengguna menjawab
 
-| Koleksi                  | Field                                                                                                                                                                                                                                                         |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `users/{uid}`            | `uid`, `email`, `nama`, `prodi`, `poin` (hasil scan, bisa ditukar), `poinJSDP` (hasil penukaran, syarat kelulusan), `totalScan`, `cooldownUntil`, `createdAt`                                                                                                 |
-| `exchanges/{exchangeId}` | `exchangeId`, `userId`, `poinSpent`, `jsdpGained`, `timestamp`                                                                                                                                                                                                |
-| `scans/{scanId}`         | `scanId`, `userId`, `categoryBin`, `location`, `locationName`, `photoUrl`, `photoHash`, `itemType`, `quizAnswered`, `quizCorrect`, `quizTotal`, `pointsEarned` (bisa negatif), `status` (`verified`, `unverified`, `penalized`), `penaltyReason`, `timestamp`, `quizAnswers` (jawaban per soal, hanya scan baru), `review` (keputusan admin) |
-| `locations/{locationId}` | `locationId`, `name`, `coordinates` (`x`, `y` dalam persen pada denah), `imageUrl`, `routeSteps`                                                                                                              |
+Apabila data koleksi kosong, kurang dari 2 soal valid per kategori, atau gagal dimuat, aplikasi otomatis menggunakan data bawaan dari `lib/data/quiz-bank.json` disertai pemberitahuan.
+
+### Skema Koleksi Firestore
+
+| Koleksi | Field |
+| :--- | :--- |
+| `users/{uid}` | `uid`, `email`, `nama`, `prodi`, `poin`, `poinJSDP`, `totalScan`, `cooldownUntil`, `createdAt` |
+| `exchanges/{exchangeId}` | `exchangeId`, `userId`, `poinSpent`, `jsdpGained`, `timestamp` |
+| `scans/{scanId}` | `scanId`, `userId`, `categoryBin`, `location`, `locationName`, `photoUrl`, `photoHash`, `itemType`, `quizAnswered`, `quizCorrect`, `quizTotal`, `pointsEarned`, `status` (`verified`, `unverified`, `penalized`), `penaltyReason`, `timestamp`, `quizAnswers`, `review` |
+| `locations/{locationId}` | `locationId`, `name`, `coordinates` (`x`, `y` dalam persen pada denah), `imageUrl`, `routeSteps` |
 | `quizQuestions/{questionId}` | `category`, `question`, `options`, `answerIndex`, `explanation` |
-| `scanPhotos/{scanId}`    | `scanId`, `userId`, `mime`, `dataUrl`, `timestamp`                                                                                                                                                                                                            |
+| `scanPhotos/{scanId}` | `scanId`, `userId`, `mime`, `dataUrl`, `timestamp` |
 
-## Halaman admin
+### Halaman Admin (`/admin`)
 
-Admin membuka `/admin` (diketik di alamat, tidak ada tautannya di menu) untuk meninjau hasil scan pengguna. Halaman itu hanya bisa dipakai akun Google `lintararyadwi@gmail.com`. Akun lain melihat pesan "khusus admin", dan pengunjung yang belum login diarahkan ke halaman masuk.
+Admin mengakses `/admin` langsung melalui URL (tanpa tautan di navigasi umum). Halaman ini menampilkan foto bukti, profil pengguna, kesesuaian barang dengan tong, jawaban kuis per soal, penanda foto ganda, serta filter status (`menunggu`, `disetujui`, `ditolak`).
 
-Yang terlihat per scan: foto bukti, pengguna dan lokasi, barang dan tong yang dipakai (dengan penanda sesuai atau tidak), jawaban kuis per soal, serta poin dan status otomatis. Daftar bisa disaring menurut keputusan (menunggu, disetujui, ditolak), dan foto yang sama dipakai ulang ditandai "Foto ganda" dengan tautan ke scan aslinya.
+Keputusan disimpan di field `review` (`status`: `approved` atau `rejected`, `note` wajib saat menolak maksimal 500 karakter, `reviewedBy`, `reviewedAt`).
 
-Keputusannya disimpan di kolom `review` pada dokumen scan: `status` (`approved` atau `rejected`), `note` (wajib bila menolak, maksimal 500 karakter), `reviewedBy`, dan `reviewedAt`. Saat admin menyetujui scan bernilai poin positif, poin asli scan dan `totalScan` baru masuk ke akun pengguna; jika ditolak, pengguna tidak mendapatkan poin tersebut dan catatan penolakannya muncul di riwayat dashboard.
+- **Keamanan berbasis Firestore Rules**: `isAdmin()` di `firestore.rules` mewajibkan login Google terverifikasi dengan alamat email admin (`lintararyadwi@gmail.com`). Penjaga di sisi React hanya mengatur tampilan.
+- **Mengganti akun admin**: Ubah alamat email pada `ADMIN_EMAIL` di `lib/admin.ts` dan fungsi `isAdmin()` di `firestore.rules`, lalu jalankan `firebase deploy --only firestore:rules`.
 
-Dua catatan keamanan:
+</details>
 
-- **Yang melindungi data adalah aturan Firestore, bukan halamannya.** `isAdmin()` di `firestore.rules` mensyaratkan token Google dengan email terverifikasi `lintararyadwi@gmail.com`, dan hanya admin yang boleh membaca scan, foto, dan profil semua pengguna, serta mengubah kolom `review` saja. Penjaga di halaman hanya mengatur tampilan. Setelah mengubah `firestore.rules`, deploy: `firebase deploy --only firestore:rules`. Sebelum dideploy, halaman admin menampilkan "Akses ke data scan ditolak".
-- **Mengganti admin** berarti mengubah alamat di dua tempat: `ADMIN_EMAIL` di `lib/admin.ts` dan `isAdmin()` di `firestore.rules`, lalu deploy aturannya. Alamat itu ikut tersimpan di repositori, jadi perlakukan sebagai informasi yang bisa dibaca orang lain.
+<details>
+<summary><strong>Detail Operasional: Cetak Kode QR Tong dan Penyimpanan Foto Bukti</strong></summary>
 
-Jawaban kuis per soal (`quizAnswers`) baru tersimpan dari scan setelah fitur ini. Scan lama hanya punya skor, dan halaman admin menyatakannya terus terang. Jawaban dan poin dikirim dari ponsel pengguna, jadi admin sebaiknya menganggapnya keterangan, bukan bukti: fotonya yang paling bisa dipegang.
+### Kode QR Tong
 
-## Kode QR tong
+Setiap kode QR berisi tautan langsung ke halaman scan, misalnya `https://eco-waste-corner.vercel.app/scan?lokasi=spot-a&tong=organik`. Pembacaan menggunakan logika tunggal di `lib/qr.ts`:
+- **Kamera bawaan ponsel**: Membuka tautan scan dengan lokasi dan tong terisi (jika belum login, query string dibawa ke `?next=` agar tidak hilang setelah login).
+- **Pemindai di halaman `/scan`**: Menyalakan kamera secara otomatis lewat `useCameraStream` saat langkah pindai terbuka dan tab aktif, lalu berhenti otomatis setelah QR terbaca atau pengguna berpindah halaman.
 
-Ada dua lokasi (Spot A dekat Pantry Kantin, Spot B dekat Parkiran Motor) dan tiga tong di tiap lokasi (Organik, Plastik/Kertas, Residu), jadi ada enam kode QR. Satu kode menyatakan satu tong di satu lokasi. Mahasiswa tidak memilih apa pun: begitu QR dipindai, lokasi dan jenis tong terbaca dari kodenya.
+Langkah mencetak QR:
+1. Deploy aplikasi terlebih dahulu agar URL produksi aktif.
+2. Jalankan `npm run qr -- --base https://eco-waste-corner.vercel.app`.
+3. Buka `qr-print/index.html` untuk lembar cetak A4 (gunakan skala 100% dan aktifkan *background graphics*), atau gunakan berkas `.svg` dan `.png` per tong yang ikut dihasilkan di folder `qr-print/`.
+4. Tempel di masing-masing tong lalu uji pindai satu per satu.
 
-Isi QR adalah tautan ke halaman scan, misalnya `https://eco-waste-corner.vercel.app/scan?lokasi=spot-a&tong=organik`. `lokasi` adalah `locationId` di `lib/data/seed.json`, dan `tong` adalah `organik`, `plastik_kertas`, atau `residu`. Ada dua cara membacanya, dan keduanya memakai pembaca yang sama di `lib/qr.ts`:
+### Foto Bukti (`scanPhotos`)
 
-- Aplikasi kamera bawaan ponsel: tautannya langsung membuka halaman Scan dengan lokasi dan tong terisi. Kalau belum login, pengguna diarahkan ke halaman login dan kembali ke tautan yang sama setelah masuk.
-- Halaman Scan: kamera pemindai langsung menyala saat halaman dibuka (jsQR, diunduh hanya saat pemindai dibuka), tanpa tombol buka atau tutup. Kamera mati sendiri saat QR terbaca, saat pengguna pindah halaman, dan saat tab ada di latar belakang.
+Pengambilan foto menggunakan `<input type="file" accept="image/*" capture="environment">` agar kamera ponsel langsung terbuka. Karena batas dokumen Firestore adalah 1 MiB, `lib/photo.ts` mengecilkan foto di browser (sisi terpanjang maksimal `1024 px`, format JPEG, maksimal data URL di bawah `300.000` karakter agar tetap aman di bawah batas `400.000` pada `firestore.rules`).
 
-Membuat dan mencetak:
+Dokumen `scans` hanya menyimpan `photoHash` dan referensi path `scanPhotos/{scanId}`. Gambar penuh baru dimuat saat pengguna menekan tombol **Lihat foto** di riwayat dashboard atau saat admin meninjau scan.
 
-1. Deploy aplikasi dulu, karena alamatnya tertanam di QR.
-2. Jalankan `npm run qr -- --base https://eco-waste-corner.vercel.app` (harus https, kecuali `localhost` untuk uji coba).
-3. Hasilnya ada di folder `qr-print/` (tidak ikut git): `index.html` berisi lembar cetak A4 satu halaman per lokasi (buka di browser, cetak dengan skala 100% dan "background graphics" aktif), ditambah file `.svg` (vektor, disarankan untuk percetakan) dan `.png` per kode.
-4. Tempel tiap kode di tong yang sesuai dengan lokasinya, lalu pindai satu per satu dengan ponsel untuk memastikan halaman Scan menampilkan lokasi dan tong yang benar.
+</details>
 
-Kalau alamat aplikasi berubah, semua kode harus dicetak ulang. Untuk lokasi baru, tambahkan di `lib/data/seed.json` (id huruf kecil dan tanda hubung), jalankan `npm run seed`, lalu `npm run qr`.
+<details>
+<summary><strong>Autentikasi, Masa Sesi, SMTP Reset Kata Sandi, dan Pemecahan Masalah</strong></summary>
 
-Batasan: kode QR bisa difoto lalu dipindai dari jauh, atau tautannya diketik manual. Penghalang yang ada: foto bukti hanya dari kamera, jeda 5 menit (15 menit bila pelanggaran), dan penalti untuk jenis sampah yang tidak cocok dengan tong. Memastikan orangnya benar-benar berada di lokasi butuh pemeriksaan di server (misalnya kode yang berganti berkala), yang memerlukan Cloud Functions.
+### Login, Masa Sesi, dan Reset Kata Sandi
 
-## Foto bukti
+- **Metode masuk**: Akun Google atau Email dan kata sandi (minimal `8` karakter). Pendaftar baru dengan email langsung masuk ke aplikasi tanpa verifikasi email terlebih dahulu. Email apa pun diperbolehkan tanpa pembatasan domain kampus.
+- **Masa berlaku sesi** (`lib/firebase/session.ts`): Sesi berakhir setelah **1 jam** pengguna aktif di dalam situs, atau setelah **10 menit** apabila pengguna meninggalkan situs (pindah tab atau menutup browser).
+- **Lupa kata sandi**: Pemanggilan `sendPasswordResetEmail` menyertakan `actionCodeSettings` dengan `url: ${window.location.origin}/login` dan `handleCodeInApp: false` sehingga pengguna menyelesaikan reset di halaman default Firebase lalu diarahkan kembali ke `/login`.
 
-Foto bukti diambil lewat kamera ponsel: tombolnya memicu `<input type="file" accept="image/*" capture="environment">`, jadi di ponsel kamera langsung terbuka. `capture` hanyalah petunjuk untuk browser. Di komputer yang muncul pemilih berkas, dan sebagian browser ponsel masih menawarkan galeri, jadi aplikasi tidak bisa melarang foto lama sepenuhnya.
+### SMTP Sendiri (Opsional)
 
-Foto disimpan di Firestore, bukan Storage. Satu dokumen maksimal 1 MiB, jadi `lib/photo.ts` mengecilkan foto di browser (sisi terpanjang maksimal 1024 px, JPEG, di bawah 300.000 karakter data URL) sebelum disimpan di `scanPhotos/{scanId}`. Dokumen `scans` hanya menyimpan `photoHash` dan, di field `photoUrl`, path dokumen fotonya (`scanPhotos/{scanId}`), supaya riwayat tidak ikut memuat gambar. Foto duplikat tidak disimpan lagi. Kualitas foto cukup untuk bukti, bukan untuk arsip. Di dashboard, tombol "Lihat foto" pada riwayat mengambil foto dari `scanPhotos` hanya saat diklik.
+Secara default email reset kata sandi dikirim dari `noreply@<authDomain>` yang terkadang masuk ke folder Spam/Junk. Jika ingin memakai pengirim sendiri:
+1. Siapkan akun Gmail khusus proyek, aktifkan verifikasi 2 langkah, dan buat **App password** 16 karakter.
+2. Buka **Firebase Console > Authentication > Templates > SMTP Settings** dan atur host `smtp.gmail.com` (port `587` `STARTTLS` atau `465` `SSL`).
+3. Sesuaikan bahasa template ke Indonesian dan nama pengirim ke **Eco Waste Corner UPJ**.
 
-## Struktur
+### Pemecahan Masalah Umum
 
-| Folder                    | Isi                                                                               |
-| ------------------------- | --------------------------------------------------------------------------------- |
-| `app/`                    | Route: `/`, `/login`, `/dashboard`, `/scan`, `/map`                               |
-| `components/`             | `landing`, `auth`, `dashboard`, `scan`, `map`, `layout`, `ui`, `providers`        |
-| `store/`                  | Zustand: `useUserStore` (auth, poin, poin JSDP, cooldown)                         |
-| `hooks/`                  | `useCooldown`, `useRequireAuth`, `useRemoteList`, `useScanHistory`, `useExchangeHistory`, `useSignOut`, `useCameraStream` |
-| `scripts/`                | `seed-firestore.mjs` (isi lokasi dan soal kuis), `generate-qr.mjs` (enam QR tong), `reset-accounts.mjs` (reset semua akun ke 0), `clear-history.mjs` (hapus riwayat pembuangan semua user) |
-| `DESIGN.md`               | Arah visual: identitas, palet dan kontras, tipografi, dial, komposisi halaman     |
-| `lib/firebase/`           | Config, auth, firestore, pemetaan error                                           |
-| `lib/validation/email.ts` | `isValidEmail`, panjang minimal kata sandi, pesan validasi                        |
-| `lib/scoring.ts`          | Poin berjenjang, penalti, cooldown 5 menit (15 menit pelanggaran), kurs penukaran |
-| `lib/photo.ts`            | Validasi, hash, dan kompresi foto bukti                                           |
-| `lib/qr.ts`               | Format dan pembaca isi QR tong (lokasi dan jenis tong)                            |
+| Gejala | Penyebab dan Solusi |
+| :--- | :--- |
+| "Metode login ini belum diaktifkan" | Aktifkan provider **Google** dan **Email/Password** di **Authentication > Sign-in method**. |
+| "Domain situs ini belum didaftarkan" | Tambahkan `localhost` dan domain produksi di **Authentication > Settings > Authorized domains**. |
+| "Login belum aktif" di `/login` | Variabel `NEXT_PUBLIC_FIREBASE_*` di `.env.local` belum lengkap. Isi lalu restart `npm run dev`. |
+| "Akses ditolak oleh aturan keamanan" | Rules belum di-deploy (`firebase deploy --only firestore:rules`) atau sesi login sudah kedaluwarsa. |
+| Email reset kata sandi tidak masuk | Periksa folder Spam/Junk. Bila masih tertahan penyedia email, konfigurasikan SMTP kustom di Firebase Console. |
+| Kamera pemindai QR tidak menyala | Pastikan izin kamera browser aktif dan situs diakses melalui `https://` atau `localhost`. |
+| Foto bukti gagal diproses | Format harus JPG, PNG, atau WebP maksimal `10 MB`. Jika foto terlalu kompleks untuk dikecilkan di bawah batas ukuran, ambil ulang dengan latar lebih sederhana. |
+| QR terbaca bukan kode tong / lokasi tak dikenal | Pastikan `npm run seed` sudah dijalankan dan kode QR dicetak dari `npm run qr` dengan `locationId` yang cocok. |
 
-## Aturan poin
+</details>
 
-| Kuis          | Foto  | Poin           |
-| ------------- | ----- | -------------- |
-| Semua benar   | Ada   | Dasar + 2      |
-| Semua benar   | Tidak | Setengah dasar |
-| Separuh benar | Ada   | Setengah dasar |
-| Lainnya       |       | 0              |
+---
 
-Poin dasar: Organik 3, Plastik/Kertas 5, Residu 2. Penalti: sampah tidak cocok dengan slot (-3), foto duplikat via hash SHA-256 (-3), scan saat cooldown (-2). Saldo tidak pernah di bawah 0.
+## Struktur Proyek
 
-## Penukaran ke poin JSDP
+| Direktori / Berkas | Deskripsi |
+| :--- | :--- |
+| `app/` | Halaman App Router: `/`, `/login`, `/dashboard`, `/scan`, `/map`, `/admin`, `error.tsx`, `not-found.tsx`, dan konfigurasi styling global `globals.css` |
+| `components/` | Komponen terstruktur per domain: `landing`, `auth`, `dashboard`, `scan`, `map`, `admin`, `layout`, `art`, `ui`, dan `providers` |
+| `store/` | Zustand store `useUserStore` untuk state autentikasi, profil, saldo poin, poin JSDP, dan cooldown |
+| `hooks/` | Custom hooks: `useCooldown`, `useRequireAuth`, `useRemoteList`, `useScanHistory`, `useExchangeHistory`, `useSignOut`, `useCameraStream`, `useAdminScans` |
+| `lib/` | Aturan poin (`scoring.ts`), validasi & kompresi foto (`photo.ts`), parser QR (`qr.ts`), data statis (`seed.json`, `quiz-bank.json`, `items.ts`), konfigurasi admin (`admin.ts`), serta modul `firebase/` |
+| `scripts/` | Skrip CLI pemeliharaan: `seed-firestore.mjs`, `generate-qr.mjs`, `reset-accounts.mjs`, dan `clear-history.mjs` |
+| `public/` | Aset publik termasuk logo utama (`brand-logo.png`) |
+| `DESIGN.md` | Arah visual, aturan kontras warna, tipografi, dan dial desain proyek |
+| `firestore.rules` | Aturan keamanan Firestore untuk kontrol akses pengguna, admin, transaksi poin, dan penukaran |
 
-Poin hasil scan (`poin`) ditukar jadi poin JSDP (`poinJSDP`) di dashboard, per paket: 10 poin menjadi 5 poin JSDP. Jumlah yang ditukar selalu kelipatan 10, sisa poin tetap tersimpan, dan penukaran tidak bisa dibatalkan. Poin JSDP tidak bisa ditukar balik dan tidak ada target jumlah, jadi hanya dikumpulkan. Kurs ada di `EXCHANGE_POIN` dan `EXCHANGE_JSDP` di `lib/scoring.ts`. Angkanya juga tertulis di `firestore.rules` (fungsi `isExchangeUpdate` dan aturan `exchanges`), jadi ubah keduanya sekaligus lalu deploy ulang rules.
+---
 
-Mengembalikan semua akun ke 0: `npm run reset:accounts` (dry run), lalu `npm run reset:accounts -- --apply`. Tambahkan `--history` untuk ikut menghapus riwayat scan, foto bukti, dan penukaran. Skrip ini memakai service account key yang sama dengan `npm run seed` dan tidak bisa dibatalkan.
+## Batasan dan Saran Pengembangan
 
-Menghapus riwayat pembuangan semua user saja, tanpa menyentuh akun: `npm run clear:history` (dry run), lalu `npm run clear:history -- --apply`. Skrip ini mengosongkan `scans` dan `scanPhotos`, lalu mengembalikan `totalScan` semua akun ke 0 supaya progress badge ikut hilang. Poin, poin JSDP, dan cooldown tidak berubah, dan deteksi foto duplikat mulai dari nol karena hash lama ikut terhapus. Tanpa `--apply`, skrip hanya menghitung dan tidak mengubah apa pun.
+### Batasan Versi Saat Ini
 
-## Login dan email verifikasi
+- **Perhitungan poin awal berjalan di klien**: Saldo baru bertambah setelah admin menyetujui scan di `/admin` (`firestore.rules` membatasi penyesuaian admin maks `+-7` per scan dan mengunci kurs penukaran).
+- **Verifikasi identitas mahasiswa belum otomatis**: Siapa pun dengan email apa pun dapat mendaftar, sementara nama dan prodi diisi mandiri di dashboard.
+- **Potensi pemindaian QR jarak jauh**: Tautan QR bersifat statis sehingga dapat difoto atau diketik manual; penahan saat ini mengandalkan foto kamera bukti, jeda 5/15 menit, penalti otomatis, dan tinjauan admin.
+- **Denah peta bersifat skematik**: Foto area stasiun pilah dan langkah rute diisi pengelola lewat Firestore.
 
-Login ada dua jalur, dan email apa pun boleh dipakai, termasuk Gmail:
+### Saran Pengembangan Selanjutnya
 
-- **Google**: tombol "Masuk dengan Google". Emailnya sudah diverifikasi Google.
-- **Email dan kata sandi**: tab Daftar dan Masuk, plus Lupa kata sandi. Kata sandi minimal 8 karakter. Akun baru harus memverifikasi emailnya lewat tautan yang dikirim Firebase, karena `firestore.rules` mensyaratkan `email_verified`. Sebelum diverifikasi, aplikasi menganggap akun itu belum masuk (lihat `AuthProvider`), dan layar login menuntun verifikasinya: tombol "Saya sudah verifikasi" dan kirim ulang dengan jeda 60 detik.
+Berdasarkan arsitektur yang sudah berjalan saat ini, berikut beberapa peningkatan yang relevan untuk tahap berikutnya:
 
-Tidak ada lagi pembatasan domain `@student.upj.ac.id`, dan login tautan email dihapus.
-
-### SMTP sendiri (opsional, memperbaiki pengiriman email)
-
-Secara bawaan Firebase mengirim email verifikasi dan reset kata sandi dari `noreply@<authDomain>`. Pengirim itu kadang masuk Junk atau ditahan penyedia email penerima. Dengan SMTP sendiri, email keluar lewat server dan pengirim milikmu. Pengaturannya dilakukan di Firebase Console, bukan di kode.
-
-1. Siapkan akun SMTP. Cara tercepat tanpa domain sendiri adalah akun Gmail khusus proyek ini (bukan akun pribadi): aktifkan verifikasi 2 langkah, lalu buat **App password** di Akun Google > Keamanan > Sandi aplikasi. Batasnya sekitar 500 penerima per hari.
-2. Firebase Console > Authentication > Templates > **SMTP Settings** (lokasi ini dari tutorial pihak ketiga dan referensi REST Identity Platform, belum kuverifikasi langsung di konsol). Isi:
-   - Sender address: alamat Gmail tadi
-   - SMTP server host: `smtp.gmail.com`, port `587`, security mode `STARTTLS` (atau port `465` dengan `SSL`)
-   - Username: alamat Gmail lengkap, password: App password 16 karakter (bukan kata sandi akun)
-3. Masih di Templates, ubah bahasa template ke Indonesian dan nama pengirim ke "Eco Waste Corner UPJ" untuk template "Email address verification" dan "Password reset".
-4. Isi `NEXT_PUBLIC_LOGIN_EMAIL_SENDER` di `.env.local` dengan alamat pengirim tadi (format `NEXT_PUBLIC_LOGIN_EMAIL_SENDER=alamat@gmail.com`), lalu restart `npm run dev`, supaya layar verifikasi menyebut pengirim yang benar.
-5. Uji dengan mendaftar memakai emailmu sendiri, lalu cek Inbox dan Junk.
-
-Jika menu SMTP Settings tidak ada atau terkunci di paket Spark, fitur itu butuh upgrade. Aplikasi tetap jalan dengan pengirim bawaan Firebase.
-
-## Pemecahan masalah
-
-| Gejala                                  | Penyebab dan solusi                                                                                                                        |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| "Metode login ini belum diaktifkan"     | Provider belum dinyalakan. Aktifkan Google dan Email/Password di Authentication > Sign-in method.                                           |
-| "Domain situs ini belum didaftarkan"    | Tambahkan domain di Authentication > Settings > Authorized domains.                                                                        |
-| "Login belum aktif" di halaman login    | `.env.local` belum terisi. Isi semua `NEXT_PUBLIC_FIREBASE_*`, lalu restart `npm run dev`.                                                 |
-| "Akses ditolak oleh aturan keamanan"    | Rules belum di-deploy, atau emailmu belum terverifikasi.                                                                                   |
-| Email verifikasi atau reset tidak sampai | Cek folder Junk atau Spam dan tunggu beberapa menit. Kirim ulang dari layar verifikasi (jeda 60 detik). Pengirim bawaan Firebase kadang ditahan penyedia email penerima: pasang SMTP sendiri (bagian "Login dan email verifikasi"). Email dari Gmail umumnya sampai. |
-| Kamera pemindai QR tidak terbuka        | Izinkan kamera untuk situs ini di pengaturan browser. Kamera di dalam browser hanya jalan di https atau `localhost`, dan tidak jalan jika aplikasi lain sedang memakainya. Pemindaian QR tetap bisa lewat aplikasi kamera bawaan ponsel. |
-| Foto bukti gagal diproses atau tidak terbaca | Format harus JPG, PNG, atau WebP, maksimal 10 MB. Foto yang terlalu kompleks untuk dikecilkan di bawah batas akan ditolak, ambil ulang dengan latar yang lebih sederhana. Foto bukti juga bisa dilewati dengan poin lebih sedikit. |
-| QR terbaca "bukan kode tong" atau lokasinya tidak dikenal | QR bukan dari `npm run qr`, atau `locationId`-nya tidak ada di koleksi `locations`. Cetak ulang QR, dan pastikan `npm run seed` sudah dijalankan. |
-
-## Batasan yang perlu kamu tahu
-
-- Perhitungan poin awal berjalan di klien, lalu poin positif baru masuk ke saldo pengguna setelah admin menyetujui scan di `/admin` (aturan `firestore.rules` menahan kenaikan poin langsung dari klien, membatasi penyesuaian admin maks +-7 per scan, serta menjaga kurs penukaran). Untuk produksi skala penuh sebaiknya perhitungan tetap dipindah ke Cloud Function.
-- Siapa pun dengan email apa pun bisa mendaftar, jadi aplikasi tidak bisa memastikan seseorang mahasiswa UPJ. Nama dan program studi diisi sendiri oleh pengguna di dashboard. Jika poin JSDP nanti harus dicocokkan dengan data mahasiswa resmi, perlu langkah tambahan di luar aplikasi ini.
-- Cek otomatis tahap 1 memeriksa kuis, kecocokan jenis sampah, dan foto unik; poin baru masuk ke saldo setelah verifikasi tahap 2 oleh admin (`approved`). Jika ditolak (`rejected`), poin tidak diberikan dan alasannya tampil di riwayat dashboard pengguna.
-- Denah di `/map` bersifat skematik. Foto area dan petunjuk rute diisi pengelola lewat Firestore.
+1. **Validasi Poin dan Penukaran via Cloud Functions**
+   Memindahkan logika `submitScan` dan `submitExchange` dari transaksi klien ke Cloud Functions (bila proyek beralih ke paket Blaze) untuk menghilangkan ketergantungan pada perhitungan sisi klien.
+2. **Verifikasi Identitas Mahasiswa (NIM / SSO UPJ)**
+   Menambahkan validasi NIM atau integrasi email kampus saat pendaftaran maupun pengajuan penukaran JSDP agar pencatatan poin JSDP dapat langsung dicocokkan dengan data akademik kemahasiswaan.
+3. **Pengamanan QR Lokasi (Geofencing atau Token Berkala)**
+   Menambahkan pengecekan koordinat lokasi browser opsional atau rotasi parameter token QR berkala agar pemindaian benar-benar dilakukan di depan tong fisik.
+4. **Penyimpanan Foto Bukti Jangka Panjang**
+   Jika kapasitas bukti foto terus bertambah, memindahkan media dari koleksi `scanPhotos` Firestore ke object storage (seperti Firebase Storage atau Cloudflare R2) agar kueri basis data tetap ringan dan foto tersimpan dengan resolusi lebih baik.
+5. **Ekspor Laporan JSDP untuk Admin**
+   Menambahkan fitur unduh rekap CSV/XLSX di `/admin` berisi daftar mahasiswa, jumlah scan disetujui, dan total `poinJSDP` yang telah ditukar untuk mempermudah pelaporan berkala.
+6. **Pengujian Otomatis**
+   Menambahkan unit test (misalnya Vitest) untuk `lib/scoring.ts`, `lib/qr.ts`, dan `lib/validation/email.ts`, serta uji integrasi alur scan hingga penukaran JSDP.

@@ -6,8 +6,7 @@ export function normalizeEmail(email: string): string {
 
 /**
  * Pemeriksaan bentuk saja (ada nama, satu @, ada domain bertitik). Email apa pun boleh dipakai,
- * termasuk Gmail. Firebase yang memeriksa sisanya, dan verifikasi email membuktikan alamatnya
- * memang milik pendaftar.
+ * termasuk Gmail.
  */
 export function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmail(email));

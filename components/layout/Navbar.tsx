@@ -102,12 +102,12 @@ export function Navbar() {
       >
         <Link href="/" className="flex min-h-11 min-w-0 items-center gap-2 sm:gap-2.5">
           <Image
-            src="/logo.png"
+            src="/brand-logo.png"
             alt=""
-            width={302}
+            width={304}
             height={256}
             priority
-            className="h-7 w-auto shrink-0 sm:h-9"
+            className="h-9 w-auto shrink-0 sm:h-11"
           />
           <span className="truncate font-display text-lg font-extrabold leading-none sm:text-xl md:text-2xl lg:text-3xl">
             Eco Waste Corner <span className="text-link">UPJ</span>

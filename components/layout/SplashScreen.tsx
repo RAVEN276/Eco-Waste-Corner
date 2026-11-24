@@ -31,14 +31,14 @@ export function SplashScreen() {
           <span className="sr-only">Memuat Eco Waste Corner UPJ</span>
           <div className="w-full max-w-sm rounded-sheet border-2 border-line bg-surface p-6 text-center shadow-[8px_8px_0_var(--shadow-ink)] sm:max-w-md sm:p-8">
             <Image
-              src="/logo.png"
+              src="/brand-logo.png"
               alt=""
-              width={302}
+              width={304}
               height={256}
               priority
-              className="mx-auto h-20 w-auto sm:h-24"
+              className="mx-auto h-28 w-auto sm:h-32"
             />
-            <p className="mt-5 font-display text-4xl font-extrabold leading-none text-ink sm:text-5xl">
+            <p className="mt-4 font-display text-4xl font-extrabold leading-none text-ink sm:text-5xl">
               Eco Waste Corner <span className="text-link">UPJ</span>
             </p>
             <p className="mt-2 text-sm text-muted sm:text-base">

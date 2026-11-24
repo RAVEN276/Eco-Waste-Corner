@@ -8,14 +8,10 @@ import { Card } from "@/components/ui/Card";
 import { CheckIcon } from "@/components/ui/Icons";
 import { InlineNotice, Spinner } from "@/components/ui/States";
 import {
-  LOGIN_EMAIL_SENDER,
-  checkVerified,
   registerWithEmail,
-  resendVerification,
   sendPasswordReset,
   signInWithEmail,
   signInWithGoogle,
-  signOut,
 } from "@/lib/firebase/auth";
 import { FIREBASE_NOT_CONFIGURED_MESSAGE, isFirebaseConfigured } from "@/lib/firebase/config";
 import { describeFirebaseError } from "@/lib/firebase/errors";
@@ -31,12 +27,8 @@ import { cn } from "@/lib/utils";
 import { useUserStore } from "@/store/useUserStore";
 
 type Mode = "masuk" | "daftar";
-type Stage = "form" | "lupa" | "lupa-terkirim" | "verifikasi";
-type Busy = "google" | "submit" | "resend" | "check" | null;
-
-// Jeda sebelum email verifikasi boleh dikirim ulang, supaya klik berulang tidak membanjiri
-// kotak masuk atau menghabiskan kuota pengiriman Firebase.
-const RESEND_SECONDS = 60;
+type Stage = "form" | "lupa" | "lupa-terkirim";
+type Busy = "google" | "submit" | null;
 
 const INPUT_CLASS =
   "mt-1.5 min-h-12 w-full rounded-ctl border-2 border-edge bg-surface px-3 text-base placeholder:text-muted disabled:bg-paper aria-[invalid=true]:border-brick-text";
@@ -76,7 +68,9 @@ export function LoginPanel() {
 
   const authStatus = useUserStore((s) => s.authStatus);
   const storeError = useUserStore((s) => s.error);
+  const sessionNotice = useUserStore((s) => s.sessionNotice);
   const clearError = useUserStore((s) => s.clearError);
+  const clearSessionNotice = useUserStore((s) => s.clearSessionNotice);
 
   const [mode, setMode] = useState<Mode>("masuk");
   const [stage, setStage] = useState<Stage>("form");
@@ -88,22 +82,16 @@ export function LoginPanel() {
   const [formError, setFormError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState<Busy>(null);
-  const [wait, setWait] = useState(0);
 
   useEffect(() => {
     if (authStatus === "authenticated") router.replace(nextPath);
   }, [authStatus, nextPath, router]);
 
-  useEffect(() => {
-    if (wait <= 0) return;
-    const timer = window.setTimeout(() => setWait((seconds) => seconds - 1), 1000);
-    return () => window.clearTimeout(timer);
-  }, [wait]);
-
   const clearMessages = () => {
     setFormError(null);
     setNotice(null);
     clearError();
+    clearSessionNotice();
   };
 
   const switchMode = (next: Mode) => {
@@ -156,18 +144,11 @@ export function LoginPanel() {
     setBusy("submit");
     try {
       if (mode === "daftar") {
-        const { verificationError } = await registerWithEmail(email, password);
-        setStage("verifikasi");
-        if (verificationError) setFormError(verificationError);
-        else setWait(RESEND_SECONDS);
+        await registerWithEmail(email, password);
       } else {
-        const user = await signInWithEmail(email, password);
-        if (!user.emailVerified) {
-          setStage("verifikasi");
-          setNotice("Emailmu belum terverifikasi. Kirim ulang email verifikasi bila perlu.");
-        }
-        // Bila sudah terverifikasi, AuthProvider membuka akses dan halaman ini berpindah sendiri.
+        await signInWithEmail(email, password);
       }
+      // AuthProvider langsung membuka akses dan mengarahkan pengguna setelah akun masuk.
     } catch (error) {
       setFormError(describeFirebaseError(error));
     } finally {
@@ -184,51 +165,17 @@ export function LoginPanel() {
       await sendPasswordReset(email);
       setStage("lupa-terkirim");
     } catch (error) {
-      setFormError(describeFirebaseError(error));
+      const code =
+        typeof error === "object" && error !== null && "code" in error
+          ? String((error as { code: unknown }).code)
+          : "";
+      setFormError(
+        code === "auth/user-not-found"
+          ? "Email ini belum terdaftar. Periksa kembali alamat emailmu atau daftar akun baru."
+          : describeFirebaseError(error),
+      );
     } finally {
       setBusy(null);
-    }
-  };
-
-  const handleResend = async () => {
-    if (wait > 0) return;
-    clearMessages();
-    setBusy("resend");
-    try {
-      await resendVerification();
-      setWait(RESEND_SECONDS);
-      setNotice("Email verifikasi dikirim ulang.");
-    } catch (error) {
-      setFormError(describeFirebaseError(error));
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const handleCheck = async () => {
-    clearMessages();
-    setBusy("check");
-    try {
-      const verified = await checkVerified();
-      if (!verified) {
-        setFormError("Emailmu belum terverifikasi. Buka tautan di email itu dulu, lalu coba lagi.");
-      }
-      // Bila sudah, AuthProvider membuka akses dan halaman ini berpindah sendiri.
-    } catch (error) {
-      setFormError(describeFirebaseError(error));
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const handleLeaveVerification = async () => {
-    setBusy("check");
-    try {
-      await signOut();
-    } finally {
-      setBusy(null);
-      setPassword("");
-      toForm();
     }
   };
 
@@ -244,10 +191,6 @@ export function LoginPanel() {
           <p className="mt-5 max-w-md text-lg">
             Pakai akun Google, atau daftar dengan email dan kata sandi. Email apa saja boleh, tidak
             harus email kampus, dan tidak perlu NIM.
-          </p>
-          <p className="mt-3 max-w-md text-sm text-mist">
-            Setelah daftar dengan email, kami kirim tautan verifikasi ke emailmu. Akunmu aktif
-            begitu tautan itu dibuka.
           </p>
         </div>
         <div className="hidden max-w-md overflow-hidden rounded-sheet border-2 border-line bg-paper p-3 md:block">
@@ -269,48 +212,11 @@ export function LoginPanel() {
 
           {shownError ? <InlineNotice tone="error">{shownError}</InlineNotice> : null}
           {notice ? <InlineNotice tone="info">{notice}</InlineNotice> : null}
+          {!shownError && !notice && sessionNotice ? (
+            <InlineNotice tone="warning">{sessionNotice}</InlineNotice>
+          ) : null}
 
-          {stage === "verifikasi" ? (
-            <div className="space-y-5">
-              <div className="space-y-3 text-center" role="status">
-                <CheckIcon className="mx-auto size-10 text-organik" />
-                <h2 className="text-4xl">Verifikasi email kamu</h2>
-                <p className="text-sm text-muted">
-                  Tautan verifikasi dikirim ke{" "}
-                  <strong className="break-words text-ink">{shownEmail}</strong>. Buka tautannya, lalu
-                  kembali ke sini dan tekan tombol di bawah.
-                </p>
-              </div>
-
-              <div className="rounded-plate border-2 border-rule bg-paper p-4 text-left text-sm">
-                <p className="font-bold">Belum ada di kotak masuk?</p>
-                <ul className="mt-2 list-disc space-y-1.5 pl-5 text-muted">
-                  <li>Tunggu beberapa menit, lalu cek folder Junk atau Spam.</li>
-                  {LOGIN_EMAIL_SENDER ? (
-                    <li>
-                      Pengirimnya{" "}
-                      <strong className="break-words text-ink">{LOGIN_EMAIL_SENDER}</strong>.
-                    </li>
-                  ) : null}
-                  <li>Salah ketik email? Kembali, lalu daftar dengan alamat yang benar.</li>
-                </ul>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <Button onClick={handleCheck} disabled={disabled}>
-                  {busy === "check" ? <Spinner label="Memeriksa" /> : null}
-                  Saya sudah verifikasi
-                </Button>
-                <Button variant="outline" onClick={handleResend} disabled={disabled || wait > 0}>
-                  {busy === "resend" ? <Spinner label="Mengirim" /> : null}
-                  {wait > 0 ? `Kirim ulang email (${wait} dtk)` : "Kirim ulang email verifikasi"}
-                </Button>
-                <Button variant="ghost" onClick={handleLeaveVerification} disabled={disabled}>
-                  Kembali
-                </Button>
-              </div>
-            </div>
-          ) : stage === "lupa-terkirim" ? (
+          {stage === "lupa-terkirim" ? (
             <div className="space-y-5">
               <div className="space-y-3 text-center" role="status">
                 <CheckIcon className="mx-auto size-10 text-organik" />
@@ -364,8 +270,14 @@ export function LoginPanel() {
                 ) : null}
               </div>
               <Button type="submit" size="lg" className="w-full" disabled={disabled}>
-                {busy === "submit" ? <Spinner label="Mengirim" /> : null}
-                Kirim tautan reset
+                {busy === "submit" ? (
+                  <>
+                    <Spinner label="Mengirim" />
+                    Mengirim tautan...
+                  </>
+                ) : (
+                  "Kirim tautan reset"
+                )}
               </Button>
               <Button variant="ghost" className="w-full" onClick={toForm} disabled={disabled}>
                 Kembali

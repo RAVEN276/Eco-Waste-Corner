@@ -21,7 +21,7 @@ Motif yang diulang: **tong berkode warna**, digambar sendiri di `components/art/
 
 Gambar ini dekoratif (`aria-hidden`). Informasi yang sama selalu ada sebagai teks di dekatnya (nama tong dan poin dasar). Ilustrasinya langsung menunjukkan produknya, bukan ilustrasi stok.
 
-Logo resmi proyek (`public/logo.png`, diberikan oleh pemilik proyek) ditampilkan di sebelah kiri teks wordmark "Eco Waste Corner UPJ" pada navbar atas. Tidak ada logo buatan lain.
+Logo resmi proyek (`public/brand-logo.png`, diberikan oleh pemilik proyek) ditampilkan di sebelah kiri teks wordmark "Eco Waste Corner UPJ" pada navbar atas. Tidak ada logo buatan lain.
 
 ## Palet
 

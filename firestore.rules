@@ -12,12 +12,10 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Any email domain may sign in (Google, or email and password), but the email must
-    // be verified. Email and password accounts verify through the link Firebase sends.
-    // The name is historical: it no longer checks for a UPJ student address.
+    // Any authenticated user may participate with Google or email/password without waiting for
+    // email verification. Admin access below still requires verified Google sign-in.
     function isUpjStudent() {
-      return signedIn()
-        && request.auth.token.email_verified == true;
+      return signedIn();
     }
 
     function isOwner(uid) {

@@ -18,6 +18,7 @@ interface UserState {
   /** Akun ini admin: masuk lewat Google dan emailnya terverifikasi. Hanya untuk tampilan, aturan Firestore yang melindungi data. */
   isAdmin: boolean;
   error: string | null;
+  sessionNotice: string | null;
   /** Bumped to make the auth provider re-subscribe after a profile error. */
   retryToken: number;
 
@@ -29,6 +30,8 @@ interface UserState {
   setProfile: (profile: UserProfile) => void;
   setError: (message: string) => void;
   clearError: () => void;
+  setSessionNotice: (message: string | null) => void;
+  clearSessionNotice: () => void;
 }
 
 export const useUserStore = create<UserState>((set) => ({
@@ -41,6 +44,7 @@ export const useUserStore = create<UserState>((set) => ({
   photoURL: null,
   isAdmin: false,
   error: null,
+  sessionNotice: null,
   retryToken: 0,
 
   retryProfile: () => set((s) => ({ retryToken: s.retryToken + 1, error: null })),
@@ -56,7 +60,8 @@ export const useUserStore = create<UserState>((set) => ({
       photoURL: null,
       isAdmin: false,
     }),
-  setSignedIn: (photoURL, isAdmin) => set({ authStatus: "authenticated", photoURL, isAdmin, error: null }),
+  setSignedIn: (photoURL, isAdmin) =>
+    set({ authStatus: "authenticated", photoURL, isAdmin, error: null, sessionNotice: null }),
   setProfileLoading: () => set({ profileStatus: "loading" }),
   setProfile: (profile) =>
     set({
@@ -69,4 +74,6 @@ export const useUserStore = create<UserState>((set) => ({
     }),
   setError: (message) => set({ error: message, profileStatus: "error" }),
   clearError: () => set({ error: null }),
+  setSessionNotice: (message) => set({ sessionNotice: message }),
+  clearSessionNotice: () => set({ sessionNotice: null }),
 }));

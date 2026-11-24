@@ -47,7 +47,7 @@ export function describeFirebaseError(error: unknown): string {
     case "timeout":
       return "Server terlalu lama merespons. Periksa koneksi lalu coba lagi.";
     case "permission-denied":
-      return "Akses ditolak oleh aturan keamanan. Pastikan kamu sudah login dan emailmu terverifikasi.";
+      return "Akses ditolak oleh aturan keamanan. Pastikan kamu sudah masuk dengan akun yang sesuai.";
 
     case "failed-precondition":
       return "Data belum siap dipakai. Coba lagi sebentar.";
