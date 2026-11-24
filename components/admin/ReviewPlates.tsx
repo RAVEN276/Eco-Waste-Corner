@@ -19,7 +19,11 @@ export function ReviewPlates({
   onChange: (filter: ReviewFilter) => void;
 }) {
   return (
-    <div role="group" aria-label="Saring scan berdasarkan keputusan" className="flex flex-wrap gap-2">
+    <div
+      role="group"
+      aria-label="Saring scan berdasarkan keputusan"
+      className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap"
+    >
       {TABS.map((tab) => {
         const selected = tab.id === active;
         return (
@@ -29,7 +33,7 @@ export function ReviewPlates({
             aria-pressed={selected}
             onClick={() => onChange(tab.id)}
             className={cn(
-              "inline-flex min-h-11 items-center gap-2 rounded-ctl border-2 px-3.5 py-2 text-sm font-bold transition-colors duration-150",
+              "inline-flex min-h-11 items-center justify-between gap-2 rounded-ctl border-2 px-3.5 py-2 text-sm font-bold transition-colors duration-150 sm:justify-center",
               selected
                 ? "border-pick bg-pick text-on-pick"
                 : "border-line bg-surface text-ink hover:bg-cobalt-soft",

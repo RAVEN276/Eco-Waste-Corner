@@ -16,16 +16,16 @@ function AdminWorkspace() {
   const loadPhoto = useScanPhotoLoader();
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6 md:py-10">
-      <header className="flex flex-col gap-3 border-b-2 border-rule pb-5 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h1 className="fade-up text-5xl sm:text-6xl">Tinjau hasil scan</h1>
-          <p className="fade-up mt-2 max-w-2xl text-base text-muted sm:text-lg" style={{ ["--delay" as string]: "100ms" }}>
+    <div className="mx-auto max-w-6xl space-y-4 px-4 py-5 sm:space-y-6 sm:px-6 sm:py-8 md:py-10">
+      <header className="flex flex-col gap-2 border-b-2 border-rule pb-4 sm:gap-3 sm:pb-5 md:flex-row md:items-end md:justify-between">
+        <div className="min-w-0">
+          <h1 className="fade-up text-4xl sm:text-5xl lg:text-6xl">Tinjau hasil scan</h1>
+          <p className="fade-up mt-1.5 max-w-2xl text-sm text-muted sm:mt-2 sm:text-base lg:text-lg" style={{ ["--delay" as string]: "100ms" }}>
             Periksa foto bukti dan data scan dari mahasiswa, lalu setujui agar poin masuk ke saldo pengguna atau tolak dengan alasan.
           </p>
         </div>
         {email ? (
-          <p className="shrink-0 text-sm text-muted">
+          <p className="shrink-0 text-xs text-muted sm:text-sm">
             Admin: <strong className="break-all text-ink">{email}</strong>
           </p>
         ) : null}

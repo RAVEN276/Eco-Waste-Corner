@@ -6,6 +6,7 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ScrollMotion } from "@/components/layout/ScrollMotion";
+import { SplashScreen } from "@/components/layout/SplashScreen";
 
 // Tampilan: Big Shoulders, warisan papan penanda jalan, cocok untuk label tong dan
 // angka poin, dan sempit sehingga nama panjang muat di layar ponsel.
@@ -61,6 +62,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           Lewati ke konten
         </a>
         <Providers>
+          <SplashScreen />
           <Navbar />
           <main id="konten-utama" className="flex-1 overflow-x-clip">
             {children}

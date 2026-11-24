@@ -80,7 +80,7 @@ function ScanPhoto({
 
   return (
     <div className="space-y-3">
-      <div className="flex aspect-[4/3] w-full items-center justify-center rounded-plate border-2 border-line bg-paper p-3 text-center">
+      <div className="flex aspect-[4/3] w-full items-center justify-center rounded-plate border-2 border-line bg-paper p-2 text-center sm:p-3">
         {photo.status === "loading" ? (
           <div className="flex flex-col items-center gap-3 text-muted">
             <Spinner className="size-7 text-link" label="Memuat foto" />
@@ -145,7 +145,7 @@ function ScanPhoto({
       </div>
 
       {photo.status === "ready" ? (
-        <Button variant="outline" onClick={() => setZoom(true)}>
+        <Button variant="outline" onClick={() => setZoom(true)} className="w-full sm:w-auto">
           Perbesar foto
         </Button>
       ) : null}
@@ -185,49 +185,65 @@ export function ScanDetail({
 
   return (
     <div className="overflow-clip rounded-sheet border-2 border-line bg-surface">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-line bg-paper px-4 py-3 sm:px-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <h2 className="text-3xl sm:text-4xl">Scan {binLabel(scan.categoryBin)}</h2>
-          <ReviewBadge state={reviewState(scan)} />
-          <span className="text-sm text-muted">{formatDateTime(scan.timestamp)}</span>
+      <div className="flex flex-col gap-3 border-b-2 border-line bg-paper px-3.5 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0 space-y-1">
+          <div className="flex flex-wrap items-center justify-between gap-2 sm:justify-start sm:gap-3">
+            <h2 className="text-2xl sm:text-4xl">Scan {binLabel(scan.categoryBin)}</h2>
+            <ReviewBadge state={reviewState(scan)} />
+          </div>
+          <p className="text-xs text-muted sm:text-sm">{formatDateTime(scan.timestamp)}</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="mr-1 text-sm font-bold tabular-nums text-muted">
-            {position} / {total}
-          </span>
-          <Button variant="outline" onClick={onPrev} disabled={!hasPrev}>
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:flex sm:items-center">
+          <Button
+            variant="outline"
+            onClick={onPrev}
+            disabled={!hasPrev}
+            title="Scan sebelumnya (panah kiri)"
+            className="px-3 sm:px-4"
+          >
             Sebelumnya
           </Button>
-          <Button variant="outline" onClick={onNext} disabled={!hasNext}>
+          <span className="px-1 text-center text-sm font-bold tabular-nums text-muted sm:order-first sm:mr-1">
+            {position} / {total}
+          </span>
+          <Button
+            variant="outline"
+            onClick={onNext}
+            disabled={!hasNext}
+            title="Scan berikutnya (panah kanan)"
+            className="px-3 sm:px-4"
+          >
             Berikutnya
           </Button>
         </div>
       </div>
 
-      <div className="grid gap-6 p-4 sm:p-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-start">
-        <section aria-label="Foto bukti" className="space-y-3 lg:sticky lg:top-20">
-          <h3 className="text-2xl">Foto bukti</h3>
+      <div className="grid gap-5 p-3.5 sm:gap-6 sm:p-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-start">
+        <section aria-label="Foto bukti" className="min-w-0 space-y-2.5 lg:sticky lg:top-20 lg:space-y-3">
+          <h3 className="text-xl sm:text-2xl">Foto bukti</h3>
           <ScanPhoto scan={scan} facts={facts} loadPhoto={loadPhoto} onOpenScan={onOpenScan} />
         </section>
 
-        <div className="min-w-0 space-y-5">
-          <section className="rounded-plate border-2 border-rule bg-paper p-4">
-            <h3 className="text-2xl">Mahasiswa dan lokasi</h3>
-            <dl className="mt-3 grid gap-3 sm:grid-cols-2">
+        <div className="min-w-0 space-y-4 sm:space-y-5">
+          <section className="rounded-plate border-2 border-rule bg-paper p-3.5 sm:p-4">
+            <h3 className="text-xl sm:text-2xl">Mahasiswa dan lokasi</h3>
+            <dl className="mt-2.5 grid gap-2.5 sm:mt-3 sm:grid-cols-2 sm:gap-3">
               <Fact label="Nama">{name}</Fact>
-              <Fact label="Email">{user?.email || "Tidak ditemukan"}</Fact>
+              <Fact label="Email">
+                <span className="break-all">{user?.email || "Tidak ditemukan"}</span>
+              </Fact>
               <Fact label="Program studi">{user?.prodi || "Belum diisi"}</Fact>
               <Fact label="Lokasi">{scan.locationName || scan.location}</Fact>
               <Fact label="ID scan">
-                <span className="font-mono text-xs">{scan.scanId}</span>
+                <span className="break-all font-mono text-xs">{scan.scanId}</span>
               </Fact>
             </dl>
           </section>
 
-          <section className="rounded-plate border-2 border-rule bg-paper p-4">
-            <h3 className="text-2xl">Laporan dan cek otomatis (tahap 1)</h3>
-            <dl className="mt-3 grid gap-3 sm:grid-cols-2">
+          <section className="rounded-plate border-2 border-rule bg-paper p-3.5 sm:p-4">
+            <h3 className="text-xl sm:text-2xl">Laporan dan cek otomatis (tahap 1)</h3>
+            <dl className="mt-2.5 grid gap-2.5 sm:mt-3 sm:grid-cols-2 sm:gap-3">
               <Fact label="Barang dilaporkan">{facts.itemLabel}</Fact>
               <Fact label="Tong yang dipakai">{binLabel(scan.categoryBin)}</Fact>
               <Fact label="Tong yang seharusnya">
@@ -269,8 +285,8 @@ export function ScanDetail({
             </dl>
           </section>
 
-          <section className="space-y-3">
-            <h3 className="text-2xl">
+          <section className="space-y-2.5 sm:space-y-3">
+            <h3 className="text-xl sm:text-2xl">
               Kuis: {scan.quizCorrect} dari {scan.quizTotal} benar
             </h3>
             {scan.quizAnswers ? (

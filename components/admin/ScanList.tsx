@@ -37,7 +37,7 @@ export function ScanList({ scans, allScans, users, selectedId, onSelect }: ScanL
               aria-current={selected ? "true" : undefined}
               onClick={() => onSelect(scan.scanId)}
               className={cn(
-                "flex min-h-11 w-full flex-col gap-2 rounded-plate border-2 p-3.5 text-left transition-colors duration-150",
+                "flex min-h-11 w-full flex-col gap-1.5 rounded-plate border-2 p-3 text-left transition-colors duration-150 sm:gap-2 sm:p-3.5",
                 selected
                   ? "border-pick bg-pick text-on-pick"
                   : "border-line bg-surface text-ink hover:bg-cobalt-soft",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button, buttonClasses } from "@/components/ui/Button";
@@ -99,8 +100,16 @@ export function Navbar() {
         aria-label="Navigasi utama"
         className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6"
       >
-        <Link href="/" className="flex min-h-11 items-center">
-          <span className="whitespace-nowrap font-display text-xl font-extrabold leading-none md:text-2xl lg:text-3xl">
+        <Link href="/" className="flex min-h-11 min-w-0 items-center gap-2 sm:gap-2.5">
+          <Image
+            src="/logo.png"
+            alt=""
+            width={302}
+            height={256}
+            priority
+            className="h-7 w-auto shrink-0 sm:h-9"
+          />
+          <span className="truncate font-display text-lg font-extrabold leading-none sm:text-xl md:text-2xl lg:text-3xl">
             Eco Waste Corner <span className="text-link">UPJ</span>
           </span>
         </Link>

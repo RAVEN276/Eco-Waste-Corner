@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ReviewPlates } from "@/components/admin/ReviewPlates";
 import { ScanDetail } from "@/components/admin/ScanDetail";
 import { ScanList } from "@/components/admin/ScanList";
-import { reviewState, scanFacts, type ReviewFilter } from "@/components/admin/adminLabels";
+import { ScanPickerDialog } from "@/components/admin/ScanPickerDialog";
+import { binLabel, reviewState, scanFacts, userName, type ReviewFilter } from "@/components/admin/adminLabels";
 import { Button } from "@/components/ui/Button";
 import { RefreshIcon } from "@/components/ui/Icons";
 import { EmptyState, ErrorState, LoadingState } from "@/components/ui/States";
@@ -35,6 +36,29 @@ function matches(filter: ReviewFilter, scan: ScanRecord): boolean {
   return filter === "all" || reviewState(scan) === filter;
 }
 
+function matchesQuery(scan: ScanRecord, allScans: ScanRecord[], users: Map<string, UserProfile>, needle: string): boolean {
+  if (needle === "") return true;
+  const user = users.get(scan.userId);
+  const facts = scanFacts(scan, allScans);
+  const haystack = [
+    userName(scan, users),
+    user?.email ?? "",
+    user?.prodi ?? "",
+    facts.itemLabel,
+    binLabel(scan.categoryBin),
+    scan.locationName,
+    scan.location,
+    scan.scanId,
+    scan.review?.note ?? "",
+    scan.status === "penalized" ? "penalti" : "",
+    !facts.hasStoredPhoto && !facts.duplicatePhoto ? "tanpa foto" : "",
+    facts.duplicatePhoto ? "foto ganda" : "",
+  ]
+    .join(" ")
+    .toLowerCase();
+  return haystack.includes(needle);
+}
+
 /**
  * Ruang kerja tinjauan bergaya antrean fokus: bar saringan tab kompak di atas, satu kartu fokus aktif
  * (foto bukti di kiri, fakta scan + kuis + keputusan di kanan) dengan navigasi antrean, lalu daftar antrean
@@ -53,7 +77,15 @@ export function AdminReview({
   onReview,
 }: AdminReviewProps) {
   const [filter, setFilter] = useState<ReviewFilter>("pending");
+  const [query, setQuery] = useState("");
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const focusRef = useRef<HTMLElement>(null);
+
+  // Activity keeps hidden pages mounted, so close the picker dialog when the page is hidden.
+  useLayoutEffect(() => {
+    return () => setPickerOpen(false);
+  }, []);
 
   const counts = useMemo(() => {
     const total: Record<ReviewFilter, number> = { pending: 0, approved: 0, rejected: 0, all: scans.length };
@@ -61,7 +93,12 @@ export function AdminReview({
     return total;
   }, [scans]);
 
-  const visible = useMemo(() => scans.filter((scan) => matches(filter, scan)), [scans, filter]);
+  const needle = query.trim().toLowerCase();
+  const byFilter = useMemo(() => scans.filter((scan) => matches(filter, scan)), [scans, filter]);
+  const visible = useMemo(
+    () => (needle === "" ? byFilter : byFilter.filter((scan) => matchesQuery(scan, scans, users, needle))),
+    [byFilter, scans, users, needle],
+  );
 
   // Selalu fokus ke scan yang sedang dipilih, atau otomatis ke item pertama di antrean saat ini.
   const selectedIndex = useMemo(() => {
@@ -77,16 +114,61 @@ export function AdminReview({
     setSelectedId(null);
   };
 
+  const scrollToFocus = () => {
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    focusRef.current?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+  };
+
+  const selectFromQueue = (scanId: string) => {
+    setSelectedId(scanId);
+    scrollToFocus();
+  };
+
+  const selectFromPicker = (scanId: string) => {
+    setSelectedId(scanId);
+    setPickerOpen(false);
+  };
+
   const openScan = (scanId: string) => {
     const target = scans.find((scan) => scan.scanId === scanId);
     if (target && !matches(filter, target)) setFilter("all");
+    setQuery("");
     setSelectedId(scanId);
   };
 
-  const stepQueue = (delta: -1 | 1) => {
-    const target = visible[selectedIndex + delta];
-    if (target) setSelectedId(target.scanId);
-  };
+  const stepQueue = useCallback(
+    (delta: -1 | 1) => {
+      const target = visible[selectedIndex + delta];
+      if (target) setSelectedId(target.scanId);
+    },
+    [visible, selectedIndex],
+  );
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (pickerOpen || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
+      if (document.querySelector('[role="dialog"]')) return;
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        stepQueue(-1);
+      } else if (event.key === "ArrowRight") {
+        event.preventDefault();
+        stepQueue(1);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [pickerOpen, stepQueue]);
 
   const handleReview = async (scan: ScanRecord, decision: ReviewDecision, note: string) => {
     const next = visible[selectedIndex + 1] ?? visible[selectedIndex - 1] ?? null;
@@ -106,17 +188,45 @@ export function AdminReview({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="space-y-5 sm:space-y-6">
+      <div className="space-y-3">
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
           <ReviewPlates counts={counts} active={filter} onChange={changeFilter} />
-          <Button variant="outline" onClick={onReload}>
+          <Button variant="outline" onClick={onReload} className="w-full sm:w-auto sm:shrink-0">
             <RefreshIcon className="size-4" />
             Muat ulang
           </Button>
         </div>
-        <p className="text-sm text-muted">
-          Dihitung dari {scans.length} scan terbaru yang sudah dimuat{hasMore ? ". Masih ada yang lebih lama." : "."}
+
+        <div className="grid gap-2.5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+          <div>
+            <label htmlFor="cari-scan-admin" className="text-sm font-bold">
+              Cari scan
+            </label>
+            <input
+              id="cari-scan-admin"
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Nama, email, barang, tong, lokasi, atau ID scan"
+              autoComplete="off"
+              className="mt-1 min-h-11 w-full rounded-ctl border-2 border-edge bg-surface px-3.5 text-base"
+            />
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => setPickerOpen(true)}
+            disabled={byFilter.length === 0}
+            className="w-full sm:w-auto sm:shrink-0"
+          >
+            Pilih dari daftar ({visible.length})
+          </Button>
+        </div>
+
+        <p className="text-xs text-muted sm:text-sm">
+          {needle !== ""
+            ? `Menampilkan ${visible.length} hasil cocok dari ${byFilter.length} scan pada tab ini.`
+            : `Dihitung dari ${scans.length} scan terbaru yang sudah dimuat${hasMore ? ". Masih ada yang lebih lama." : "."}`}
         </p>
       </div>
 
@@ -128,10 +238,18 @@ export function AdminReview({
 
       {visible.length === 0 ? (
         <EmptyState
-          title={EMPTY_COPY[filter].title}
-          description={EMPTY_COPY[filter].description}
+          title={needle !== "" ? "Tidak ada scan yang cocok" : EMPTY_COPY[filter].title}
+          description={
+            needle !== ""
+              ? "Coba kata kunci lain atau hapus pencarian untuk melihat daftar scan."
+              : EMPTY_COPY[filter].description
+          }
           action={
-            filter !== "all" ? (
+            needle !== "" ? (
+              <Button variant="outline" onClick={() => setQuery("")}>
+                Hapus pencarian
+              </Button>
+            ) : filter !== "all" ? (
               <Button variant="outline" onClick={() => changeFilter("all")}>
                 Lihat semua scan
               </Button>
@@ -145,7 +263,7 @@ export function AdminReview({
       ) : (
         <>
           {selected ? (
-            <section aria-label="Tinjauan scan aktif">
+            <section ref={focusRef} aria-label="Tinjauan scan aktif" className="scroll-mt-20">
               <ScanDetail
                 key={selected.scanId}
                 scan={selected}
@@ -164,28 +282,51 @@ export function AdminReview({
             </section>
           ) : null}
 
-          <section aria-labelledby="judul-antrean-scan" className="space-y-3 pt-2">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 id="judul-antrean-scan" className="text-3xl">
-                Antrean scan ({visible.length})
-              </h2>
-              {hasMore ? (
-                <Button variant="outline" onClick={onLoadMore} disabled={loadingMore}>
-                  {loadingMore ? "Memuat..." : "Muat lebih banyak"}
-                </Button>
-              ) : null}
-            </div>
+          {filter === "pending" && visible.length > 1 ? (
+            <section aria-labelledby="judul-antrean-scan" className="space-y-3 pt-1 sm:pt-2">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 id="judul-antrean-scan" className="text-2xl sm:text-3xl">
+                  Antrean scan ({visible.length})
+                </h2>
+                {hasMore ? (
+                  <Button variant="outline" onClick={onLoadMore} disabled={loadingMore} className="w-full sm:w-auto">
+                    {loadingMore ? "Memuat..." : "Muat lebih banyak"}
+                  </Button>
+                ) : null}
+              </div>
 
-            <ScanList
-              scans={visible}
-              allScans={scans}
-              users={users}
-              selectedId={selected?.scanId ?? null}
-              onSelect={setSelectedId}
-            />
-          </section>
+              <ScanList
+                scans={visible}
+                allScans={scans}
+                users={users}
+                selectedId={selected?.scanId ?? null}
+                onSelect={selectFromQueue}
+              />
+            </section>
+          ) : hasMore ? (
+            <div className="flex justify-center pt-1">
+              <Button variant="outline" onClick={onLoadMore} disabled={loadingMore} className="w-full sm:w-auto">
+                {loadingMore ? "Memuat..." : "Muat lebih banyak"}
+              </Button>
+            </div>
+          ) : null}
         </>
       )}
+
+      <ScanPickerDialog
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        scans={visible}
+        allScans={scans}
+        users={users}
+        selectedId={selected?.scanId ?? null}
+        query={query}
+        onQueryChange={setQuery}
+        hasMore={hasMore}
+        loadingMore={loadingMore}
+        onLoadMore={onLoadMore}
+        onSelect={selectFromPicker}
+      />
     </div>
   );
 }
