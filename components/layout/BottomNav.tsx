@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { SectionLink } from "@/components/layout/SectionLink";
 import { cn } from "@/lib/utils";
 import { useUserStore } from "@/store/useUserStore";
 
@@ -32,7 +32,7 @@ export function BottomNav() {
           const active = item.href === pathname;
           return (
             <li key={item.href}>
-              <Link
+              <SectionLink
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
@@ -45,7 +45,7 @@ export function BottomNav() {
                 )}
               >
                 {item.label}
-              </Link>
+              </SectionLink>
             </li>
           );
         })}

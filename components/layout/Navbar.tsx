@@ -103,7 +103,7 @@ export function Navbar() {
         aria-label="Navigasi utama"
         className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6"
       >
-        <Link href="/" className="flex min-h-11 min-w-0 items-center gap-2 sm:gap-2.5">
+        <SectionLink href="/" className="flex min-h-11 min-w-0 items-center gap-2 sm:gap-2.5">
           <Image
             src="/brand-logo.png"
             alt=""
@@ -116,7 +116,7 @@ export function Navbar() {
           <span className="truncate font-display text-lg font-extrabold leading-none sm:text-xl md:text-2xl lg:text-3xl">
             Eco Waste Corner <span className="text-link">UPJ</span>
           </span>
-        </Link>
+        </SectionLink>
 
         <ul className="hidden items-center gap-1 md:flex">
           {NAV_LINKS.map((link) => {
