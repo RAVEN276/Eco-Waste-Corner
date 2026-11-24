@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import { CloseIcon } from "@/components/ui/Icons";
 import { cn } from "@/lib/utils";
 
@@ -79,7 +79,7 @@ export function Dialog({ open, onClose, title, children, className }: DialogProp
     <AnimatePresence>
       {open ? (
         <div className="fixed inset-0 z-50 flex items-end justify-center pt-20 sm:items-center sm:px-6 sm:pt-20 sm:pb-6">
-          <motion.div
+          <m.div
             className="absolute inset-0 bg-night/65"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -87,7 +87,7 @@ export function Dialog({ open, onClose, title, children, className }: DialogProp
             onClick={onClose}
             aria-hidden="true"
           />
-          <motion.div
+          <m.div
             ref={panelRef}
             role="dialog"
             aria-modal="true"
@@ -116,7 +116,7 @@ export function Dialog({ open, onClose, title, children, className }: DialogProp
               </button>
             </div>
             <div className="overflow-y-auto px-5 py-5">{children}</div>
-          </motion.div>
+          </m.div>
         </div>
       ) : null}
     </AnimatePresence>,

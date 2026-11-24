@@ -78,22 +78,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       state.setSignedIn(user.photoURL, isAdminUser(user));
       state.setProfileLoading();
 
-      try {
-        await ensureUserProfile({
-          uid: user.uid,
-          email: user.email ?? `${user.uid}@no-email.invalid`,
-          displayName: user.displayName,
-        });
-        unsubscribeProfile = subscribeUser(
-          user.uid,
-          (profile) => {
-            if (profile) useUserStore.getState().setProfile(profile);
-          },
-          (error) => useUserStore.getState().setError(describeFirebaseError(error)),
-        );
-      } catch (error) {
-        useUserStore.getState().setError(describeFirebaseError(error));
-      }
+      let ensured = false;
+      unsubscribeProfile = subscribeUser(
+        user.uid,
+        (profile) => {
+          if (profile) {
+            useUserStore.getState().setProfile(profile);
+            return;
+          }
+          if (ensured || key !== lastKey) return;
+          ensured = true;
+          void ensureUserProfile({
+            uid: user.uid,
+            email: user.email ?? `${user.uid}@no-email.invalid`,
+            displayName: user.displayName,
+          }).catch((error) => {
+            if (key === lastKey) useUserStore.getState().setError(describeFirebaseError(error));
+          });
+        },
+        (error) => useUserStore.getState().setError(describeFirebaseError(error)),
+      );
     };
 
     const unsubscribeAuth = onIdTokenChanged(

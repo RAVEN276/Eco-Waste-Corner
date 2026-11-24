@@ -1,9 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { CampusMap } from "@/components/map/CampusMap";
 import { LocationCard } from "@/components/map/LocationCard";
-import { LocationDialog } from "@/components/map/LocationDialog";
+
+const LocationDialog = dynamic(() =>
+  import("@/components/map/LocationDialog").then((mod) => mod.LocationDialog),
+);
 import { Button } from "@/components/ui/Button";
 import { EmptyState, ErrorState, InlineNotice, LoadingState } from "@/components/ui/States";
 import { useLocations } from "@/hooks/useRemoteList";

@@ -59,18 +59,23 @@ export function ScrollMotion() {
 
   useEffect(() => {
     let frame = 0;
-
     let allowPause = true;
+    let targetsDirty = true;
+    let targets: Element[] = [];
 
     const update = () => {
       frame = 0;
       const canPause = allowPause;
       allowPause = true;
+      if (targetsDirty) {
+        targets = Array.from(document.querySelectorAll(TARGETS));
+        targetsDirty = false;
+      }
       const viewport = window.innerHeight;
       const changes: [Element, "in" | "out" | "show"][] = [];
 
       // Baca semua posisi dulu, baru ubah animasi, supaya tidak memaksa layout berulang.
-      for (const el of document.querySelectorAll(TARGETS)) {
+      for (const el of targets) {
         const { top, bottom, width, height } = el.getBoundingClientRect();
         const hidden = width === 0 && height === 0;
         // Di luar zona aktif: belum terlihat sama sekali dan juga belum dekat.
@@ -116,11 +121,22 @@ export function ScrollMotion() {
     };
 
     schedule();
+    const root = document.getElementById("konten-utama") ?? document.body;
+    const observer = new MutationObserver(() => {
+      targetsDirty = true;
+      schedule();
+    });
+    observer.observe(root, { childList: true, subtree: true });
+
     // Sekali lagi setelah tata letak dan font settle, supaya posisi awalnya akurat.
-    const settle = window.setTimeout(schedule, 400);
+    const settle = window.setTimeout(() => {
+      targetsDirty = true;
+      schedule();
+    }, 400);
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", scheduleWithoutPause);
     return () => {
+      observer.disconnect();
       window.clearTimeout(settle);
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", scheduleWithoutPause);

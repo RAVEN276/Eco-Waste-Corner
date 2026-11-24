@@ -1,12 +1,17 @@
 "use client";
 
-import { AdminReview } from "@/components/admin/AdminReview";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/Button";
 import { LoadingState } from "@/components/ui/States";
 import { useAdminScans, useAdminUsers, useScanPhotoLoader } from "@/hooks/useAdminScans";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { useSignOut } from "@/hooks/useSignOut";
 import { useUserStore } from "@/store/useUserStore";
+
+const AdminReview = dynamic(
+  () => import("@/components/admin/AdminReview").then((mod) => mod.AdminReview),
+  { loading: () => <LoadingState label="Memuat konsol tinjauan" className="py-12" /> },
+);
 
 /** Ruang kerja admin: memuat scan, profil, dan foto, lalu menyerahkannya ke tampilan tinjauan. */
 function AdminWorkspace() {

@@ -5,6 +5,7 @@ import { isFirebaseConfigured } from "@/lib/firebase/config";
 import { DEFAULT_QUIZ_BANK } from "@/lib/data/quiz";
 import {
   DEFAULT_LOCATIONS,
+  clearLocationsCache,
   clearQuizCache,
   fetchLocations,
   fetchQuizQuestions,
@@ -96,7 +97,13 @@ function useRemoteList<T>(
 }
 
 export function useLocations(): ListState<CampusLocation> {
-  return useRemoteList(fetchLocations, DEFAULT_LOCATIONS);
+  const list = useRemoteList(fetchLocations, DEFAULT_LOCATIONS);
+  const { reload } = list;
+  const reloadFresh = useCallback(() => {
+    clearLocationsCache();
+    reload();
+  }, [reload]);
+  return { ...list, reload: reloadFresh };
 }
 
 /** Bank soal kuis. Muat ulang melewati cache 15 menitnya, supaya tombol coba lagi benar-benar membaca ulang. */

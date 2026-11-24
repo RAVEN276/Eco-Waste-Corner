@@ -31,14 +31,17 @@ function useEdukasiActive(enabled: boolean): boolean {
   useEffect(() => {
     if (!enabled) return;
     let frame = 0;
+    let cachedSection: HTMLElement | null = null;
     const update = () => {
       frame = 0;
-      const section = document.getElementById("edukasi");
-      if (!section) {
+      if (!cachedSection || !cachedSection.isConnected) {
+        cachedSection = document.getElementById("edukasi");
+      }
+      if (!cachedSection) {
         setActive(false);
         return;
       }
-      const { top, bottom } = section.getBoundingClientRect();
+      const { top, bottom } = cachedSection.getBoundingClientRect();
       const line = Math.max(140, window.innerHeight * 0.35);
       setActive(top <= line && bottom > line);
     };
@@ -106,6 +109,7 @@ export function Navbar() {
             alt=""
             width={304}
             height={256}
+            sizes="(max-width: 640px) 43px, 52px"
             priority
             className="h-9 w-auto shrink-0 sm:h-11"
           />

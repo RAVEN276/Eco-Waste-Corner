@@ -1,17 +1,28 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import { StationScene } from "@/components/art/BinArt";
-import { PhotoStep } from "@/components/scan/PhotoStep";
-import { QuizStep } from "@/components/scan/QuizStep";
-import { ResultStep } from "@/components/scan/ResultStep";
 import { ScanStep } from "@/components/scan/ScanStep";
 import { Stepper } from "@/components/scan/Stepper";
 import { Button } from "@/components/ui/Button";
 import { ScrollLinked } from "@/components/ui/ScrollLinked";
 import { ErrorState, LoadingState } from "@/components/ui/States";
+
+const QuizStep = dynamic(
+  () => import("@/components/scan/QuizStep").then((mod) => mod.QuizStep),
+  { loading: () => <LoadingState label="Menyiapkan kuis" className="py-12" /> },
+);
+const PhotoStep = dynamic(
+  () => import("@/components/scan/PhotoStep").then((mod) => mod.PhotoStep),
+  { loading: () => <LoadingState label="Menyiapkan langkah foto bukti" className="py-12" /> },
+);
+const ResultStep = dynamic(
+  () => import("@/components/scan/ResultStep").then((mod) => mod.ResultStep),
+  { loading: () => <LoadingState label="Menyiapkan hasil scan" className="py-12" /> },
+);
 import { useCooldown } from "@/hooks/useCooldown";
 import { useLocations, useQuizBank } from "@/hooks/useRemoteList";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
@@ -217,7 +228,7 @@ export function ScanFlow() {
           </div>
         ) : null}
         <AnimatePresence mode="wait" initial={false}>
-          <motion.div
+          <m.div
             key={step}
             initial={{ opacity: 0, x: 16 }}
             animate={{ opacity: 1, x: 0 }}
@@ -258,7 +269,7 @@ export function ScanFlow() {
             {step === "result" && result ? (
               <ResultStep result={result} category={category} item={scannedItem} onAgain={stepHistory.back} />
             ) : null}
-          </motion.div>
+          </m.div>
         </AnimatePresence>
       </div>
       </div>

@@ -251,14 +251,21 @@ export async function fetchAdminScans(after: QueryDocumentSnapshot | null): Prom
   };
 }
 
-const IN_QUERY_LIMIT = 10;
+const IN_QUERY_LIMIT = 30;
 
 /** Profil beberapa pengguna sekaligus, untuk menampilkan nama di daftar scan. Yang tidak ditemukan tidak ikut. */
 export async function fetchUsersByIds(uids: string[]): Promise<Map<string, UserProfile>> {
   const users = new Map<string, UserProfile>();
+  if (uids.length === 0) return users;
+  const db = getDb();
+  const chunks: string[][] = [];
   for (let i = 0; i < uids.length; i += IN_QUERY_LIMIT) {
-    const chunk = uids.slice(i, i + IN_QUERY_LIMIT);
-    const snap = await getDocs(query(collection(getDb(), "users"), where(documentId(), "in", chunk)));
+    chunks.push(uids.slice(i, i + IN_QUERY_LIMIT));
+  }
+  const snaps = await Promise.all(
+    chunks.map((chunk) => getDocs(query(collection(db, "users"), where(documentId(), "in", chunk)))),
+  );
+  for (const snap of snaps) {
     snap.forEach((d) => users.set(d.id, mapUser(d.id, d.data())));
   }
   return users;
@@ -533,16 +540,29 @@ function assertReachable(snap: { empty: boolean; metadata: { fromCache: boolean 
   if (snap.empty && snap.metadata.fromCache) throw { code: "unavailable" };
 }
 
+const LOCATIONS_CACHE_MS = 15 * 60 * 1000;
+let locationsCache: { at: number; result: CollectionResult<CampusLocation> } | null = null;
+
+export function clearLocationsCache(): void {
+  locationsCache = null;
+}
+
 export async function fetchLocations(): Promise<CollectionResult<CampusLocation>> {
+  if (locationsCache && Date.now() - locationsCache.at < LOCATIONS_CACHE_MS) {
+    return locationsCache.result;
+  }
   const snap = await getDocs(collection(getDb(), "locations"));
   assertReachable(snap);
-  if (snap.empty) return { items: DEFAULT_LOCATIONS, source: "default" };
-  return {
-    items: snap.docs
-      .map((d) => mapLocation(d.id, d.data()))
-      .sort((a, b) => a.name.localeCompare(b.name)),
-    source: "firestore",
-  };
+  const result: CollectionResult<CampusLocation> = snap.empty
+    ? { items: DEFAULT_LOCATIONS, source: "default" }
+    : {
+        items: snap.docs
+          .map((d) => mapLocation(d.id, d.data()))
+          .sort((a, b) => a.name.localeCompare(b.name)),
+        source: "firestore",
+      };
+  locationsCache = { at: Date.now(), result };
+  return result;
 }
 
 /* ------------------------------ quiz bank (read) --------------------------- */

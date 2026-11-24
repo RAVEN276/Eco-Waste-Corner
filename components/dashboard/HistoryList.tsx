@@ -1,10 +1,14 @@
 "use client";
 
 import { useLayoutEffect, useMemo, useState, type CSSProperties } from "react";
+import dynamic from "next/dynamic";
 import { ReviewBadge, USER_REVIEW_LABELS } from "@/components/admin/ReviewBadge";
 import { reviewState, type ReviewFilter } from "@/components/admin/adminLabels";
-import { PhotoDialog } from "@/components/dashboard/PhotoDialog";
 import { ReviewNote } from "@/components/dashboard/ReviewNote";
+
+const PhotoDialog = dynamic(() =>
+  import("@/components/dashboard/PhotoDialog").then((mod) => mod.PhotoDialog),
+);
 import { Button } from "@/components/ui/Button";
 import { AlertIcon, CheckIcon } from "@/components/ui/Icons";
 import { EmptyState, ErrorState, InlineNotice, LoadingState } from "@/components/ui/States";
