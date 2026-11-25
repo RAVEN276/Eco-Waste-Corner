@@ -103,6 +103,7 @@ Seluruh bagian aplikasi dibangun di atas arsitektur React Server/Client Componen
 | **Zustand** | `5.0.16` | State management global (`useUserStore`) untuk sesi auth, profil, `poin`, `poinJSDP`, dan `cooldownUntil` |
 | **Framer Motion** | `14.9.1` | Transisi alur langkah dan animasi UI dengan `MotionConfig` yang menghormati `prefers-reduced-motion` |
 | **jsQR** | `1.4.0` | Pembacaan kode QR langsung di browser via `getUserMedia` (dimuat dinamis hanya saat langkah pindai dibuka) |
+| **ONNX Runtime Web** | `1.31.1` | Inferensi model klasifikasi foto sampah (`sampah-v3.onnx`, WASM via jsDelivr) langsung di browser saat foto pertama diambil |
 | **Web Crypto & Canvas API** | Bawaan Browser | Kompresi foto bukti JPEG (maksimal sisi `1024 px`) dan hashing SHA-256 di `lib/photo.ts` untuk deteksi foto duplikat |
 
 ### Backend, Basis Data, dan Perkakas CLI
@@ -220,7 +221,7 @@ Apabila data koleksi kosong, kurang dari 2 soal valid per kategori, atau gagal d
 | :--- | :--- |
 | `users/{uid}` | `uid`, `email`, `nama`, `prodi`, `poin`, `poinJSDP`, `totalScan`, `cooldownUntil`, `createdAt` |
 | `exchanges/{exchangeId}` | `exchangeId`, `userId`, `poinSpent`, `jsdpGained`, `timestamp` |
-| `scans/{scanId}` | `scanId`, `userId`, `categoryBin`, `location`, `locationName`, `photoUrl`, `photoHash`, `itemType`, `quizAnswered`, `quizCorrect`, `quizTotal`, `pointsEarned`, `status` (`verified`, `unverified`, `penalized`), `penaltyReason`, `timestamp`, `quizAnswers`, `review` |
+| `scans/{scanId}` | `scanId`, `userId`, `categoryBin`, `location`, `locationName`, `photoUrl`, `photoHash`, `itemType`, `quizAnswered`, `quizCorrect`, `quizTotal`, `pointsEarned`, `status` (`verified`, `unverified`, `penalized`), `penaltyReason`, `timestamp`, `mlSuggestion`, `quizAnswers`, `review` |
 | `locations/{locationId}` | `locationId`, `name`, `coordinates` (`x`, `y` dalam persen pada denah), `imageUrl`, `routeSteps` |
 | `quizQuestions/{questionId}` | `category`, `question`, `options`, `answerIndex`, `explanation` |
 | `scanPhotos/{scanId}` | `scanId`, `userId`, `mime`, `dataUrl`, `timestamp` |
@@ -256,6 +257,14 @@ Langkah mencetak QR:
 Pengambilan foto menggunakan `<input type="file" accept="image/*" capture="environment">` agar kamera ponsel langsung terbuka. Karena batas dokumen Firestore adalah 1 MiB, `lib/photo.ts` mengecilkan foto di browser (sisi terpanjang maksimal `1024 px`, format JPEG, maksimal data URL di bawah `300.000` karakter agar tetap aman di bawah batas `400.000` pada `firestore.rules`).
 
 Dokumen `scans` hanya menyimpan `photoHash` dan referensi path `scanPhotos/{scanId}`. Gambar penuh baru dimuat saat pengguna menekan tombol **Lihat foto** di riwayat dashboard atau saat admin meninjau scan.
+
+### Pengenal Jenis Sampah dari Foto (ML)
+
+Setelah foto bukti diambil, aplikasi menebak jenis barang dan tongnya langsung di browser memakai model `sampah-v3.onnx` (EfficientNet-B0 lewat `onnxruntime-web`, tanpa server).
+
+- **Saran pengisian otomatis (`SUGGEST_THRESHOLD` = `60%`)**: Pilihan jenis sampah diisi otomatis hanya jika masih kosong, kelasnya punya padanan barang (`botol-plastik`, `plastik-bersih`, `paper`, `cardboard`), keyakinan minimal `60%`, dan barangnya milik tong yang dipindai. Pilihan pengguna tidak pernah ditimpa.
+- **Peringatan & penahan kirim (`BLOCK_THRESHOLD` = `70%`)**: Jika foto terdeteksi milik tong lain dengan keyakinan minimal `70%`, tombol kirim ditahan sampai foto diulang dan opsi tanpa foto dinonaktifkan untuk scan tersebut (`mlSuggestion.blockedTries` mencatat percobaan). Di antara `60%` dan `70%` hanya muncul pengingat.
+- **Batas aman**: Kelas tanpa kategori tong (kaca, logam, baterai, pakaian, sepatu), keyakinan rendah, maupun model yang gagal dimuat tidak pernah menahan kirim (tunggu inferensi maksimal `20 detik`). Tebakan dicatat di `scans.mlSuggestion` untuk evaluasi akurasi dan tidak memengaruhi perhitungan poin.
 
 </details>
 
@@ -300,9 +309,9 @@ Secara default email reset kata sandi dikirim dari `noreply@<authDomain>` yang t
 | `components/` | Komponen terstruktur per domain: `landing`, `auth`, `dashboard`, `scan`, `map`, `admin`, `layout`, `art`, `ui`, dan `providers` |
 | `store/` | Zustand store `useUserStore` untuk state autentikasi, profil, saldo poin, poin JSDP, dan cooldown |
 | `hooks/` | Custom hooks: `useCooldown`, `useRequireAuth`, `useRemoteList`, `useScanHistory`, `useExchangeHistory`, `useSignOut`, `useCameraStream`, `useAdminScans` |
-| `lib/` | Aturan poin (`scoring.ts`), validasi & kompresi foto (`photo.ts`), parser QR (`qr.ts`), data statis (`seed.json`, `quiz-bank.json`, `items.ts`), konfigurasi admin (`admin.ts`), serta modul `firebase/` |
+| `lib/` | Aturan poin (`scoring.ts`), validasi & kompresi foto (`photo.ts`), parser QR (`qr.ts`), klasifikasi ML foto (`ml/classify.ts`), data statis (`seed.json`, `quiz-bank.json`, `items.ts`), konfigurasi admin (`admin.ts`), serta modul `firebase/` |
 | `scripts/` | Skrip CLI pemeliharaan: `seed-firestore.mjs`, `generate-qr.mjs`, `reset-accounts.mjs`, dan `clear-history.mjs` |
-| `public/` | Aset publik termasuk logo utama (`brand-logo.png`) |
+| `public/` | Aset publik termasuk logo utama (`brand-logo.png`) dan model ML (`models/sampah-v3.onnx`, `sampah-v3.labels.json`) |
 | `DESIGN.md` | Arah visual, aturan kontras warna, tipografi, dan dial desain proyek |
 | `firestore.rules` | Aturan keamanan Firestore untuk kontrol akses pengguna, admin, transaksi poin, dan penukaran |
 

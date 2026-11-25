@@ -1,29 +1,47 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type MouseEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { CameraIcon } from "@/components/ui/Icons";
 import { InlineNotice, Spinner } from "@/components/ui/States";
-import { SCAN_ITEMS } from "@/lib/data/items";
+import { BINS } from "@/lib/data/bins";
+import { SCAN_ITEMS, findWasteItem } from "@/lib/data/items";
+import { MAX_BLOCKED_TRIES, binVerdict, guessWasteItem } from "@/lib/ml/classify";
 import { ACCEPTED_PHOTO_TYPES, validatePhoto } from "@/lib/photo";
 import { NO_PHOTO_QUIZ_FULL_POINTS } from "@/lib/scoring";
+import type { BinCategory, MlSuggestion } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-interface PhotoStepProps {
-  submitting: boolean;
+const GUESS_WAIT_MS = 20_000;
 
+interface PhotoStepProps {
+  category: BinCategory;
+  submitting: boolean;
   error: string | null;
-  onSubmit: (values: { photo: File | null; itemId: string }) => void;
+  onSubmit: (values: { photo: File | null; itemId: string; mlSuggestion: MlSuggestion | null }) => void;
 }
 
-export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
+type Guess =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "done"; result: Omit<MlSuggestion, "accepted" | "blockedTries"> }
+  | { status: "error" };
+
+export function PhotoStep({ category, submitting, error, onSubmit }: PhotoStepProps) {
   const [photo, setPhoto] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [itemId, setItemId] = useState("");
   const [skipPhoto, setSkipPhoto] = useState(false);
   const [itemError, setItemError] = useState<string | null>(null);
+  const [guess, setGuess] = useState<Guess>({ status: "idle" });
+  const [autoPicked, setAutoPicked] = useState(false);
+  const [blockedTries, setBlockedTries] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const itemIdRef = useRef("");
+  const autoPickedRef = useRef(false);
+  const guessToken = useRef(0);
+  const guessStartedAt = useRef(0);
 
   useEffect(() => {
     if (!photo) return;
@@ -36,9 +54,52 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
     };
   }, [photo]);
 
+  useEffect(() => {
+    const tokens = guessToken;
+    return () => {
+      tokens.current += 1;
+    };
+  }, []);
+
+  const chooseItem = (id: string, auto: boolean) => {
+    itemIdRef.current = id;
+    autoPickedRef.current = auto;
+    setItemId(id);
+    setAutoPicked(auto);
+  };
+
   const resetSelectedPhoto = () => {
     setPhoto(null);
     if (inputRef.current) inputRef.current.value = "";
+    guessToken.current += 1;
+    setGuess({ status: "idle" });
+  };
+
+  const startGuess = (file: File, startedAt: number) => {
+    const token = ++guessToken.current;
+    if (autoPickedRef.current) chooseItem("", false);
+    setGuess({ status: "loading" });
+    guessStartedAt.current = startedAt;
+    guessWasteItem(file)
+      .then((result) => {
+        if (token !== guessToken.current) return;
+        setGuess({ status: "done", result });
+        setPhotoError(null);
+        if (binVerdict(result, category) === "block") {
+          setBlockedTries((tries) => Math.min(tries + 1, MAX_BLOCKED_TRIES));
+          setSkipPhoto(false);
+        }
+        const suggestedItem = result.suggested && result.itemId ? findWasteItem(result.itemId) : undefined;
+        if (suggestedItem && suggestedItem.category === category && !itemIdRef.current) {
+          chooseItem(suggestedItem.id, true);
+          setItemError(null);
+        }
+      })
+      .catch(() => {
+        if (token !== guessToken.current) return;
+        setGuess({ status: "error" });
+        setPhotoError(null);
+      });
   };
 
   const onFile = (event: ChangeEvent<HTMLInputElement>) => {
@@ -53,6 +114,7 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
     setPhotoError(null);
     setSkipPhoto(false);
     setPhoto(file);
+    startGuess(file, event.timeStamp);
   };
 
   const handleSkipPhotoChange = (checked: boolean) => {
@@ -60,9 +122,18 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
     if (!checked) return;
     setPhotoError(null);
     resetSelectedPhoto();
+    if (autoPickedRef.current) chooseItem("", false);
   };
 
-  const submit = () => {
+  const blocked =
+    Boolean(photo) && !skipPhoto && guess.status === "done" && binVerdict(guess.result, category) === "block";
+
+  const submit = (event: MouseEvent<HTMLButtonElement>) => {
+    if (blocked) return;
+    if (photo && !skipPhoto && guess.status === "loading" && event.timeStamp - guessStartedAt.current < GUESS_WAIT_MS) {
+      setPhotoError("Sampah di foto masih dikenali. Tunggu sebentar, lalu tekan kirim lagi.");
+      return;
+    }
     if (!itemId) {
       setItemError("Pilih jenis sampah yang kamu buang.");
       return;
@@ -72,7 +143,12 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
       return;
     }
     setItemError(null);
-    onSubmit({ photo: skipPhoto ? null : photo, itemId });
+    const usePhoto = skipPhoto ? null : photo;
+    const mlSuggestion =
+      usePhoto && guess.status === "done"
+        ? { ...guess.result, accepted: guess.result.suggested && guess.result.itemId === itemId, blockedTries }
+        : null;
+    onSubmit({ photo: usePhoto, itemId, mlSuggestion });
   };
 
   return (
@@ -99,7 +175,7 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
                 className="size-5 shrink-0 accent-link"
                 checked={itemId === item.id}
                 onChange={() => {
-                  setItemId(item.id);
+                  chooseItem(item.id, false);
                   setItemError(null);
                 }}
               />
@@ -162,21 +238,28 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
             >
               {photo ? "Foto ulang" : "Buka kamera ponsel"}
             </Button>
-            <label className="flex min-h-11 items-center gap-2.5 text-sm">
+            <label className={cn("flex min-h-11 items-center gap-2.5 text-sm", blockedTries > 0 && "text-muted")}>
               <input
                 type="checkbox"
                 className="size-5 accent-link"
                 checked={skipPhoto}
+                disabled={submitting || blockedTries > 0}
                 onChange={(event) => handleSkipPhotoChange(event.target.checked)}
               />
               Saya tidak bisa mengambil foto (hanya {NO_PHOTO_QUIZ_FULL_POINTS} poin jika kuis benar semua)
             </label>
+            {blockedTries > 0 ? (
+              <p className="text-sm text-muted">Pilihan tanpa foto tidak tersedia setelah foto tidak sesuai tong.</p>
+            ) : null}
           </div>
         </div>
         {photoError ? (
           <p id="foto-error" role="alert" className="mt-2 text-sm font-bold text-brick-text">
             {photoError}
           </p>
+        ) : null}
+        {photo && !skipPhoto ? (
+          <GuessNotice guess={guess} itemId={itemId} autoPicked={autoPicked} category={category} />
         ) : null}
       </fieldset>
 
@@ -189,9 +272,101 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
         </div>
       ) : null}
 
-      <Button size="lg" onClick={submit} disabled={submitting} className="reveal w-full sm:w-auto">
+      <Button
+        size="lg"
+        onClick={submit}
+        disabled={submitting || blocked}
+        aria-describedby={blocked ? "foto-tidak-sesuai" : undefined}
+        className="reveal w-full sm:w-auto"
+      >
         Kirim dan klaim poin
       </Button>
     </div>
+  );
+}
+
+/** Menampilkan hasil pengenal foto terhadap tong yang dipindai: sesuai, tidak sesuai, pengingat, atau belum yakin. */
+function GuessNotice({
+  guess,
+  itemId,
+  autoPicked,
+  category,
+}: {
+  guess: Guess;
+  itemId: string;
+  autoPicked: boolean;
+  category: BinCategory;
+}) {
+  if (guess.status === "idle") return null;
+  if (guess.status === "loading") {
+    return (
+      <div role="status" className="mt-3 flex items-center gap-3 text-sm text-muted">
+        <Spinner className="text-link" label="Mengenali" />
+        Mengenali sampah di foto. Pertama kali bisa agak lama karena pengenalnya diunduh dulu.
+      </div>
+    );
+  }
+  if (guess.status === "error") {
+    return (
+      <InlineNotice className="mt-3">
+        Pengenal otomatis tidak bisa dimuat. Pilih jenis sampah sendiri di atas.
+      </InlineNotice>
+    );
+  }
+
+  const { result } = guess;
+  const suggestion = result.suggested && result.itemId ? findWasteItem(result.itemId) : undefined;
+  const percent = Math.round(result.confidence * 100);
+  const chosen = itemId ? findWasteItem(itemId) : undefined;
+  const verdict = binVerdict(result, category);
+  const scanned = BINS[category].label;
+
+  if (verdict === "block" || verdict === "warn") {
+    const other = BINS[result.binId ?? category].label;
+    const looksLike = suggestion ? suggestion.label : `sampah ${other}`;
+    if (verdict === "block") {
+      return (
+        <div id="foto-tidak-sesuai">
+          <InlineNotice tone="error" className="mt-3">
+            <p className="font-bold">Sampah tidak sesuai dengan tong {scanned}.</p>
+            <p className="mt-1">
+              {`Foto terlihat seperti ${looksLike} (yakin ${percent}%), yang masuk tong ${other}. `}
+              Buang ke tong yang sesuai lalu pindai QR-nya. Kalau tebakan ini keliru, foto ulang dengan sampah terlihat
+              jelas.
+            </p>
+          </InlineNotice>
+        </div>
+      );
+    }
+    return (
+      <InlineNotice tone="warning" className="mt-3">
+        {`Foto terlihat seperti ${looksLike} (yakin ${percent}%), yang masuk tong ${other}. `}
+        {`Kamu memindai tong ${scanned}, jadi cek lagi sampahmu sebelum dibuang.`}
+        {chosen ? ` Pilihanmu tetap ${chosen.label}.` : " Pilih jenis sampah di atas."}
+      </InlineNotice>
+    );
+  }
+
+  if (verdict === "match") {
+    let detail = `Yakin ${percent}%.`;
+    if (suggestion && itemId === suggestion.id) {
+      detail = autoPicked
+        ? `Tebakan: ${suggestion.label} (yakin ${percent}%). Pilihan di atas sudah diisi, ganti kalau salah.`
+        : `Foto cocok dengan pilihanmu: ${suggestion.label} (yakin ${percent}%).`;
+    } else if (suggestion) {
+      detail = `Foto terlihat seperti ${suggestion.label} (yakin ${percent}%).${chosen ? ` Pilihanmu tetap ${chosen.label}.` : " Pilih jenis sampah di atas."}`;
+    }
+    return (
+      <InlineNotice tone="success" className="mt-3">
+        <p className="font-bold">Sampah sesuai dengan tong {scanned}.</p>
+        <p className="mt-1">{detail}</p>
+      </InlineNotice>
+    );
+  }
+
+  return (
+    <InlineNotice className="mt-3">
+      Jenis sampah di foto belum bisa dikenali dengan yakin. Pilih sendiri di atas.
+    </InlineNotice>
   );
 }

@@ -36,12 +36,25 @@ export interface ScanRecord {
   status: ScanStatus;
   penaltyReason: PenaltyReason | null;
   timestamp: number;
+  mlSuggestion: MlSuggestion | null;
   /** Jawaban per soal yang dilaporkan klien. Null untuk scan lama yang hanya menyimpan skor. */
   quizAnswers: QuizAnswerRecord[] | null;
   /** Keputusan admin. Null berarti belum ditinjau. */
   review: ScanReview | null;
 }
 
+export interface MlSuggestion {
+  classId: string;
+  confidence: number;
+  itemId: string | null;
+  binId: BinCategory | null;
+  suggested: boolean;
+  accepted: boolean;
+  modelVersion: string;
+  loadMs: number;
+  inferMs: number;
+  blockedTries: number;
+}
 /** Satu jawaban kuis. Teksnya disalin, supaya tetap terbaca bila bank soal berubah. */
 export interface QuizAnswerRecord {
   questionId: string;

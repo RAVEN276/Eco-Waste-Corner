@@ -32,7 +32,7 @@ import { describeFirebaseError } from "@/lib/firebase/errors";
 import { submitScan, type SubmitScanResult } from "@/lib/firebase/firestore";
 import { QR_PARAM_BIN, QR_PARAM_LOCATION, scanTargetFromParams, type ScanTarget } from "@/lib/qr";
 import { COOLDOWN_MINUTES, PENALTY_COOLDOWN_MINUTES } from "@/lib/scoring";
-import type { QuizAnswerRecord, QuizQuestion } from "@/lib/types";
+import type { MlSuggestion, QuizAnswerRecord, QuizQuestion } from "@/lib/types";
 import { useUserStore } from "@/store/useUserStore";
 
 type Step = "scan" | "quiz" | "photo" | "result";
@@ -142,7 +142,15 @@ export function ScanFlow() {
     setStep("quiz");
   };
 
-  const handleSubmit = async ({ photo, itemId }: { photo: File | null; itemId: string }) => {
+  const handleSubmit = async ({
+    photo,
+    itemId,
+    mlSuggestion,
+  }: {
+    photo: File | null;
+    itemId: string;
+    mlSuggestion: MlSuggestion | null;
+  }) => {
     if (!category || !location || submitting) return;
     setSubmitting(true);
     setSubmitError(null);
@@ -158,6 +166,7 @@ export function ScanFlow() {
         quizTotal: questions.length,
         quizAnswers,
         photo,
+        mlSuggestion,
       });
       setResult(outcome);
       setScannedItem(itemId);
@@ -262,8 +271,8 @@ export function ScanFlow() {
               />
             ) : null}
 
-            {step === "photo" ? (
-              <PhotoStep submitting={submitting} error={submitError} onSubmit={handleSubmit} />
+            {step === "photo" && category ? (
+              <PhotoStep category={category} submitting={submitting} error={submitError} onSubmit={handleSubmit} />
             ) : null}
 
             {step === "result" && result ? (

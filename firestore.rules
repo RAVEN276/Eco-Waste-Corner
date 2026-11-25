@@ -144,6 +144,23 @@ service cloud.firestore {
     }
 
     match /scans/{scanId} {
+      // Tebakan pengenal foto (lib/ml/classify.ts). Hanya catatan, tidak memengaruhi poin,
+      // jadi cukup dibatasi bentuk dan ukurannya. binId opsional: model sebelum sampah-v3 tidak mengirimnya.
+      function isMlSuggestion(s) {
+        return s is map
+          && s.keys().hasOnly(['classId', 'confidence', 'itemId', 'binId', 'suggested', 'accepted', 'modelVersion', 'loadMs', 'inferMs', 'blockedTries'])
+          && s.classId is string && s.classId.size() <= 32
+          && s.confidence is number && s.confidence >= 0 && s.confidence <= 1
+          && (s.itemId == null || (s.itemId is string && s.itemId.size() <= 64))
+          && (s.get('binId', null) == null || s.binId in ['organik', 'plastik_kertas', 'residu'])
+          && s.suggested is bool
+          && s.accepted is bool
+          && s.modelVersion is string && s.modelVersion.size() <= 32
+          && s.loadMs is number && s.loadMs >= 0
+          && s.inferMs is number && s.inferMs >= 0
+          && (s.get('blockedTries', 0) is int && s.get('blockedTries', 0) >= 0 && s.get('blockedTries', 0) <= 50);
+      }
+
       allow read: if (isUpjStudent() && resource.data.userId == request.auth.uid) || isAdmin();
 
       allow create: if isUpjStudent()
@@ -152,7 +169,9 @@ service cloud.firestore {
         && request.resource.data.categoryBin in ['organik', 'plastik_kertas', 'residu']
         && request.resource.data.pointsEarned >= -3
         && request.resource.data.pointsEarned <= 7
-        && request.resource.data.timestamp == request.time;
+        && request.resource.data.timestamp == request.time
+        && (request.resource.data.get('mlSuggestion', null) == null
+          || isMlSuggestion(request.resource.data.mlSuggestion));
 
       // The only change an admin may make to a scan is its review. Points are never touched here.
       allow update: if isAdmin()

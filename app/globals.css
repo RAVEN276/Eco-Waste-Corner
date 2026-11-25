@@ -457,7 +457,6 @@ body {
 .splash-fill {
   animation: splash-fill 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
-
 /*
  * Efek terikat gulir (ScrollLinked dan bilah progres) dijalankan CSS di thread compositor, bukan
  * JavaScript. Dengan JavaScript, nilainya dihitung setelah gulir terjadi sehingga tertinggal satu

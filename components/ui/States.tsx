@@ -98,12 +98,13 @@ export function InlineNotice({
   children,
   className,
 }: {
-  tone?: "info" | "warning" | "error";
+  tone?: "info" | "success" | "warning" | "error";
   children: ReactNode;
   className?: string;
 }) {
   const tones = {
     info: "border-link bg-cobalt-soft text-ink",
+    success: "border-organik bg-organik-soft text-ink",
     warning: "border-line bg-kertas-soft text-ink",
     error: "border-brick-text bg-brick-soft text-brick-ink",
   } as const;

@@ -1,0 +1,61 @@
+{
+  "model": "efficientnet_b0",
+  "classes": [
+    "biological",
+    "botol-plastik",
+    "plastik-bersih",
+    "paper",
+    "cardboard",
+    "trash",
+    "lainnya"
+  ],
+  "mapping_from_dataset": {
+    "biological": "biological",
+    "plastic": "dipecah per foto: botol-plastik, plastik-bersih, kemasan-multilayer (digabung ke trash), atau buang",
+    "paper": "paper",
+    "cardboard": "cardboard",
+    "trash": "trash",
+    "metal": "lainnya",
+    "glass": "lainnya",
+    "battery": "lainnya",
+    "shoes": "lainnya",
+    "clothes": "lainnya"
+  },
+  "bin_of": {
+    "biological": "organik",
+    "botol-plastik": "plastik_kertas",
+    "plastik-bersih": "plastik_kertas",
+    "paper": "plastik_kertas",
+    "cardboard": "plastik_kertas",
+    "trash": "residu",
+    "lainnya": "tidak-ada"
+  },
+  "input": {
+    "name": "input",
+    "shape": [
+      1,
+      3,
+      224,
+      224
+    ],
+    "layout": "NCHW",
+    "dtype": "float32"
+  },
+  "preprocess": {
+    "resize_shorter_side": 256,
+    "center_crop": 224,
+    "interpolation": "InterpolationMode.BICUBIC",
+    "mean": [
+      0.485,
+      0.456,
+      0.406
+    ],
+    "std": [
+      0.229,
+      0.224,
+      0.225
+    ],
+    "scale": "pixel / 255 sebelum normalisasi"
+  },
+  "output": "logits, gunakan softmax untuk tingkat keyakinan"
+}

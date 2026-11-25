@@ -21,7 +21,7 @@ import {
 } from "firebase/firestore";
 import { getDb, getFirebaseAuth } from "@/lib/firebase/config";
 import { compressPhoto, hashFile } from "@/lib/photo";
-import { BIN_LIST } from "@/lib/data/bins";
+import { BIN_LIST, isBinCategory } from "@/lib/data/bins";
 import { findWasteItem } from "@/lib/data/items";
 import { DEFAULT_QUIZ_BANK, QUESTIONS_PER_SCAN } from "@/lib/data/quiz";
 import seed from "@/lib/data/seed.json";
@@ -41,6 +41,7 @@ import type {
   CampusLocation,
   DataSource,
   ExchangeRecord,
+  MlSuggestion,
   QuizAnswerRecord,
   QuizQuestion,
   ReviewDecision,
@@ -118,11 +119,28 @@ function mapScan(id: string, data: DocumentData): ScanRecord {
     status: data.status ?? "unverified",
     penaltyReason: data.penaltyReason ?? null,
     timestamp: toMillis(data.timestamp) ?? 0,
+    mlSuggestion: mapMlSuggestion(data.mlSuggestion),
     quizAnswers: mapQuizAnswers(data.quizAnswers),
     review: mapReview(data.review),
   };
 }
 
+function mapMlSuggestion(value: unknown): MlSuggestion | null {
+  if (!value || typeof value !== "object") return null;
+  const data = value as Record<string, unknown>;
+  return {
+    classId: String(data.classId ?? ""),
+    confidence: Number(data.confidence ?? 0),
+    itemId: typeof data.itemId === "string" ? data.itemId : null,
+    binId: isBinCategory(data.binId) ? data.binId : null,
+    suggested: Boolean(data.suggested),
+    accepted: Boolean(data.accepted),
+    modelVersion: String(data.modelVersion ?? ""),
+    loadMs: Number(data.loadMs ?? 0),
+    inferMs: Number(data.inferMs ?? 0),
+    blockedTries: Number(data.blockedTries ?? 0),
+  };
+}
 function mapExchange(id: string, data: DocumentData): ExchangeRecord {
   return {
     exchangeId: id,
@@ -347,6 +365,7 @@ export interface SubmitScanInput {
   /** Jawaban per soal, supaya admin bisa memeriksanya. Dilaporkan klien, jadi bukan bukti. */
   quizAnswers: QuizAnswerRecord[];
   photo: File | null;
+  mlSuggestion: MlSuggestion | null;
 }
 
 export interface SubmitScanResult {
@@ -438,6 +457,7 @@ export async function submitScan(input: SubmitScanInput): Promise<SubmitScanResu
       status: breakdown.status,
       penaltyReason: breakdown.penalty,
       timestamp: serverTimestamp(),
+      mlSuggestion: input.mlSuggestion,
     });
 
     if (photoData) {
