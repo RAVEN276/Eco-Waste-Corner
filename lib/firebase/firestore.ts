@@ -138,6 +138,7 @@ function mapMlSuggestion(value: unknown): MlSuggestion | null {
     modelVersion: String(data.modelVersion ?? ""),
     loadMs: Number(data.loadMs ?? 0),
     inferMs: Number(data.inferMs ?? 0),
+    blockedTries: Number(data.blockedTries ?? 0),
   };
 }
 

@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type MouseEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { CameraIcon } from "@/components/ui/Icons";
 import { InlineNotice, Spinner } from "@/components/ui/States";
 import { BINS } from "@/lib/data/bins";
 import { SCAN_ITEMS, findWasteItem } from "@/lib/data/items";
-import { SUGGEST_THRESHOLD, guessWasteItem } from "@/lib/ml/classify";
+import { MAX_BLOCKED_TRIES, binVerdict, guessWasteItem } from "@/lib/ml/classify";
 import { ACCEPTED_PHOTO_TYPES, validatePhoto } from "@/lib/photo";
 import type { BinCategory, MlSuggestion } from "@/lib/types";
 import { cn } from "@/lib/utils";
+
+const GUESS_WAIT_MS = 20_000;
 
 interface PhotoStepProps {
   category: BinCategory;
@@ -22,7 +24,7 @@ interface PhotoStepProps {
 type Guess =
   | { status: "idle" }
   | { status: "loading" }
-  | { status: "done"; result: Omit<MlSuggestion, "accepted"> }
+  | { status: "done"; result: Omit<MlSuggestion, "accepted" | "blockedTries"> }
   | { status: "error" };
 
 export function PhotoStep({ category, submitting, error, onSubmit }: PhotoStepProps) {
@@ -34,10 +36,12 @@ export function PhotoStep({ category, submitting, error, onSubmit }: PhotoStepPr
   const [itemError, setItemError] = useState<string | null>(null);
   const [guess, setGuess] = useState<Guess>({ status: "idle" });
   const [autoPicked, setAutoPicked] = useState(false);
+  const [blockedTries, setBlockedTries] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const itemIdRef = useRef("");
   const autoPickedRef = useRef(false);
   const guessToken = useRef(0);
+  const guessStartedAt = useRef(0);
 
   useEffect(() => {
     if (!photo) return;
@@ -64,14 +68,20 @@ export function PhotoStep({ category, submitting, error, onSubmit }: PhotoStepPr
     setAutoPicked(auto);
   };
 
-  const startGuess = (file: File) => {
+  const startGuess = (file: File, startedAt: number) => {
     const token = ++guessToken.current;
     if (autoPickedRef.current) chooseItem("", false);
     setGuess({ status: "loading" });
+    guessStartedAt.current = startedAt;
     guessWasteItem(file)
       .then((result) => {
         if (token !== guessToken.current) return;
         setGuess({ status: "done", result });
+        setPhotoError(null);
+        if (binVerdict(result, category) === "block") {
+          setBlockedTries((tries) => Math.min(tries + 1, MAX_BLOCKED_TRIES));
+          setSkipPhoto(false);
+        }
         const suggestedItem = result.suggested && result.itemId ? findWasteItem(result.itemId) : undefined;
         if (suggestedItem && suggestedItem.category === category && !itemIdRef.current) {
           chooseItem(suggestedItem.id, true);
@@ -79,7 +89,9 @@ export function PhotoStep({ category, submitting, error, onSubmit }: PhotoStepPr
         }
       })
       .catch(() => {
-        if (token === guessToken.current) setGuess({ status: "error" });
+        if (token !== guessToken.current) return;
+        setGuess({ status: "error" });
+        setPhotoError(null);
       });
   };
 
@@ -98,10 +110,17 @@ export function PhotoStep({ category, submitting, error, onSubmit }: PhotoStepPr
     setPhotoError(null);
     setSkipPhoto(false);
     setPhoto(file);
-    startGuess(file);
+    startGuess(file, event.timeStamp);
   };
 
-  const submit = () => {
+  const blocked = Boolean(photo) && !skipPhoto && guess.status === "done" && binVerdict(guess.result, category) === "block";
+
+  const submit = (event: MouseEvent<HTMLButtonElement>) => {
+    if (blocked) return;
+    if (photo && !skipPhoto && guess.status === "loading" && event.timeStamp - guessStartedAt.current < GUESS_WAIT_MS) {
+      setPhotoError("Sampah di foto masih dikenali. Tunggu sebentar, lalu tekan kirim lagi.");
+      return;
+    }
     if (!itemId) {
       setItemError("Pilih jenis sampah yang kamu buang.");
       return;
@@ -114,7 +133,7 @@ export function PhotoStep({ category, submitting, error, onSubmit }: PhotoStepPr
     const usePhoto = skipPhoto ? null : photo;
     const mlSuggestion =
       usePhoto && guess.status === "done"
-        ? { ...guess.result, accepted: guess.result.suggested && guess.result.itemId === itemId }
+        ? { ...guess.result, accepted: guess.result.suggested && guess.result.itemId === itemId, blockedTries }
         : null;
     onSubmit({ photo: usePhoto, itemId, mlSuggestion });
   };
@@ -201,11 +220,12 @@ export function PhotoStep({ category, submitting, error, onSubmit }: PhotoStepPr
             <Button variant="outline" onClick={() => inputRef.current?.click()} disabled={submitting}>
               {photo ? "Foto ulang" : "Buka kamera ponsel"}
             </Button>
-            <label className="flex min-h-11 items-center gap-2.5 text-sm">
+            <label className={cn("flex min-h-11 items-center gap-2.5 text-sm", blockedTries > 0 && "text-muted")}>
               <input
                 type="checkbox"
                 className="size-5 accent-link"
                 checked={skipPhoto}
+                disabled={blockedTries > 0}
                 onChange={(event) => {
                   setSkipPhoto(event.target.checked);
                   if (event.target.checked) setPhotoError(null);
@@ -213,6 +233,9 @@ export function PhotoStep({ category, submitting, error, onSubmit }: PhotoStepPr
               />
               Saya tidak bisa mengambil foto (poin lebih sedikit)
             </label>
+            {blockedTries > 0 ? (
+              <p className="text-sm text-muted">Pilihan tanpa foto tidak tersedia setelah foto tidak sesuai tong.</p>
+            ) : null}
           </div>
         </div>
         {photoError ? (
@@ -232,14 +255,20 @@ export function PhotoStep({ category, submitting, error, onSubmit }: PhotoStepPr
         </div>
       ) : null}
 
-      <Button size="lg" onClick={submit} disabled={submitting} className="reveal w-full sm:w-auto">
+      <Button
+        size="lg"
+        onClick={submit}
+        disabled={submitting || blocked}
+        aria-describedby={blocked ? "foto-tidak-sesuai" : undefined}
+        className="reveal w-full sm:w-auto"
+      >
         Kirim dan klaim poin
       </Button>
     </div>
   );
 }
 
-/** Status pengenal foto. Hanya saran: pilihan jenis sampah tetap bisa diganti dan scan tidak menunggu tebakan. */
+/** Menampilkan hasil pengenal foto terhadap tong yang dipindai: sesuai, tidak sesuai, pengingat, atau belum yakin. */
 function GuessNotice({
   guess,
   itemId,
@@ -269,42 +298,58 @@ function GuessNotice({
   }
 
   const { result } = guess;
-  const suggestion = result.itemId ? findWasteItem(result.itemId) : undefined;
+  const suggestion = result.suggested && result.itemId ? findWasteItem(result.itemId) : undefined;
   const percent = Math.round(result.confidence * 100);
   const chosen = itemId ? findWasteItem(itemId) : undefined;
+  const verdict = binVerdict(result, category);
+  const scanned = BINS[category].label;
 
-  const otherBin = result.binId && result.binId !== category && result.confidence >= SUGGEST_THRESHOLD ? result.binId : null;
-  if (otherBin) {
-    const looksLike = result.suggested && suggestion ? suggestion.label : `sampah ${BINS[otherBin].label}`;
+  if (verdict === "block" || verdict === "warn") {
+    const other = BINS[result.binId ?? category].label;
+    const looksLike = suggestion ? suggestion.label : `sampah ${other}`;
+    if (verdict === "block") {
+      return (
+        <div id="foto-tidak-sesuai">
+          <InlineNotice tone="error" className="mt-3">
+            <p className="font-bold">Sampah tidak sesuai dengan tong {scanned}.</p>
+            <p className="mt-1">
+              {`Foto terlihat seperti ${looksLike} (yakin ${percent}%), yang masuk tong ${other}. `}
+              Buang ke tong yang sesuai lalu pindai QR-nya. Kalau tebakan ini keliru, foto ulang dengan sampah terlihat
+              jelas.
+            </p>
+          </InlineNotice>
+        </div>
+      );
+    }
     return (
       <InlineNotice tone="warning" className="mt-3">
-        {`Foto terlihat seperti ${looksLike} (yakin ${percent}%), yang masuk tong ${BINS[otherBin].label}. `}
-        {`Kamu memindai tong ${BINS[category].label}, jadi cek lagi sampahmu sebelum dibuang.`}
+        {`Foto terlihat seperti ${looksLike} (yakin ${percent}%), yang masuk tong ${other}. `}
+        {`Kamu memindai tong ${scanned}, jadi cek lagi sampahmu sebelum dibuang.`}
         {chosen ? ` Pilihanmu tetap ${chosen.label}.` : " Pilih jenis sampah di atas."}
       </InlineNotice>
     );
   }
 
-  if (!result.suggested || !suggestion) {
+  if (verdict === "match") {
+    let detail = `Yakin ${percent}%.`;
+    if (suggestion && itemId === suggestion.id) {
+      detail = autoPicked
+        ? `Tebakan: ${suggestion.label} (yakin ${percent}%). Pilihan di atas sudah diisi, ganti kalau salah.`
+        : `Foto cocok dengan pilihanmu: ${suggestion.label} (yakin ${percent}%).`;
+    } else if (suggestion) {
+      detail = `Foto terlihat seperti ${suggestion.label} (yakin ${percent}%).${chosen ? ` Pilihanmu tetap ${chosen.label}.` : " Pilih jenis sampah di atas."}`;
+    }
     return (
-      <InlineNotice className="mt-3">
-        Jenis sampah di foto belum bisa dikenali dengan yakin. Pilih sendiri di atas.
+      <InlineNotice tone="success" className="mt-3">
+        <p className="font-bold">Sampah sesuai dengan tong {scanned}.</p>
+        <p className="mt-1">{detail}</p>
       </InlineNotice>
     );
   }
-  if (itemId === suggestion.id) {
-    return (
-      <InlineNotice className="mt-3">
-        {autoPicked
-          ? `Tebakan otomatis: ${suggestion.label} (yakin ${percent}%). Pilihan di atas sudah diisi, ganti kalau salah.`
-          : `Foto cocok dengan pilihanmu: ${suggestion.label} (yakin ${percent}%).`}
-      </InlineNotice>
-    );
-  }
+
   return (
     <InlineNotice className="mt-3">
-      {`Foto terlihat seperti ${suggestion.label} (yakin ${percent}%).`}
-      {chosen ? ` Pilihanmu tetap ${chosen.label}.` : " Pilih jenis sampah di atas."}
+      Jenis sampah di foto belum bisa dikenali dengan yakin. Pilih sendiri di atas.
     </InlineNotice>
   );
 }

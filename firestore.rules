@@ -150,7 +150,7 @@ service cloud.firestore {
       // jadi cukup dibatasi bentuk dan ukurannya. binId opsional: model sebelum sampah-v3 tidak mengirimnya.
       function isMlSuggestion(s) {
         return s is map
-          && s.keys().hasOnly(['classId', 'confidence', 'itemId', 'binId', 'suggested', 'accepted', 'modelVersion', 'loadMs', 'inferMs'])
+          && s.keys().hasOnly(['classId', 'confidence', 'itemId', 'binId', 'suggested', 'accepted', 'modelVersion', 'loadMs', 'inferMs', 'blockedTries'])
           && s.classId is string && s.classId.size() <= 32
           && s.confidence is number && s.confidence >= 0 && s.confidence <= 1
           && (s.itemId == null || (s.itemId is string && s.itemId.size() <= 64))
@@ -159,7 +159,8 @@ service cloud.firestore {
           && s.accepted is bool
           && s.modelVersion is string && s.modelVersion.size() <= 32
           && s.loadMs is number && s.loadMs >= 0
-          && s.inferMs is number && s.inferMs >= 0;
+          && s.inferMs is number && s.inferMs >= 0
+          && (s.get('blockedTries', 0) is int && s.get('blockedTries', 0) >= 0 && s.get('blockedTries', 0) <= 50);
       }
 
       allow read: if (isUpjStudent() && resource.data.userId == request.auth.uid) || isAdmin();

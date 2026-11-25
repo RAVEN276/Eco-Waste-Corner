@@ -8,6 +8,12 @@ const LABELS_URL = `/models/${ML_MODEL_VERSION}.labels.json`;
 
 export const SUGGEST_THRESHOLD = 0.6;
 
+export const BLOCK_THRESHOLD = 0.7;
+
+export const MAX_BLOCKED_TRIES = 50;
+
+export type BinVerdict = "match" | "block" | "warn" | "unsure";
+
 const CLASS_TO_ITEM: Record<string, string> = {
   "botol-plastik": "botol-plastik",
   "plastik-bersih": "gelas-plastik",
@@ -88,7 +94,7 @@ async function toInput(model: LoadedModel, photo: Blob) {
  * dan keyakinannya di atas SUGGEST_THRESHOLD. `binId` adalah tong untuk kelas itu (null bila tidak
  * punya tong), tanpa melihat keyakinan. Melempar galat bila model atau foto gagal diproses.
  */
-export async function guessWasteItem(photo: Blob): Promise<Omit<MlSuggestion, "accepted">> {
+export async function guessWasteItem(photo: Blob): Promise<Omit<MlSuggestion, "accepted" | "blockedTries">> {
   const model = await loadModel();
   const input = await toInput(model, photo);
   const start = performance.now();
@@ -116,4 +122,12 @@ export async function guessWasteItem(photo: Blob): Promise<Omit<MlSuggestion, "a
     loadMs: Math.round(model.loadMs),
     inferMs: Math.round(inferMs),
   };
+}
+
+/** Menilai tebakan terhadap tong yang dipindai: sesuai, tidak sesuai sampai kirim ditahan, sekadar pengingat, atau belum yakin. */
+export function binVerdict(result: Pick<MlSuggestion, "binId" | "confidence">, category: BinCategory): BinVerdict {
+  if (!result.binId) return "unsure";
+  if (result.binId === category) return result.confidence >= SUGGEST_THRESHOLD ? "match" : "unsure";
+  if (result.confidence >= BLOCK_THRESHOLD) return "block";
+  return result.confidence >= SUGGEST_THRESHOLD ? "warn" : "unsure";
 }

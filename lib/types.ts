@@ -53,6 +53,7 @@ export interface MlSuggestion {
   modelVersion: string;
   loadMs: number;
   inferMs: number;
+  blockedTries: number;
 }
 
 /** Satu jawaban kuis. Teksnya disalin, supaya tetap terbaca bila bank soal berubah. */
