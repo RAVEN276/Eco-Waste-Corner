@@ -6,6 +6,7 @@ import { CameraIcon } from "@/components/ui/Icons";
 import { InlineNotice, Spinner } from "@/components/ui/States";
 import { SCAN_ITEMS } from "@/lib/data/items";
 import { ACCEPTED_PHOTO_TYPES, validatePhoto } from "@/lib/photo";
+import { NO_PHOTO_QUIZ_FULL_POINTS } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
 
 interface PhotoStepProps {
@@ -35,19 +36,30 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
     };
   }, [photo]);
 
+  const resetSelectedPhoto = () => {
+    setPhoto(null);
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
   const onFile = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
     if (!file) return;
     const problem = validatePhoto(file);
     if (problem) {
       setPhotoError(problem);
-      setPhoto(null);
-      event.target.value = "";
+      resetSelectedPhoto();
       return;
     }
     setPhotoError(null);
     setSkipPhoto(false);
     setPhoto(file);
+  };
+
+  const handleSkipPhotoChange = (checked: boolean) => {
+    setSkipPhoto(checked);
+    if (!checked) return;
+    setPhotoError(null);
+    resetSelectedPhoto();
   };
 
   const submit = () => {
@@ -116,6 +128,7 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
           type="file"
           accept={ACCEPTED_PHOTO_TYPES.join(",")}
           capture="environment"
+          disabled={submitting || skipPhoto}
           onChange={onFile}
           tabIndex={-1}
           className="sr-only"
@@ -142,7 +155,11 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
             </div>
           )}
           <div className="space-y-3">
-            <Button variant="outline" onClick={() => inputRef.current?.click()} disabled={submitting}>
+            <Button
+              variant="outline"
+              onClick={() => inputRef.current?.click()}
+              disabled={submitting || skipPhoto}
+            >
               {photo ? "Foto ulang" : "Buka kamera ponsel"}
             </Button>
             <label className="flex min-h-11 items-center gap-2.5 text-sm">
@@ -150,12 +167,9 @@ export function PhotoStep({ submitting, error, onSubmit }: PhotoStepProps) {
                 type="checkbox"
                 className="size-5 accent-link"
                 checked={skipPhoto}
-                onChange={(event) => {
-                  setSkipPhoto(event.target.checked);
-                  if (event.target.checked) setPhotoError(null);
-                }}
+                onChange={(event) => handleSkipPhotoChange(event.target.checked)}
               />
-              Saya tidak bisa mengambil foto (poin lebih sedikit)
+              Saya tidak bisa mengambil foto (hanya {NO_PHOTO_QUIZ_FULL_POINTS} poin jika kuis benar semua)
             </label>
           </div>
         </div>

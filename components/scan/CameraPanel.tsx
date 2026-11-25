@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode, RefObject } from "react";
+import type { CSSProperties, ReactNode, RefObject } from "react";
 import { Button } from "@/components/ui/Button";
 import { AlertIcon } from "@/components/ui/Icons";
 import { Spinner } from "@/components/ui/States";
@@ -28,12 +28,14 @@ interface CameraPanelProps {
   onRetry?: () => void;
   /** Rasio, batas tinggi, sudut, dan garis tepi ditentukan pemanggil. */
   className?: string;
+  /** Gaya tambahan pada elemen video (misalnya zoom saat QR terdeteksi). */
+  videoStyle?: CSSProperties;
   /** Tampil di atas gambar kamera hanya saat kamera menyala (misalnya bingkai bidik). */
   children?: ReactNode;
 }
 
 /** Elemen video selalu ada supaya kamera bisa tersambung. Keadaan memuat atau gagal menutupinya dengan penjelasan. */
-export function CameraPanel({ videoRef, status, onRetry, className, children }: CameraPanelProps) {
+export function CameraPanel({ videoRef, status, onRetry, className, videoStyle, children }: CameraPanelProps) {
   const problem = status === "denied" || status === "unavailable" || status === "insecure" ? PROBLEMS[status] : null;
 
   return (
@@ -44,7 +46,11 @@ export function CameraPanel({ videoRef, status, onRetry, className, children }: 
         muted
         autoPlay
         aria-label="Pratinjau kamera"
-        className={cn("absolute inset-0 size-full object-cover", status !== "live" && "invisible")}
+        style={videoStyle}
+        className={cn(
+          "absolute inset-0 size-full object-cover transition-transform duration-[340ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+          status !== "live" && "invisible",
+        )}
       />
       {status === "live" ? children : null}
 

@@ -93,6 +93,7 @@ Kosakata gerak sengaja pendek supaya terasa seperti satu sistem, bukan tumpukan 
 | Isi bilah | `.fill-x` | penanda langkah scan, progres badge | Menunjukkan kemajuan. Bilah badge terisi tiap kali panelnya masuk layar. |
 | Getar dan membal | `.shake`, `.pop` | kuis, ikon jawaban di latihan memilah | Umpan balik jawaban yang tidak bergantung pada warna: jawaban kuis yang salah bergetar, ikon benar atau salah membal. |
 | Cap | `.stamp` | plat hasil scan | Menegaskan bahwa scan tercatat. |
+| Fokus QR | Transisi zoom dan bidik di `QrScanner` | langkah 1 scan QR | Menegaskan QR yang sah tertangkap dengan memfokuskan kamera dan bingkai ke posisi QR sesaat sebelum berpindah ke kartu hasil. |
 | Mendarat | `.land` | penanda denah peta | Menunjukkan letak dua titik begitu denah muncul. |
 | Tekan | `active:scale-[0.98]` di tombol | semua tombol | Memberi tahu bahwa klik terdaftar. |
 

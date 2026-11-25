@@ -131,7 +131,12 @@ export function ScanStep({
         <div className="space-y-4">
           {/* -mx-5 menyamai padding plat di ScanFlow, supaya kamera menempel ke tepi plat di ponsel. */}
           <div className="-mx-5 sm:mx-0">
-            <QrScanner key={scannerKey} onDetect={handleDetect} onRetry={() => setScannerKey((n) => n + 1)} />
+            <QrScanner
+              key={scannerKey}
+              validateText={(text) => parseQrText(text) !== null}
+              onDetect={handleDetect}
+              onRetry={() => setScannerKey((n) => n + 1)}
+            />
           </div>
           <p className="text-sm text-muted">{NATIVE_CAMERA_HINT}</p>
         </div>

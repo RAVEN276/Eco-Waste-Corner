@@ -125,7 +125,7 @@ Perhitungan poin didefinisikan terpusat di [lib/scoring.ts](file:///D:/test/Pers
 | Hasil Kuis | Foto Bukti | Perhitungan Poin |
 | :--- | :--- | :--- |
 | Semua benar | Ada | Poin dasar + `2` |
-| Semua benar | Tidak ada | Setengah poin dasar (dibulatkan ke atas) |
+| Semua benar | Tidak ada | `1` |
 | Separuh benar | Ada | Setengah poin dasar (dibulatkan ke atas) |
 | Lainnya | Apa pun | `0` |
 

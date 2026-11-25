@@ -15,6 +15,9 @@ export const BASE_POINTS: Record<BinCategory, number> = {
 /** Extra points when the quiz is fully correct and a photo proof is attached. */
 export const FULL_PROOF_BONUS = 2;
 
+/** Points awarded when the quiz is fully correct without a proof photo. */
+export const NO_PHOTO_QUIZ_FULL_POINTS = 1;
+
 /**
  * Points earned from scans can be exchanged for JSDP points in whole packages:
  * EXCHANGE_POIN points become EXCHANGE_JSDP JSDP points. The rate is a starting
@@ -68,7 +71,7 @@ export interface ScoreBreakdown {
 /**
  * Tiered scoring:
  *  - quiz fully correct + photo     -> base + bonus
- *  - quiz fully correct, no photo   -> half of base (rounded up)
+ *  - quiz fully correct, no photo   -> NO_PHOTO_QUIZ_FULL_POINTS (1)
  *  - quiz half correct + photo      -> half of base (rounded up)
  *  - anything else                  -> 0
  * A detected violation zeroes the earned points and deducts the penalty.
@@ -88,7 +91,7 @@ export function calculateScore(input: ScoreInput): ScoreBreakdown {
     tier = "penuh";
     tierLabel = "Kuis benar semua dengan foto bukti";
   } else if (quizFull) {
-    earned = Math.ceil(base / 2);
+    earned = NO_PHOTO_QUIZ_FULL_POINTS;
     tier = "sebagian";
     tierLabel = "Kuis benar semua tanpa foto bukti";
   } else if (quizHalf && input.hasPhoto) {
@@ -138,8 +141,8 @@ export function isCoolingDown(cooldownUntil: number | null, now: number): boolea
 }
 
 export const SCORE_TABLE_ROWS: { quiz: string; photo: string; points: string }[] = [
-  { quiz: "Semua benar", photo: "Ada foto", points: "Poin dasar + 2" },
-  { quiz: "Semua benar", photo: "Tanpa foto", points: "Setengah poin dasar" },
+  { quiz: "Semua benar", photo: "Ada foto", points: `Poin dasar + ${FULL_PROOF_BONUS}` },
+  { quiz: "Semua benar", photo: "Tanpa foto", points: `${NO_PHOTO_QUIZ_FULL_POINTS}` },
   { quiz: "Separuh benar", photo: "Ada foto", points: "Setengah poin dasar" },
   { quiz: "Separuh benar", photo: "Tanpa foto", points: "0" },
   { quiz: "Salah semua", photo: "Apa pun", points: "0" },
