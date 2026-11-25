@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState, type ChangeEvent, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
+import { ProofCamera } from "@/components/scan/ProofCamera";
 import { Button } from "@/components/ui/Button";
 import { CameraIcon } from "@/components/ui/Icons";
 import { InlineNotice, Spinner } from "@/components/ui/States";
+import { usePageVisible } from "@/hooks/usePageVisible";
 import { BINS } from "@/lib/data/bins";
 import { SCAN_ITEMS, findWasteItem } from "@/lib/data/items";
 import { MAX_BLOCKED_TRIES, binVerdict, guessWasteItem } from "@/lib/ml/classify";
-import { ACCEPTED_PHOTO_TYPES, validatePhoto } from "@/lib/photo";
+import { validatePhoto } from "@/lib/photo";
 import { NO_PHOTO_QUIZ_FULL_POINTS } from "@/lib/scoring";
 import type { BinCategory, MlSuggestion } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -31,13 +33,15 @@ export function PhotoStep({ category, submitting, error, onSubmit }: PhotoStepPr
   const [photo, setPhoto] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraKey, setCameraKey] = useState(0);
   const [itemId, setItemId] = useState("");
   const [skipPhoto, setSkipPhoto] = useState(false);
   const [itemError, setItemError] = useState<string | null>(null);
   const [guess, setGuess] = useState<Guess>({ status: "idle" });
   const [autoPicked, setAutoPicked] = useState(false);
   const [blockedTries, setBlockedTries] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const pageVisible = usePageVisible();
   const itemIdRef = useRef("");
   const autoPickedRef = useRef(false);
   const guessToken = useRef(0);
@@ -70,7 +74,6 @@ export function PhotoStep({ category, submitting, error, onSubmit }: PhotoStepPr
 
   const resetSelectedPhoto = () => {
     setPhoto(null);
-    if (inputRef.current) inputRef.current.value = "";
     guessToken.current += 1;
     setGuess({ status: "idle" });
   };
@@ -102,24 +105,30 @@ export function PhotoStep({ category, submitting, error, onSubmit }: PhotoStepPr
       });
   };
 
-  const onFile = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0] ?? null;
-    if (!file) return;
+  const handleCapture = (file: File, capturedAt: number) => {
     const problem = validatePhoto(file);
     if (problem) {
       setPhotoError(problem);
       resetSelectedPhoto();
       return;
     }
+    setCameraOpen(false);
     setPhotoError(null);
     setSkipPhoto(false);
     setPhoto(file);
-    startGuess(file, event.timeStamp);
+    startGuess(file, capturedAt);
+  };
+
+  const handleOpenCamera = () => {
+    if (submitting || skipPhoto) return;
+    setPhotoError(null);
+    setCameraOpen(true);
   };
 
   const handleSkipPhotoChange = (checked: boolean) => {
     setSkipPhoto(checked);
     if (!checked) return;
+    setCameraOpen(false);
     setPhotoError(null);
     resetSelectedPhoto();
     if (autoPickedRef.current) chooseItem("", false);
@@ -139,7 +148,7 @@ export function PhotoStep({ category, submitting, error, onSubmit }: PhotoStepPr
       return;
     }
     if (!photo && !skipPhoto) {
-      setPhotoError("Ambil foto bukti dengan kamera ponsel, atau centang pilihan tanpa foto.");
+      setPhotoError("Ambil foto bukti dengan kamera, atau centang pilihan tanpa foto.");
       return;
     }
     setItemError(null);
@@ -190,71 +199,67 @@ export function PhotoStep({ category, submitting, error, onSubmit }: PhotoStepPr
         ) : null}
       </fieldset>
 
-      <fieldset disabled={submitting} className="reveal">
-        <legend className="font-display text-3xl font-extrabold">Foto bukti pemilahan</legend>
-        <p className="mt-1 text-sm text-muted">
-          Kamera ponselmu akan terbuka. Foto sampahmu langsung saat berada di depan tong. Foto dikecilkan otomatis
-          sebelum disimpan.
-        </p>
-
-        {/* Kamera ponsel terbuka langsung berkat capture. Browser desktop tetap menampilkan pemilih berkas. */}
-        <input
-          ref={inputRef}
-          id="foto-bukti"
-          type="file"
-          accept={ACCEPTED_PHOTO_TYPES.join(",")}
-          capture="environment"
-          disabled={submitting || skipPhoto}
-          onChange={onFile}
-          tabIndex={-1}
-          className="sr-only"
-          aria-describedby={photoError ? "foto-error" : undefined}
-        />
-
-        <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start">
-          {preview ? (
-            // eslint-disable-next-line @next/next/no-img-element -- blob preview of a local file, nothing to optimise
-            <img
-              src={preview}
-              alt="Pratinjau foto bukti yang akan dikirim"
-              width={160}
-              height={160}
-              className="size-40 shrink-0 rounded-plate border-2 border-line object-cover"
-            />
-          ) : (
-            <div
-              className="flex size-40 shrink-0 flex-col items-center justify-center gap-2 rounded-plate border-2 border-dashed border-edge bg-surface text-center text-sm text-muted"
-              aria-hidden="true"
-            >
-              <CameraIcon className="size-8" />
-              Belum ada foto
-            </div>
-          )}
-          <div className="space-y-3">
-            <Button
-              variant="outline"
-              onClick={() => inputRef.current?.click()}
-              disabled={submitting || skipPhoto}
-            >
-              {photo ? "Foto ulang" : "Buka kamera ponsel"}
-            </Button>
-            <label className={cn("flex min-h-11 items-center gap-2.5 text-sm", blockedTries > 0 && "text-muted")}>
-              <input
-                type="checkbox"
-                className="size-5 accent-link"
-                checked={skipPhoto}
-                disabled={submitting || blockedTries > 0}
-                onChange={(event) => handleSkipPhotoChange(event.target.checked)}
-              />
-              Saya tidak bisa mengambil foto (hanya {NO_PHOTO_QUIZ_FULL_POINTS} poin jika kuis benar semua)
-            </label>
-            {blockedTries > 0 ? (
-              <p className="text-sm text-muted">Pilihan tanpa foto tidak tersedia setelah foto tidak sesuai tong.</p>
-            ) : null}
-          </div>
+      <fieldset disabled={submitting} className="reveal space-y-4">
+        <div>
+          <legend className="font-display text-3xl font-extrabold">Foto bukti pemilahan</legend>
+          <p className="mt-1 text-sm text-muted">
+            Foto sampahmu langsung lewat kamera di bawah saat berada di depan tong. Foto dikenali otomatis dan
+            dikecilkan sebelum disimpan.
+          </p>
         </div>
+
+        {cameraOpen && !skipPhoto && pageVisible ? (
+          <ProofCamera
+            key={cameraKey}
+            disabled={submitting}
+            onCapture={handleCapture}
+            onCancel={() => setCameraOpen(false)}
+            onError={(message) => setPhotoError(message)}
+            onRetry={() => setCameraKey((n) => n + 1)}
+          />
+        ) : (
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+            {preview ? (
+              // eslint-disable-next-line @next/next/no-img-element -- blob preview of a captured frame, nothing to optimise
+              <img
+                src={preview}
+                alt="Pratinjau foto bukti yang akan dikirim"
+                width={160}
+                height={160}
+                className="size-40 shrink-0 rounded-plate border-2 border-line object-cover"
+              />
+            ) : (
+              <div
+                className="flex size-40 shrink-0 flex-col items-center justify-center gap-2 rounded-plate border-2 border-dashed border-edge bg-surface text-center text-sm text-muted"
+                aria-hidden="true"
+              >
+                <CameraIcon className="size-8" />
+                Belum ada foto
+              </div>
+            )}
+            <div className="space-y-3">
+              <Button variant="outline" onClick={handleOpenCamera} disabled={submitting || skipPhoto}>
+                {photo ? "Foto ulang" : "Buka kamera"}
+              </Button>
+              <label className={cn("flex min-h-11 items-center gap-2.5 text-sm", blockedTries > 0 && "text-muted")}>
+                <input
+                  type="checkbox"
+                  className="size-5 accent-link"
+                  checked={skipPhoto}
+                  disabled={submitting || blockedTries > 0}
+                  onChange={(event) => handleSkipPhotoChange(event.target.checked)}
+                />
+                Saya tidak bisa mengambil foto (hanya {NO_PHOTO_QUIZ_FULL_POINTS} poin jika kuis benar semua)
+              </label>
+              {blockedTries > 0 ? (
+                <p className="text-sm text-muted">Pilihan tanpa foto tidak tersedia setelah foto tidak sesuai tong.</p>
+              ) : null}
+            </div>
+          </div>
+        )}
+
         {photoError ? (
-          <p id="foto-error" role="alert" className="mt-2 text-sm font-bold text-brick-text">
+          <p id="foto-error" role="alert" className="text-sm font-bold text-brick-text">
             {photoError}
           </p>
         ) : null}

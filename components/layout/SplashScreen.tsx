@@ -58,7 +58,7 @@ export function SplashScreen() {
 
         <div
           aria-hidden="true"
-          className="mt-6 h-3.5 w-full overflow-hidden rounded-ctl border-2 border-line bg-paper"
+          className="mt-6 h-3.5 w-full overflow-clip rounded-ctl border-2 border-line bg-paper bg-clip-padding"
         >
           <div className="splash-fill grid h-full w-full origin-left grid-cols-3">
             <span className="bg-organik" />

@@ -254,7 +254,7 @@ Langkah mencetak QR:
 
 ### Foto Bukti (`scanPhotos`)
 
-Pengambilan foto menggunakan `<input type="file" accept="image/*" capture="environment">` agar kamera ponsel langsung terbuka. Karena batas dokumen Firestore adalah 1 MiB, `lib/photo.ts` mengecilkan foto di browser (sisi terpanjang maksimal `1024 px`, format JPEG, maksimal data URL di bawah `300.000` karakter agar tetap aman di bawah batas `400.000` pada `firestore.rules`).
+Pengambilan foto bukti memakai kamera terintegrasi langsung di browser (`ProofCamera` dengan `getUserMedia`) sehingga pengguna tidak diarahkan ke pemilih berkas. Karena batas dokumen Firestore adalah 1 MiB, `lib/photo.ts` mengecilkan foto di browser (sisi terpanjang maksimal `1024 px`, format JPEG, maksimal data URL di bawah `300.000` karakter agar tetap aman di bawah batas `400.000` pada `firestore.rules`).
 
 Dokumen `scans` hanya menyimpan `photoHash` dan referensi path `scanPhotos/{scanId}`. Gambar penuh baru dimuat saat pengguna menekan tombol **Lihat foto** di riwayat dashboard atau saat admin meninjau scan.
 

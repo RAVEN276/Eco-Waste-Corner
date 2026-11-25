@@ -19,12 +19,11 @@ export function Stepper({ current }: { current: number }) {
             <span
               aria-hidden="true"
               className={cn(
-                "relative block h-3 overflow-hidden rounded-ctl border-2 bg-surface",
-                active ? "border-link" : done ? "border-line" : "border-edge",
+                "relative block h-3 overflow-clip rounded-sm bg-clip-padding",
+                done ? "bg-ink" : active ? "bg-cobalt-soft" : "border-2 border-edge bg-surface",
               )}
             >
-              {done ? <span className="absolute inset-0 bg-ink" /> : null}
-              {active ? <span className="fill-x absolute inset-0 bg-link" /> : null}
+              {active ? <span className="fill-x block h-full bg-link" /> : null}
             </span>
             <span
               className={cn(

@@ -35,7 +35,7 @@ export function BadgesPanel() {
           aria-valuemax={MAX_SCANS}
           aria-valuenow={reached}
           aria-valuetext={`${reached} dari ${MAX_SCANS} scan`}
-          className="h-4 overflow-hidden rounded-ctl border-2 border-line bg-surface"
+          className="h-4 overflow-clip rounded-ctl border-2 border-line bg-surface bg-clip-padding"
         >
           <div
             className="fill-x h-full bg-link"
