@@ -9,9 +9,7 @@ import { ensureUserProfile, subscribeUser } from "@/lib/firebase/firestore";
 import { describeFirebaseError } from "@/lib/firebase/errors";
 import {
   SESSION_HEARTBEAT_MS,
-  SITE_EXPIRE_MS,
   clearSessionActivity,
-  ensureSessionActivity,
   getExpireMessage,
   touchSessionActivity,
   type SessionExpireReason,
@@ -22,7 +20,7 @@ import { useUserStore } from "@/store/useUserStore";
 /**
  * Keeps the Zustand user store in sync with Firebase Auth and the user's
  * Firestore document, so points and cooldown update in real time. Also enforces
- * session expiration (10 minutes away from the site, 1 hour while on the site).
+ * session expiration (10 minutes away from the site; never expires while on the site).
  */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const retryToken = useUserStore((s) => s.retryToken);
@@ -69,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      const session = ensureSessionActivity(user.uid, Date.now(), !document.hidden);
+      const session = touchSessionActivity(user.uid, Date.now(), !document.hidden);
       if (session.reason) {
         await expireSession(session.reason);
         return;
@@ -129,20 +127,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       void signOut().catch(() => {});
     };
 
-    const checkAndTouch = (updateVisible: boolean) => {
+    const checkAndTouch = (updateVisible: boolean): boolean => {
       const result = touchSessionActivity(uid, Date.now(), updateVisible);
       if (result.reason) {
         expire(result.reason);
-        return null;
+        return false;
       }
-      return result.loginAt;
+      return true;
     };
 
-    const initialLoginAt = checkAndTouch(!document.hidden);
-    if (initialLoginAt === null) return;
-
-    const remainingSiteMs = Math.max(0, initialLoginAt + SITE_EXPIRE_MS - Date.now());
-    const siteTimer = window.setTimeout(() => expire("site"), remainingSiteMs);
+    if (!checkAndTouch(!document.hidden)) return;
 
     const heartbeat = window.setInterval(() => {
       if (!document.hidden) checkAndTouch(true);
@@ -165,7 +159,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.addEventListener("pagehide", onPageHide);
 
     return () => {
-      window.clearTimeout(siteTimer);
       window.clearInterval(heartbeat);
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("focus", onFocusOrShow);

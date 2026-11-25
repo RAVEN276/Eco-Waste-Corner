@@ -274,7 +274,7 @@ Setelah foto bukti diambil, aplikasi menebak jenis barang dan tongnya langsung d
 ### Login, Masa Sesi, dan Reset Kata Sandi
 
 - **Metode masuk**: Akun Google atau Email dan kata sandi (minimal `8` karakter). Pendaftar baru dengan email langsung masuk ke aplikasi tanpa verifikasi email terlebih dahulu. Email apa pun diperbolehkan tanpa pembatasan domain kampus.
-- **Masa berlaku sesi** (`lib/firebase/session.ts`): Sesi berakhir setelah **1 jam** pengguna aktif di dalam situs, atau setelah **10 menit** apabila pengguna meninggalkan situs (pindah tab atau menutup browser).
+- **Masa berlaku sesi** (`lib/firebase/session.ts`): Sesi tidak kedaluwarsa selama pengguna tetap berada di dalam situs, dan berakhir setelah **10 menit** apabila pengguna meninggalkan situs (pindah tab atau menutup browser).
 - **Lupa kata sandi**: Pemanggilan `sendPasswordResetEmail` menyertakan `actionCodeSettings` dengan `url: ${window.location.origin}/login` dan `handleCodeInApp: false` sehingga pengguna menyelesaikan reset di halaman default Firebase lalu diarahkan kembali ke `/login`.
 
 ### SMTP Sendiri (Opsional)
