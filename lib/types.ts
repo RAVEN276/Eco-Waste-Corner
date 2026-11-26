@@ -96,6 +96,7 @@ export interface CampusLocation {
   name: string;
   coordinates: LocationCoordinates;
   imageUrl: string;
+  description: string;
   routeSteps: string[];
 }
 

@@ -1,17 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { CampusMap } from "@/components/map/CampusMap";
-import { LocationCard } from "@/components/map/LocationCard";
-import { LocationDialog } from "@/components/map/LocationDialog";
+import { LocationPhotoCard } from "@/components/map/LocationPhotoCard";
 import { Button } from "@/components/ui/Button";
 import { EmptyState, ErrorState, InlineNotice, LoadingState } from "@/components/ui/States";
 import { useLocations } from "@/hooks/useRemoteList";
 
 export function MapView() {
   const { items, status, source, error, reload } = useLocations();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const selected = items.find((l) => l.locationId === selectedId) ?? null;
 
   if (status === "loading") {
     return <LoadingState label="Memuat lokasi Eco Waste Corner" className="py-24" />;
@@ -46,30 +41,18 @@ export function MapView() {
           }
         />
       ) : (
-        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1.3fr_1fr] lg:gap-8">
-          {/* Menempel di bawah navbar: bila titiknya bertambah dan daftar lebih tinggi dari layar, denah tetap terlihat. */}
-          <div className="lg:sticky lg:top-[5.25rem]">
-            <CampusMap locations={items} selectedId={selectedId} onSelect={setSelectedId} />
-          </div>
-
-          <div>
-            <h2 className="reveal-r text-3xl">Titik di kampus</h2>
-            <ul className="mt-3 space-y-3">
-              {items.map((location, index) => (
-                <li
-                  key={location.locationId}
-                  className="reveal-r"
-                  style={{ ["--delay" as string]: `${150 + index * 120}ms` }}
-                >
-                  <LocationCard location={location} index={index} onOpen={() => setSelectedId(location.locationId)} />
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
+        <ul className="space-y-6">
+          {items.map((location, index) => (
+            <li
+              key={location.locationId}
+              className="reveal"
+              style={{ ["--delay" as string]: `${index * 120}ms` }}
+            >
+              <LocationPhotoCard location={location} index={index} />
+            </li>
+          ))}
+        </ul>
       )}
-
-      <LocationDialog location={selected} onClose={() => setSelectedId(null)} />
     </div>
   );
 }

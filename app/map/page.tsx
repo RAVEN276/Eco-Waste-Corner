@@ -19,8 +19,8 @@ export default function MapPage() {
           >
             <h1 className="fade-up text-5xl sm:text-6xl lg:text-7xl">Peta Eco Waste Corner</h1>
             <p className="fade-up mt-3 max-w-2xl text-lg" style={{ ["--delay" as string]: "120ms" }}>
-              Tiap titik punya tiga tong: Organik, Plastik / Kertas, dan Residu. Ketuk titik di denah, atau
-              pilih dari daftar, untuk melihat foto area dan rute jalan kaki.
+              Lokasi tong Eco Waste Corner di kampus. Cari tongnya dari foto di bawah, lalu pindai QR yang tertempel
+              di tong.
             </p>
           </ScrollLinked>
         </div>

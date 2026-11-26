@@ -161,6 +161,7 @@ function mapLocation(id: string, data: DocumentData): CampusLocation {
       y: Number(data.coordinates?.y ?? 50),
     },
     imageUrl: String(data.imageUrl ?? ""),
+    description: String(data.description ?? ""),
     routeSteps: Array.isArray(data.routeSteps) ? data.routeSteps.map(String) : [],
   };
 }

@@ -2,12 +2,13 @@
   "locations": [
     {
       "locationId": "spot-a",
-      "name": "Spot A: Dekat Pantry Kantin",
+      "name": "Spot A: Kantin Gedung A",
       "coordinates": {
         "x": 27,
         "y": 64
       },
-      "imageUrl": "",
+      "imageUrl": "/lokasi/kantin-gedung-a.jpg",
+      "description": "Lokasi tempat sampah berada di kantin Gedung A. Tong berjajar di depan sekat hitam, dekat pintu masuk kantin.",
       "routeSteps": [
         "Menuju area Pantry Kantin.",
         "Eco Waste Corner berada di dekat pantry.",
@@ -16,12 +17,13 @@
     },
     {
       "locationId": "spot-b",
-      "name": "Spot B: Dekat Parkiran Motor",
+      "name": "Spot B: Parkiran Motor Gedung A",
       "coordinates": {
         "x": 74,
         "y": 30
       },
-      "imageUrl": "",
+      "imageUrl": "/lokasi/parkiran-motor-gedung-a.jpg",
+      "description": "Lokasi tempat sampah berada di parkiran motor Gedung A. Tong berada di ujung barisan motor, di samping pagar besi.",
       "routeSteps": [
         "Menuju area Parkiran Motor.",
         "Eco Waste Corner berada di dekat parkiran.",
