@@ -77,6 +77,7 @@ Di kampus tersedia dua titik stasiun pilah (**Spot A: Dekat Pantry Kantin** dan 
 | `/login` | Autentikasi | Masuk dengan Google atau Email/Password, daftar langsung aktif, dan lupa kata sandi |
 | `/scan` | Alur Pemilahan | Pemindai QR kamera otomatis (`jsQR`), kuis per kategori, pemilihan barang, dan kamera bukti |
 | `/map` | Peta Kampus | Denah skematik lokasi stasiun pilah lengkap dengan koordinat dan panduan rute jalan kaki |
+| `/tentang-logo` | Tentang Logo | Filosofi bentuk, elemen, makna warna, dan pedoman identitas logo Eco Waste Corner |
 | `/dashboard` | Dasbor Pengguna | Profil mahasiswa (nama & prodi), saldo `poin` & `poin JSDP`, panel penukaran, riwayat scan, dan riwayat penukaran |
 | `/admin` | Konsol Admin | Tinjauan foto bukti, deteksi foto ganda, jawaban kuis per soal, dan persetujuan/penolakan poin (khusus akun Google admin, tanpa tautan di menu publik) |
 
@@ -305,7 +306,7 @@ Secara default email reset kata sandi dikirim dari `noreply@<authDomain>` yang t
 
 | Direktori / Berkas | Deskripsi |
 | :--- | :--- |
-| `app/` | Halaman App Router: `/`, `/login`, `/dashboard`, `/scan`, `/map`, `/admin`, `error.tsx`, `not-found.tsx`, dan konfigurasi styling global `globals.css` |
+| `app/` | Halaman App Router: `/`, `/login`, `/dashboard`, `/scan`, `/map`, `/tentang-logo`, `/admin`, `error.tsx`, `not-found.tsx`, dan konfigurasi styling global `globals.css` |
 | `components/` | Komponen terstruktur per domain: `landing`, `auth`, `dashboard`, `scan`, `map`, `admin`, `layout`, `art`, `ui`, dan `providers` |
 | `store/` | Zustand store `useUserStore` untuk state autentikasi, profil, saldo poin, poin JSDP, dan cooldown |
 | `hooks/` | Custom hooks: `useCooldown`, `useRequireAuth`, `useRemoteList`, `useScanHistory`, `useExchangeHistory`, `useSignOut`, `useCameraStream`, `useAdminScans` |

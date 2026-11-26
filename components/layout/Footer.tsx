@@ -5,6 +5,7 @@ const LINKS = [
   { href: "/#aturan-poin", label: "Aturan poin" },
   { href: "/map", label: "Peta lokasi" },
   { href: "/scan", label: "Scan QR tong" },
+  { href: "/tentang-logo", label: "Tentang Logo" },
 ];
 
 export function Footer() {

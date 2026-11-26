@@ -28,7 +28,7 @@ Tidak ada test runner. Verifikasi dilakukan lewat build, tsc, eslint, dan klik m
 
 ## Struktur
 
-- `app/`: route `/`, `/login`, `/dashboard`, `/scan`, `/map`, `/admin` (khusus admin, tanpa tautan di menu, `noindex`), plus `error.tsx` dan `not-found.tsx`. `dashboard/page.tsx` adalah client component, jadi metadata-nya ada di `dashboard/layout.tsx`.
+- `app/`: route `/`, `/login`, `/dashboard`, `/scan`, `/map`, `/tentang-logo`, `/admin` (khusus admin, tanpa tautan di menu, `noindex`), plus `error.tsx` dan `not-found.tsx`. `dashboard/page.tsx` adalah client component, jadi metadata-nya ada di `dashboard/layout.tsx`.
 - `components/`: `landing`, `auth`, `dashboard`, `scan`, `map`, `admin`, `layout` (Navbar, BottomNav, Footer), `art` (BinArt: tong dan stasiun pilah), `ui` (Button, Card, Dialog, States, Icons, AnimatedCounter), `providers`.
 - `store/`: `useUserStore` (status auth, profil, `poin`, `poinJSDP`, `cooldownUntil`, error).
 - `hooks/`: `useCooldown`, `useRequireAuth`, `useRemoteList` (`useLocations`), `useScanHistory`, `useExchangeHistory`, `useSignOut`, `useCameraStream`, `useAdminScans` (scan, profil, dan foto untuk halaman admin).
