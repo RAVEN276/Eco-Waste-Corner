@@ -45,12 +45,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       unsubscribeProfile = undefined;
     };
 
-    const expireSession = async (reason: SessionExpireReason) => {
+    const kickOut = async (message: string) => {
       stopProfile();
+      clearSessionActivity();
       const state = useUserStore.getState();
       state.setSignedOut();
-      state.setSessionNotice(getExpireMessage(reason));
+      state.setSessionNotice(message);
       await signOut().catch(() => {});
+    };
+
+    const expireSession = async (reason: SessionExpireReason) => {
+      await kickOut(getExpireMessage(reason));
     };
 
     const handleUser = async (user: User | null) => {
@@ -77,11 +82,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       state.setProfileLoading();
 
       let ensured = false;
+      let hadProfile = false;
       unsubscribeProfile = subscribeUser(
         user.uid,
         (profile) => {
           if (profile) {
+            hadProfile = true;
+            if (profile.disabled) {
+              const reasonText = profile.disabledReason ? ` Alasan: ${profile.disabledReason}` : "";
+              void kickOut(`Akun ini dinonaktifkan oleh admin.${reasonText}`);
+              return;
+            }
             useUserStore.getState().setProfile(profile);
+            return;
+          }
+          if (hadProfile) {
+            void kickOut("Akun ini telah dihapus oleh admin.");
             return;
           }
           if (ensured || key !== lastKey) return;

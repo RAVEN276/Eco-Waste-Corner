@@ -185,10 +185,10 @@ export function LoginPanel() {
 
   return (
     <div className="grid min-h-[calc(100dvh-4rem)] md:grid-cols-2">
-      <div className="flex flex-col justify-center gap-10 border-b-2 border-line bg-cobalt px-4 py-10 text-white sm:px-8 md:border-b-0 md:border-r-2 md:px-12 md:py-16">
+      <div className="flex flex-col justify-center gap-6 border-b-2 border-line bg-cobalt px-4 py-7 text-white sm:px-8 sm:py-10 md:gap-10 md:border-b-0 md:border-r-2 md:px-12 md:py-16">
         <div className="fade-up">
-          <h1 className="text-6xl sm:text-7xl">Masuk ke Eco Waste Corner</h1>
-          <p className="mt-5 max-w-md text-lg">
+          <h1 className="text-4xl sm:text-6xl lg:text-7xl">Masuk ke Eco Waste Corner</h1>
+          <p className="mt-3 max-w-md text-base sm:mt-5 sm:text-lg">
             Pakai akun Google, atau daftar dengan email dan kata sandi. Email apa saja boleh, tidak
             harus email kampus, dan tidak perlu NIM.
           </p>
@@ -198,7 +198,7 @@ export function LoginPanel() {
         </div>
       </div>
 
-      <div className="flex items-center justify-center px-4 py-10 sm:px-8 md:px-12">
+      <div className="flex items-center justify-center px-4 py-7 sm:px-8 sm:py-10 md:px-12">
         <Card
           strong
           className="fade-up w-full max-w-md space-y-6"

@@ -71,17 +71,18 @@ function Chip({ bin, kind }: { bin: BinCategory; kind: "wrong" | "right" }) {
 // jawaban yang benar, dan alasannya. Warna hanya penanda tambahan, nama tong selalu tertulis.
 export function CommonMistakes() {
   return (
-    <section aria-labelledby="judul-salah-kaprah" className="mx-auto max-w-6xl px-4 py-14 sm:px-6 md:py-20">
-      <div className="reveal max-w-2xl">
-        <h2 id="judul-salah-kaprah" className="text-5xl sm:text-6xl">
-          Yang sering salah tong.
-        </h2>
-        <p className="mt-4 text-lg text-muted">
-          Barang yang mirip satu kategori tapi sebenarnya masuk kategori lain.
-        </p>
-      </div>
+    <section aria-labelledby="judul-salah-kaprah" className="border-y-2 border-line bg-surface">
+      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14 md:py-20">
+        <div className="reveal max-w-2xl">
+          <h2 id="judul-salah-kaprah" className="text-4xl sm:text-5xl lg:text-6xl">
+            Yang sering salah tong.
+          </h2>
+          <p className="mt-4 text-lg text-muted">
+            Barang yang mirip satu kategori tapi sebenarnya masuk kategori lain.
+          </p>
+        </div>
 
-      <div className="mt-10 overflow-hidden rounded-sheet border-2 border-line bg-surface">
+        <div className="mt-8 overflow-hidden rounded-sheet border-2 border-line bg-paper sm:mt-10">
         <div
           aria-hidden="true"
           className="hidden bg-night px-6 py-3 text-sm font-bold text-white md:grid md:grid-cols-[1.1fr_0.9fr_0.9fr_1.6fr] md:gap-6"
@@ -113,6 +114,7 @@ export function CommonMistakes() {
             </li>
           ))}
         </ul>
+        </div>
       </div>
     </section>
   );

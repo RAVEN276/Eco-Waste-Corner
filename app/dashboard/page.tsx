@@ -6,9 +6,10 @@ import { HistoryList } from "@/components/dashboard/HistoryList";
 import { PointsCard } from "@/components/dashboard/PointsCard";
 import { ProfileCard } from "@/components/dashboard/ProfileCard";
 import { Button } from "@/components/ui/Button";
-
-import { ErrorState, LoadingState } from "@/components/ui/States";
+import { ErrorState, InlineNotice, LoadingState } from "@/components/ui/States";
+import { useCooldown } from "@/hooks/useCooldown";
 import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { formatDateTime } from "@/lib/utils";
 import { useUserStore } from "@/store/useUserStore";
 
 export default function DashboardPage() {
@@ -18,6 +19,7 @@ export default function DashboardPage() {
   const isAdmin = useUserStore((s) => s.isAdmin);
   const error = useUserStore((s) => s.error);
   const retryProfile = useUserStore((s) => s.retryProfile);
+  const cooldown = useCooldown();
 
   if (authStatus === "initializing" || authStatus === "unauthenticated") {
     return (
@@ -52,13 +54,13 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-14 px-4 py-10 sm:px-6 md:py-14">
+    <div className="mx-auto max-w-6xl space-y-10 px-4 py-7 sm:space-y-14 sm:px-6 sm:py-10 md:py-14">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="fade-up text-6xl sm:text-7xl">
+        <div className="min-w-0">
+          <h1 className="fade-up break-words text-5xl sm:text-6xl lg:text-7xl">
             Halo, {profile.nama.split(" ")[0] || "Mahasiswa UPJ"}
           </h1>
-          <p className="fade-up mt-3 text-lg text-muted" style={{ ["--delay" as string]: "120ms" }}>
+          <p className="fade-up mt-2.5 text-base text-muted sm:mt-3 sm:text-lg" style={{ ["--delay" as string]: "120ms" }}>
             Ringkasan poin, poin JSDP, dan aktivitas pemilahanmu.
           </p>
         </div>
@@ -73,6 +75,18 @@ export default function DashboardPage() {
         <PointsCard />
         <ProfileCard />
       </div>
+
+      {profile.penaltyNote ? (
+        <InlineNotice tone={cooldown.active ? "error" : "warning"}>
+          <p className="font-bold">
+            {cooldown.active
+              ? `Akun sedang dalam jeda penalti (${cooldown.label} tersisa)`
+              : "Catatan penalti dari admin"}
+            {profile.penaltyUpdatedAt ? ` · ${formatDateTime(profile.penaltyUpdatedAt)}` : ""}
+          </p>
+          <p className="mt-1 break-words">{profile.penaltyNote}</p>
+        </InlineNotice>
+      ) : null}
 
       <ExchangePanel />
       <BadgesPanel />

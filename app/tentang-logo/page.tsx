@@ -86,12 +86,12 @@ export default function AboutLogoPage() {
   return (
     <>
       <section aria-labelledby="judul-tentang-logo" className="border-b-2 border-line bg-cobalt text-white">
-        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.1fr_0.9fr] md:items-center md:gap-12 md:py-16">
+        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-9 sm:gap-10 sm:px-6 sm:py-12 md:grid-cols-[1.1fr_0.9fr] md:items-center md:gap-12 md:py-16">
           <div className="fade-up">
-            <h1 id="judul-tentang-logo" className="text-5xl sm:text-6xl lg:text-7xl">
+            <h1 id="judul-tentang-logo" className="text-4xl sm:text-6xl lg:text-7xl">
               Tentang Logo Eco Waste Corner
             </h1>
-            <p className="mt-5 max-w-xl text-base leading-relaxed text-white sm:text-lg">
+            <p className="mt-4 max-w-xl text-base leading-relaxed text-white sm:mt-5 sm:text-lg">
               Logo Eco Waste Corner menggabungkan elemen tunas, daun, bentuk tangan, dan lengkungan terbuka yang
               merepresentasikan pertumbuhan, perlindungan, serta kepedulian terhadap lingkungan. Perpaduan elemen
               tersebut mencerminkan komitmen untuk membangun kebiasaan pengelolaan sampah yang bertanggung jawab demi
@@ -124,7 +124,7 @@ export default function AboutLogoPage() {
       </section>
 
       <section aria-labelledby="judul-elemen" className="border-b-2 border-line bg-paper">
-        <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 md:py-20">
+        <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14 md:py-20">
           <div className="reveal max-w-2xl">
             <h2 id="judul-elemen" className="text-4xl sm:text-5xl">
               Filosofi Bentuk dan Elemen Logo
@@ -170,7 +170,7 @@ export default function AboutLogoPage() {
       </section>
 
       <section aria-labelledby="judul-warna-identitas" className="border-b-2 border-line bg-surface">
-        <div className="mx-auto grid max-w-6xl gap-12 px-4 py-14 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:gap-14 md:py-20">
+        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-[0.85fr_1.15fr] lg:gap-14 md:py-20">
           <div className="reveal space-y-6">
             <div>
               <h2 id="judul-warna-identitas" className="text-4xl sm:text-5xl">
@@ -254,10 +254,10 @@ export default function AboutLogoPage() {
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:shrink-0">
-            <Link href="/scan" className={buttonClasses("primary", "lg")}>
+            <Link href="/scan" className={buttonClasses("primary", "lg", "w-full sm:w-auto")}>
               Mulai scan QR
             </Link>
-            <Link href="/map" className={buttonClasses("outline", "lg")}>
+            <Link href="/map" className={buttonClasses("outline", "lg", "w-full sm:w-auto")}>
               Lihat peta lokasi
             </Link>
           </div>

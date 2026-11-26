@@ -3,7 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { QueryDocumentSnapshot } from "firebase/firestore";
 import { describeFirebaseError } from "@/lib/firebase/errors";
-import { fetchAdminScans, fetchScanPhoto, fetchUsersByIds, saveScanReview } from "@/lib/firebase/firestore";
+import {
+  deleteAdminScan,
+  fetchAdminScans,
+  fetchScanPhoto,
+  fetchUsersByIds,
+  saveScanReview,
+} from "@/lib/firebase/firestore";
 import type { ReviewDecision, ScanRecord, ScanReview, UserProfile } from "@/lib/types";
 
 export type AdminStatus = "loading" | "ready" | "error";
@@ -93,7 +99,29 @@ export function useAdminScans() {
     }
   }, []);
 
-  return { ...state, reload, loadMore, review };
+  /** Menghapus scan beserta foto buktinya dari daftar dan database. */
+  const removeScan = useCallback(async (scanId: string): Promise<{ uid: string; wasApproved: boolean }> => {
+    try {
+      const result = await deleteAdminScan(scanId);
+      setState((prev) => ({
+        ...prev,
+        scans: prev.scans.filter((s) => s.scanId !== scanId),
+      }));
+      return result;
+    } catch (error) {
+      throw new Error(describeAdminError(error));
+    }
+  }, []);
+
+  /** Menghapus scan milik pengguna tertentu dari daftar memori setelah akun pengguna tersebut dihapus. */
+  const purgeUserScans = useCallback((uid: string) => {
+    setState((prev) => ({
+      ...prev,
+      scans: prev.scans.filter((s) => s.userId !== uid),
+    }));
+  }, []);
+
+  return { ...state, reload, loadMore, review, removeScan, purgeUserScans };
 }
 
 /** Profil pengguna untuk scan yang tampil, diambil sekali per pengguna. */

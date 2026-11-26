@@ -27,16 +27,16 @@ export function BottomNav() {
       aria-label="Navigasi bawah"
       className="fixed inset-x-0 bottom-0 z-40 border-t-2 border-line bg-paper pb-[env(safe-area-inset-bottom)] md:hidden"
     >
-      <ul className="grid grid-cols-4">
+      <ul className="grid grid-cols-4 divide-x divide-rule">
         {items.map((item) => {
           const active = item.href === pathname;
           return (
-            <li key={item.href}>
+            <li key={item.href} className="min-w-0">
               <SectionLink
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex min-h-14 items-center justify-center font-display text-xl font-extrabold",
+                  "flex min-h-14 items-center justify-center px-1 font-display text-lg font-extrabold sm:text-xl",
                   item.primary
                     ? "bg-cobalt text-white active:bg-cobalt-deep"
                     : active
@@ -44,7 +44,7 @@ export function BottomNav() {
                       : "active:bg-cobalt-soft",
                 )}
               >
-                {item.label}
+                <span className="truncate">{item.label}</span>
               </SectionLink>
             </li>
           );

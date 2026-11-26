@@ -15,11 +15,11 @@ import { cn } from "@/lib/utils";
 export function WasteCategories() {
   return (
     <section
-      className="mx-auto max-w-6xl px-4 py-14 sm:px-6 md:py-20"
+      className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14 md:py-20"
       aria-labelledby="judul-edukasi"
     >
       <div className="reveal max-w-2xl">
-        <h2 id="judul-edukasi" className="text-5xl sm:text-6xl">
+        <h2 id="judul-edukasi" className="text-4xl sm:text-5xl lg:text-6xl">
           Tiga tong, satu aturan: pilah dari awal.
         </h2>
         <p className="mt-4 text-lg text-muted">

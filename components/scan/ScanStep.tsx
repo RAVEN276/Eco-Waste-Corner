@@ -91,19 +91,21 @@ export function ScanStep({
 
       {target && location && bin ? (
         <>
-          <div className={cn("rounded-plate border-2 border-line p-5", bin.tone.soft)}>
-            <div className="flex items-center gap-4">
-              <BinArt id={bin.id} className="w-20 shrink-0" />
+          <div className={cn("rounded-plate border-2 border-line p-4 sm:p-5", bin.tone.soft)}>
+            <div className="flex items-center gap-3 sm:gap-4">
+              <BinArt id={bin.id} className="w-14 shrink-0 sm:w-20" />
               <div className="min-w-0 flex-1">
                 <p className="flex items-center gap-1.5 text-sm font-bold">
                   <CheckIcon className="size-4 shrink-0" />
                   QR terbaca
                 </p>
-                <p className="mt-1 font-display text-4xl font-extrabold leading-none">{bin.label}</p>
+                <p className="mt-1 font-display text-3xl font-extrabold leading-none sm:text-4xl">{bin.label}</p>
                 <p className="mt-1.5 text-sm">{location.name}</p>
               </div>
               <div className="shrink-0 text-right">
-                <span className="block font-display text-6xl font-extrabold leading-none">{BASE_POINTS[bin.id]}</span>
+                <span className="block font-display text-5xl font-extrabold leading-none sm:text-6xl">
+                  {BASE_POINTS[bin.id]}
+                </span>
                 <span className="text-xs font-bold">poin dasar</span>
               </div>
             </div>

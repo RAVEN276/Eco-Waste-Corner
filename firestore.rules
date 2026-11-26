@@ -72,17 +72,49 @@ service cloud.firestore {
           );
       }
 
-      // Admin menyetujui atau menolak scan: hanya boleh mengubah `poin` (maks +-7 per scan)
-      // dan `totalScan` (+-1) bersama pembaruan `review` pada dokumen scan.
-      function isAdminPointUpdate() {
+      // Pemilik akun yang dinonaktifkan tidak boleh memperbarui profil, scan, atau penukaran.
+      function isNotDisabled() {
+        return resource.data.get('disabled', false) != true;
+      }
+
+      // Admin menyetujui scan atau mengelola saldo, waktu jeda penalti, dan status akun pengguna.
+      // Identitas dasar dan poinJSDP tetap tidak bisa diubah admin.
+      function isAdminUserUpdate() {
+        let changed = request.resource.data.diff(resource.data).affectedKeys();
+        let nextNote = request.resource.data.get('penaltyNote', null);
+        let nextDisableReason = request.resource.data.get('disabledReason', null);
         return isAdmin()
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['poin', 'totalScan'])
-          && newPoin() >= 0
-          && newPoin() <= oldPoin() + 7
-          && newPoin() >= oldPoin() - 7
-          && request.resource.data.totalScan >= 0
-          && request.resource.data.totalScan <= resource.data.totalScan + 1
-          && request.resource.data.totalScan >= resource.data.totalScan - 1;
+          && request.resource.data.uid == resource.data.uid
+          && request.resource.data.email == resource.data.email
+          && request.resource.data.poinJSDP == resource.data.poinJSDP
+          && changed.hasOnly([
+            'poin',
+            'totalScan',
+            'cooldownUntil',
+            'penaltyNote',
+            'penaltyUpdatedAt',
+            'penaltyUpdatedBy',
+            'disabled',
+            'disabledReason',
+            'disabledAt'
+          ])
+          && newPoin() is int && newPoin() >= 0
+          && request.resource.data.totalScan is int && request.resource.data.totalScan >= 0
+          && (nextNote == null || (nextNote is string && nextNote.size() <= 500))
+          && (nextDisableReason == null || (nextDisableReason is string && nextDisableReason.size() <= 300))
+          && request.resource.data.get('disabled', false) is bool
+          && (
+            !changed.hasAny(['penaltyUpdatedAt', 'penaltyUpdatedBy'])
+            || (
+              request.resource.data.penaltyUpdatedBy == request.auth.token.email
+              && request.resource.data.penaltyUpdatedAt == request.time
+            )
+          )
+          && (
+            !changed.hasAny(['disabledAt'])
+            || request.resource.data.disabledAt == null
+            || request.resource.data.disabledAt == request.time
+          );
       }
 
       // An exchange spends whole packages of 10 points for 5 JSDP points each.
@@ -106,29 +138,38 @@ service cloud.firestore {
         && request.resource.data.poin == 0
         && request.resource.data.poinJSDP == 0
         && request.resource.data.totalScan == 0
-        && request.resource.data.cooldownUntil == null;
+        && request.resource.data.cooldownUntil == null
+        && request.resource.data.get('disabled', false) == false;
 
-      // Identity fields are immutable. JSDP points count toward graduation: they
-      // never fall and only rise through an exchange of `poin`.
+      // Identity fields and admin-managed moderation fields are protected from owner writes.
       allow update: if (
         isOwner(uid)
+        && isNotDisabled()
         && request.resource.data.uid == resource.data.uid
         && request.resource.data.email == resource.data.email
         && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.get('disabled', false) == resource.data.get('disabled', false)
+        && request.resource.data.get('disabledReason', null) == resource.data.get('disabledReason', null)
+        && request.resource.data.get('disabledAt', null) == resource.data.get('disabledAt', null)
+        && request.resource.data.get('penaltyNote', null) == resource.data.get('penaltyNote', null)
+        && request.resource.data.get('penaltyUpdatedAt', null) == resource.data.get('penaltyUpdatedAt', null)
+        && request.resource.data.get('penaltyUpdatedBy', null) == resource.data.get('penaltyUpdatedBy', null)
         && newPoin() >= 0
         && request.resource.data.poinJSDP >= 0
         && (isScanUpdate() || isExchangeUpdate())
-      ) || isAdminPointUpdate();
+      ) || isAdminUserUpdate();
 
-      allow delete: if false;
+      allow delete: if isAdmin()
+        && resource.data.get('email', '').lower() != 'lintararyadwi@gmail.com';
     }
 
     // One document per exchange. The amounts must match the change that the same
     // write makes to the user document (get = before, getAfter = after).
     match /exchanges/{exchangeId} {
-      allow read: if isUpjStudent() && resource.data.userId == request.auth.uid;
+      allow read: if (isUpjStudent() && resource.data.userId == request.auth.uid) || isAdmin();
 
       allow create: if isUpjStudent()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('disabled', false) != true
         && request.resource.data.keys().hasOnly(['exchangeId', 'userId', 'poinSpent', 'jsdpGained', 'timestamp'])
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.exchangeId == exchangeId
@@ -140,7 +181,8 @@ service cloud.firestore {
             - getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.poin
         && request.resource.data.timestamp == request.time;
 
-      allow update, delete: if false;
+      allow update: if false;
+      allow delete: if isAdmin();
     }
 
     match /scans/{scanId} {
@@ -164,6 +206,7 @@ service cloud.firestore {
       allow read: if (isUpjStudent() && resource.data.userId == request.auth.uid) || isAdmin();
 
       allow create: if isUpjStudent()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('disabled', false) != true
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.scanId == scanId
         && request.resource.data.categoryBin in ['organik', 'plastik_kertas', 'residu']
@@ -177,7 +220,7 @@ service cloud.firestore {
       allow update: if isAdmin()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['review'])
         && isValidReview(request.resource.data.review);
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
 
     // Proof photos are stored as compressed JPEG data URLs. A document is capped
@@ -185,13 +228,15 @@ service cloud.firestore {
     match /scanPhotos/{scanId} {
       allow read: if (isUpjStudent() && resource.data.userId == request.auth.uid) || isAdmin();
       allow create: if isUpjStudent()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('disabled', false) != true
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.scanId == scanId
         && request.resource.data.mime == 'image/jpeg'
         && request.resource.data.dataUrl is string
         && request.resource.data.dataUrl.size() <= 400000
         && request.resource.data.timestamp == request.time;
-      allow update, delete: if false;
+      allow update: if false;
+      allow delete: if isAdmin();
     }
 
     match /locations/{locationId} {
@@ -205,6 +250,40 @@ service cloud.firestore {
     match /quizQuestions/{questionId} {
       allow read: if true;
       allow write: if false;
+    }
+
+    // Kamus sampah + soal cek cepat yang dikelola admin. Dibaca publik oleh halaman utama.
+    match /wasteItems/{itemId} {
+      allow read: if true;
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly([
+          'id', 'label', 'category', 'question', 'choices', 'correctIndex',
+          'reason', 'deleted', 'updatedAt', 'updatedBy'
+        ])
+        && request.resource.data.id == itemId
+        && request.resource.data.label is string
+        && request.resource.data.label.size() > 0
+        && request.resource.data.label.size() <= 120
+        && request.resource.data.category in ['organik', 'plastik_kertas', 'residu']
+        && request.resource.data.question is string
+        && request.resource.data.question.size() > 0
+        && request.resource.data.question.size() <= 300
+        && request.resource.data.choices is list
+        && request.resource.data.choices.size() == 2
+        && request.resource.data.choices[0] is string
+        && request.resource.data.choices[0].size() > 0
+        && request.resource.data.choices[0].size() <= 100
+        && request.resource.data.choices[1] is string
+        && request.resource.data.choices[1].size() > 0
+        && request.resource.data.choices[1].size() <= 100
+        && request.resource.data.correctIndex in [0, 1]
+        && request.resource.data.reason is string
+        && request.resource.data.reason.size() > 0
+        && request.resource.data.reason.size() <= 400
+        && request.resource.data.deleted is bool
+        && request.resource.data.updatedBy == request.auth.token.email
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if isAdmin();
     }
 
   }

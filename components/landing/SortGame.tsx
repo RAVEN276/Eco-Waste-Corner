@@ -6,18 +6,18 @@ import { AnimatedCounter } from "@/components/ui/AnimatedCounter";
 import { Button } from "@/components/ui/Button";
 import { CheckIcon, CloseIcon } from "@/components/ui/Icons";
 import { LoadingState } from "@/components/ui/States";
+import { useWasteCatalog } from "@/hooks/useWasteCatalog";
 import { BINS, BIN_LIST } from "@/lib/data/bins";
-import { WASTE_ITEMS, pickPracticeRound, pickRejection } from "@/lib/data/items";
+import { pickPracticeRound, pickRejection } from "@/lib/data/items";
 import type { BinCategory, Rejection, WasteItem } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const ROUND_SIZE = 10;
 
-// Latihan singkat dengan barang dari kamus yang sama. Tiap putaran menampilkan 10 barang
-// yang diacak dari seluruh kamus. Pengacakan baru jalan di browser (setelah tampil, atau saat
-// tombol ulang ditekan), karena Math.random tidak boleh dipanggil saat prerender. Sebelum itu
-// yang tampil hanya penanda memuat. Tidak menyimpan apa pun dan tidak menambah poin.
+// Latihan singkat dengan barang dari kamus aktif (termasuk barang yang ditambah admin). Tiap putaran
+// menampilkan sampai 10 barang acak. Pengacakan baru jalan di browser karena Math.random dilarang saat prerender.
 export function SortGame() {
+  const { items: catalogItems, status, fetchLatest } = useWasteCatalog();
   const [items, setItems] = useState<WasteItem[] | null>(null);
   const [index, setIndex] = useState(0);
   const [picked, setPicked] = useState<BinCategory | null>(null);
@@ -27,8 +27,9 @@ export function SortGame() {
   const itemRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
-    queueMicrotask(() => setItems(pickPracticeRound(ROUND_SIZE)));
-  }, []);
+    if (status === "loading" || items !== null) return;
+    queueMicrotask(() => setItems(pickPracticeRound(ROUND_SIZE, catalogItems)));
+  }, [status, catalogItems, items]);
 
   const item = items ? items[index] : null;
   const answered = picked !== null;
@@ -55,36 +56,39 @@ export function SortGame() {
     queueMicrotask(() => itemRef.current?.focus());
   };
 
-  const restart = () => {
-    setItems(pickPracticeRound(ROUND_SIZE));
+  const restart = async () => {
+    const latest = await fetchLatest();
+    setItems(pickPracticeRound(ROUND_SIZE, latest));
     setIndex(0);
     setPicked(null);
     setCorrect(0);
     setDone(false);
   };
 
+  const roundCount = Math.min(ROUND_SIZE, catalogItems.length);
+
   return (
-    <section id="latihan" aria-labelledby="judul-latihan" className="border-b-2 border-line bg-cobalt-soft">
-      <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 md:py-20">
+    <section id="latihan" aria-labelledby="judul-latihan" className="border-y-2 border-line bg-cobalt-soft">
+      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14 md:py-20">
         <div className="reveal max-w-2xl">
-          <h2 id="judul-latihan" className="text-5xl sm:text-6xl">
+          <h2 id="judul-latihan" className="text-4xl sm:text-5xl lg:text-6xl">
             Coba pilah sekarang
           </h2>
           <p className="mt-4 text-lg">
-            Satu barang, tiga tong. Pilih tong yang benar. Setiap main, {ROUND_SIZE} barang diacak
-            dari {WASTE_ITEMS.length} barang di kamus. Latihan ini tidak menambah poin dan tidak
+            Satu barang, tiga tong. Pilih tong yang benar. Setiap main, {roundCount} barang diacak
+            dari {catalogItems.length} barang di kamus. Latihan ini tidak menambah poin dan tidak
             perlu login.
           </p>
         </div>
 
         {!items || !item ? (
           <LoadingState
-            label={`Menyiapkan ${ROUND_SIZE} barang acak`}
+            label={`Menyiapkan ${roundCount} barang acak`}
             className="mt-10 min-h-[24rem] bg-surface"
           />
         ) : done ? (
           <div className="mt-10 grid items-center gap-8 rounded-sheet border-2 border-line bg-surface p-6 shadow-[8px_8px_0_var(--shadow-ink)] sm:p-8 md:grid-cols-[auto_1fr]">
-            <p className="font-display text-[8rem] font-extrabold leading-[0.85] text-link">
+            <p className="font-display text-7xl font-extrabold leading-[0.85] text-link sm:text-8xl lg:text-[8rem]">
               <AnimatedCounter value={correct} />
               <span className="text-5xl text-ink">/{items.length}</span>
             </p>
@@ -95,7 +99,7 @@ export function SortGame() {
                 menambah poin.
               </p>
               <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-                <Button size="lg" onClick={restart}>
+                <Button size="lg" onClick={() => void restart()}>
                   Main lagi dengan barang baru
                 </Button>
                 <Button href="/scan" size="lg" variant="outline">
@@ -110,7 +114,7 @@ export function SortGame() {
               <p className="font-display text-3xl font-extrabold text-link">
                 Barang {index + 1} dari {items.length}
               </p>
-              <p ref={itemRef} tabIndex={-1} className="font-display text-6xl font-extrabold leading-none">
+              <p ref={itemRef} tabIndex={-1} className="break-words font-display text-4xl font-extrabold leading-none sm:text-5xl lg:text-6xl">
                 <span key={index} className="fade-up inline-block">
                   {item.label}
                 </span>
@@ -119,18 +123,18 @@ export function SortGame() {
             </div>
 
             <div>
-              <ul className="grid grid-cols-3 gap-3">
+              <ul className="grid grid-cols-3 gap-2 sm:gap-3">
                 {BIN_LIST.map((bin) => {
                   const isAnswer = answered && bin.id === item.category;
                   const isWrongPick = answered && picked === bin.id && bin.id !== item.category;
                   return (
-                    <li key={bin.id}>
+                    <li key={bin.id} className="min-w-0">
                       <button
                         type="button"
                         disabled={answered}
                         onClick={() => choose(bin.id)}
                         className={cn(
-                          "flex h-full w-full flex-col items-center gap-2 rounded-plate border-2 p-3 text-center",
+                          "flex h-full w-full flex-col items-center gap-2 rounded-plate border-2 p-2 text-center sm:p-3",
                           isWrongPick ? "border-brick-text bg-brick-soft" : "border-line bg-surface hover:bg-paper",
                           isWrongPick && "relative z-10",
                           isAnswer && "ring-4 ring-ink ring-offset-2 ring-offset-cobalt-soft",
@@ -146,7 +150,7 @@ export function SortGame() {
                           reject={isWrongPick && rejection ? rejection : undefined}
                           className="w-full max-w-[6.5rem] sm:max-w-[7.5rem]"
                         />
-                        <span className="font-display text-2xl font-extrabold leading-none">
+                        <span className="font-display text-lg font-extrabold leading-none sm:text-2xl">
                           {bin.label}
                         </span>
                         <span className="flex min-h-5 items-center gap-1 text-xs font-bold">

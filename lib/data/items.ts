@@ -89,17 +89,30 @@ export function pickRejection(previous?: Rejection["arah"]): Rejection {
  * three bins (the extra one goes to a random bin), then shuffles the order. Uses
  * Math.random, so call it only from an effect or an event handler, never in render.
  */
-export function pickPracticeRound(size = 10): WasteItem[] {
+export function pickPracticeRound(size = 10, source: WasteItem[] = WASTE_ITEMS): WasteItem[] {
+  if (source.length === 0) return [];
   const bins: BinCategory[] = ["organik", "plastik_kertas", "residu"];
-  const perBin = Math.floor(size / bins.length);
-  const extra = size - perBin * bins.length;
-  const extraBins = new Set(shuffle(bins).slice(0, extra));
+  const activeBins = bins.filter((bin) => source.some((item) => item.category === bin));
+  if (activeBins.length === 0) return shuffle(source).slice(0, size);
 
-  const picked = bins.flatMap((bin) =>
-    shuffle(WASTE_ITEMS.filter((item) => item.category === bin)).slice(
+  const perBin = Math.floor(size / activeBins.length);
+  const extra = size - perBin * activeBins.length;
+  const extraBins = new Set(shuffle(activeBins).slice(0, extra));
+
+  const picked = activeBins.flatMap((bin) =>
+    shuffle(source.filter((item) => item.category === bin)).slice(
       0,
       perBin + (extraBins.has(bin) ? 1 : 0),
     ),
   );
+  // Jika masih kurang karena ada kategori dengan jumlah sedikit, lengkapi secara acak dari sisa item.
+  if (picked.length < Math.min(size, source.length)) {
+    const pickedIds = new Set(picked.map((item) => item.id));
+    const remainder = shuffle(source.filter((item) => !pickedIds.has(item.id))).slice(
+      0,
+      size - picked.length,
+    );
+    return shuffle([...picked, ...remainder]);
+  }
   return shuffle(picked);
 }

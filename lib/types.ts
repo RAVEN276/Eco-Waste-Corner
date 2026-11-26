@@ -16,6 +16,14 @@ export interface UserProfile {
   totalScan: number;
   /** Epoch millis. Scanning is blocked until this moment. */
   cooldownUntil: number | null;
+  /** Catatan penalti dari admin, ditampilkan ke pengguna di dashboard dan scan. */
+  penaltyNote?: string | null;
+  penaltyUpdatedAt?: number | null;
+  penaltyUpdatedBy?: string | null;
+  /** Jika true, sesi pengguna ditolak saat masuk dan tidak boleh mengirim scan atau tukar poin. */
+  disabled?: boolean;
+  disabledReason?: string | null;
+  disabledAt?: number | null;
   createdAt: number | null;
 }
 
@@ -117,6 +125,26 @@ export interface WasteItem {
   id: string;
   label: string;
   category: BinCategory;
+}
+
+/** Satu entri kamus lengkap beserta soal cek cepatnya, dapat berasal dari bawaan atau ditambah admin. */
+export interface WasteCatalogItem extends WasteItem {
+  question: string;
+  choices: [string, string];
+  correctIndex: 0 | 1;
+  reason: string;
+  builtIn?: boolean;
+  overridden?: boolean;
+}
+
+export interface WasteCatalogInput {
+  id?: string;
+  label: string;
+  category: BinCategory;
+  question: string;
+  choices: [string, string];
+  correctIndex: 0 | 1;
+  reason: string;
 }
 
 export type DataSource = "firestore" | "default";

@@ -1,5 +1,6 @@
 import {
   collection,
+  deleteDoc,
   doc,
   documentId,
   getDoc,
@@ -15,13 +16,23 @@ import {
   Timestamp,
   updateDoc,
   where,
+  writeBatch,
   type DocumentData,
   type QueryDocumentSnapshot,
   type Unsubscribe,
 } from "firebase/firestore";
+import { ADMIN_EMAIL } from "@/lib/admin";
 import { getDb, getFirebaseAuth } from "@/lib/firebase/config";
 import { compressPhoto, hashFile } from "@/lib/photo";
 import { BIN_LIST, isBinCategory } from "@/lib/data/bins";
+import {
+  DEFAULT_WASTE_CATALOG,
+  isBuiltInWasteItem,
+  isValidCategory,
+  mergeWasteCatalog,
+  slugifyWasteId,
+  type StoredWasteItemDoc,
+} from "@/lib/data/catalog";
 import { findWasteItem } from "@/lib/data/items";
 import { DEFAULT_QUIZ_BANK, QUESTIONS_PER_SCAN } from "@/lib/data/quiz";
 import seed from "@/lib/data/seed.json";
@@ -48,6 +59,8 @@ import type {
   ScanRecord,
   ScanReview,
   UserProfile,
+  WasteCatalogInput,
+  WasteCatalogItem,
 } from "@/lib/types";
 
 export const DEFAULT_LOCATIONS = seed.locations as CampusLocation[];
@@ -68,6 +81,12 @@ function mapUser(uid: string, data: DocumentData): UserProfile {
     poinJSDP: Number(data.poinJSDP ?? 0),
     totalScan: Number(data.totalScan ?? 0),
     cooldownUntil: toMillis(data.cooldownUntil),
+    penaltyNote: typeof data.penaltyNote === "string" && data.penaltyNote.trim() !== "" ? data.penaltyNote : null,
+    penaltyUpdatedAt: toMillis(data.penaltyUpdatedAt),
+    penaltyUpdatedBy: typeof data.penaltyUpdatedBy === "string" ? data.penaltyUpdatedBy : null,
+    disabled: Boolean(data.disabled),
+    disabledReason: typeof data.disabledReason === "string" && data.disabledReason.trim() !== "" ? data.disabledReason : null,
+    disabledAt: toMillis(data.disabledAt),
     createdAt: toMillis(data.createdAt),
   };
 }
@@ -183,6 +202,7 @@ export async function ensureUserProfile(identity: {
     poinJSDP: 0,
     totalScan: 0,
     cooldownUntil: null,
+    disabled: false,
     createdAt: serverTimestamp(),
   });
 }
@@ -340,6 +360,201 @@ export async function saveScanReview(
   });
 
   return { status: decision, note: trimmed, reviewedBy: email, reviewedAt: Date.now() };
+}
+
+/** Menghapus scan beserta foto buktinya. Jika scan sebelumnya disetujui, poin dan hitungan scan pengguna dikurangi kembali. */
+export async function deleteAdminScan(scanId: string): Promise<{ uid: string; wasApproved: boolean }> {
+  const db = getDb();
+  const scanRef = doc(db, "scans", scanId);
+  const photoRef = doc(db, "scanPhotos", scanId);
+
+  return runTransaction(db, async (tx) => {
+    const scanSnap = await tx.get(scanRef);
+    if (!scanSnap.exists()) throw new Error("Data scan tidak ditemukan.");
+    const scan = mapScan(scanSnap.id, scanSnap.data());
+    const wasApproved = scan.review?.status === "approved";
+
+    if (wasApproved) {
+      const userRef = doc(db, "users", scan.userId);
+      const userSnap = await tx.get(userRef);
+      if (userSnap.exists()) {
+        const profile = mapUser(scan.userId, userSnap.data());
+        const nextPoin = scan.pointsEarned > 0 ? Math.max(0, profile.poin - scan.pointsEarned) : profile.poin;
+        const nextTotalScan = scan.status !== "penalized" ? Math.max(0, profile.totalScan - 1) : profile.totalScan;
+        if (nextPoin !== profile.poin || nextTotalScan !== profile.totalScan) {
+          tx.update(userRef, { poin: nextPoin, totalScan: nextTotalScan });
+        }
+      }
+    }
+
+    tx.delete(scanRef);
+    tx.delete(photoRef);
+    return { uid: scan.userId, wasApproved };
+  });
+}
+
+/* -------------------------- admin: kelola pengguna -------------------------- */
+
+const ADMIN_USERS_LIMIT = 200;
+const BATCH_DELETE_CHUNK = 400;
+
+export async function fetchAdminUsers(): Promise<UserProfile[]> {
+  const snap = await getDocs(query(collection(getDb(), "users"), limit(ADMIN_USERS_LIMIT)));
+  assertReachable(snap);
+  return snap.docs
+    .map((d) => mapUser(d.id, d.data({ serverTimestamps: "estimate" })))
+    .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0) || a.nama.localeCompare(b.nama, "id"));
+}
+
+/** Menambah atau mengurangi poin pengguna secara aman (saldo tidak boleh kurang dari 0). */
+export async function adjustUserPoints(uid: string, delta: number): Promise<number> {
+  const step = Math.trunc(delta);
+  if (!Number.isFinite(step) || step === 0) throw new Error("Masukkan jumlah perubahan poin lebih dari 0.");
+  const db = getDb();
+  const userRef = doc(db, "users", uid);
+
+  return runTransaction(db, async (tx) => {
+    const snap = await tx.get(userRef);
+    if (!snap.exists()) throw new Error("Profil pengguna tidak ditemukan.");
+    const profile = mapUser(uid, snap.data());
+    const nextPoin = Math.max(0, profile.poin + step);
+    tx.update(userRef, { poin: nextPoin });
+    return nextPoin;
+  });
+}
+
+export type PenaltyCooldownUpdate =
+  | { mode: "add"; minutes: number; note: string }
+  | { mode: "clear" };
+
+/** Menambah waktu penalti beserta catatan untuk pengguna, atau membebaskan penalti yang berjalan. */
+export async function setUserPenaltyCooldown(
+  uid: string,
+  action: PenaltyCooldownUpdate,
+): Promise<{
+  cooldownUntil: number | null;
+  penaltyNote: string | null;
+  penaltyUpdatedAt: number | null;
+  penaltyUpdatedBy: string | null;
+}> {
+  const email = getFirebaseAuth().currentUser?.email;
+  if (!email) throw new Error("Sesi login tidak ditemukan. Masuk lagi lalu coba lagi.");
+
+  const db = getDb();
+  const userRef = doc(db, "users", uid);
+
+  if (action.mode === "clear") {
+    await updateDoc(userRef, {
+      cooldownUntil: null,
+      penaltyNote: null,
+      penaltyUpdatedAt: serverTimestamp(),
+      penaltyUpdatedBy: email,
+    });
+    return { cooldownUntil: null, penaltyNote: null, penaltyUpdatedAt: Date.now(), penaltyUpdatedBy: email };
+  }
+
+  const minutes = Math.trunc(action.minutes);
+  const trimmedNote = action.note.trim();
+  if (!Number.isFinite(minutes) || minutes < 1 || minutes > 1440) {
+    throw new Error("Durasi penalti harus antara 1 sampai 1440 menit.");
+  }
+  if (!trimmedNote) {
+    throw new Error("Tulis catatan penalti agar pengguna mengetahui alasannya.");
+  }
+  if (trimmedNote.length > 500) {
+    throw new Error("Catatan penalti maksimal 500 karakter.");
+  }
+
+  const targetCooldown = await runTransaction(db, async (tx) => {
+    const snap = await tx.get(userRef);
+    if (!snap.exists()) throw new Error("Profil pengguna tidak ditemukan.");
+    const profile = mapUser(uid, snap.data());
+    const now = Date.now();
+    const base = profile.cooldownUntil !== null && profile.cooldownUntil > now ? profile.cooldownUntil : now;
+    const nextUntil = base + minutes * 60_000;
+    tx.update(userRef, {
+      cooldownUntil: Timestamp.fromMillis(nextUntil),
+      penaltyNote: trimmedNote,
+      penaltyUpdatedAt: serverTimestamp(),
+      penaltyUpdatedBy: email,
+    });
+    return nextUntil;
+  });
+
+  return {
+    cooldownUntil: targetCooldown,
+    penaltyNote: trimmedNote,
+    penaltyUpdatedAt: Date.now(),
+    penaltyUpdatedBy: email,
+  };
+}
+
+/** Menonaktifkan atau mengaktifkan kembali akun pengguna. Akun admin tidak dapat dinonaktifkan dari konsol ini. */
+export async function setUserDisabled(
+  uid: string,
+  disabled: boolean,
+  reason: string,
+): Promise<{ disabled: boolean; disabledReason: string | null; disabledAt: number | null }> {
+  const trimmed = reason.trim();
+  if (trimmed.length > 300) throw new Error("Alasan penonaktifan maksimal 300 karakter.");
+
+  const db = getDb();
+  const userRef = doc(db, "users", uid);
+  const snap = await getDoc(userRef);
+  if (!snap.exists()) throw new Error("Profil pengguna tidak ditemukan.");
+  const profile = mapUser(uid, snap.data());
+  if (profile.email.toLowerCase() === ADMIN_EMAIL) {
+    throw new Error("Akun admin tidak dapat dinonaktifkan.");
+  }
+
+  await updateDoc(userRef, {
+    disabled,
+    disabledReason: disabled ? trimmed || null : null,
+    disabledAt: disabled ? serverTimestamp() : null,
+  });
+
+  return {
+    disabled,
+    disabledReason: disabled ? trimmed || null : null,
+    disabledAt: disabled ? Date.now() : null,
+  };
+}
+
+/** Menghapus dokumen profil pengguna beserta seluruh scan, foto bukti, dan penukaran miliknya di Firestore. */
+export async function deleteUserAccount(uid: string): Promise<void> {
+  const db = getDb();
+  const userRef = doc(db, "users", uid);
+  const userSnap = await getDoc(userRef);
+  if (!userSnap.exists()) throw new Error("Profil pengguna tidak ditemukan.");
+  const profile = mapUser(uid, userSnap.data());
+  if (profile.email.toLowerCase() === ADMIN_EMAIL) {
+    throw new Error("Akun admin tidak dapat dihapus.");
+  }
+
+  const [scansSnap, photosSnap, exchangesSnap] = await Promise.all([
+    getDocs(query(collection(db, "scans"), where("userId", "==", uid))),
+    getDocs(query(collection(db, "scanPhotos"), where("userId", "==", uid))),
+    getDocs(query(collection(db, "exchanges"), where("userId", "==", uid))),
+  ]);
+
+  const refs = new Map<string, ReturnType<typeof doc>>();
+  for (const d of scansSnap.docs) {
+    refs.set(d.ref.path, d.ref);
+    const fallbackPhotoRef = doc(db, "scanPhotos", d.id);
+    refs.set(fallbackPhotoRef.path, fallbackPhotoRef);
+  }
+  for (const d of photosSnap.docs) refs.set(d.ref.path, d.ref);
+  for (const d of exchangesSnap.docs) refs.set(d.ref.path, d.ref);
+  refs.set(userRef.path, userRef);
+
+  const list = [...refs.values()];
+  for (let i = 0; i < list.length; i += BATCH_DELETE_CHUNK) {
+    const batch = writeBatch(db);
+    for (const ref of list.slice(i, i + BATCH_DELETE_CHUNK)) {
+      batch.delete(ref);
+    }
+    await batch.commit();
+  }
 }
 
 async function photoHashExists(uid: string, hash: string): Promise<boolean> {
@@ -583,6 +798,193 @@ export async function fetchLocations(): Promise<CollectionResult<CampusLocation>
       };
   locationsCache = { at: Date.now(), result };
   return result;
+}
+
+export interface CatalogFetchResult {
+  active: WasteCatalogItem[];
+  hiddenBuiltIns: WasteCatalogItem[];
+  source: DataSource;
+}
+
+const CATALOG_CACHE_MS = 15 * 60 * 1000;
+let catalogCache: { at: number; result: CatalogFetchResult } | null = null;
+const catalogListeners = new Set<() => void>();
+
+function notifyWasteCatalogChanged(): void {
+  for (const listener of catalogListeners) listener();
+}
+
+export function subscribeWasteCatalogUpdates(listener: () => void): () => void {
+  catalogListeners.add(listener);
+  return () => catalogListeners.delete(listener);
+}
+
+export function clearWasteCatalogCache(): void {
+  catalogCache = null;
+  notifyWasteCatalogChanged();
+}
+
+function mapWasteItemDoc(id: string, data: DocumentData): StoredWasteItemDoc | null {
+  const label = typeof data.label === "string" ? data.label.trim() : "";
+  const question = typeof data.question === "string" ? data.question.trim() : "";
+  const reason = typeof data.reason === "string" ? data.reason.trim() : "";
+  const choices = Array.isArray(data.choices) ? data.choices.map((c) => String(c).trim()) : [];
+  const correctIndex = Number(data.correctIndex);
+  if (
+    !label ||
+    !isValidCategory(data.category) ||
+    !question ||
+    choices.length !== 2 ||
+    !choices[0] ||
+    !choices[1] ||
+    (correctIndex !== 0 && correctIndex !== 1) ||
+    !reason
+  ) {
+    return null;
+  }
+  return {
+    id,
+    label,
+    category: data.category,
+    question,
+    choices: [choices[0], choices[1]],
+    correctIndex,
+    reason,
+    deleted: Boolean(data.deleted),
+  };
+}
+
+/**
+ * Mengambil kamus sampah + soal cek cepat dari `wasteItems` lalu menggabungkannya dengan 30 item bawaan.
+ * Bila `force` true, cache dilewati supaya soal baru dari admin langsung terbaca di ronde acak berikutnya.
+ */
+export async function fetchWasteCatalog(force = false): Promise<CatalogFetchResult> {
+  if (!force && catalogCache && Date.now() - catalogCache.at < CATALOG_CACHE_MS) {
+    return catalogCache.result;
+  }
+  const snap = await getDocs(collection(getDb(), "wasteItems"));
+  assertReachable(snap);
+  if (snap.empty) {
+    const result: CatalogFetchResult = {
+      active: DEFAULT_WASTE_CATALOG,
+      hiddenBuiltIns: [],
+      source: "default",
+    };
+    catalogCache = { at: Date.now(), result };
+    return result;
+  }
+  const remote = snap.docs
+    .map((d) => mapWasteItemDoc(d.id, d.data()))
+    .filter((item): item is StoredWasteItemDoc => item !== null);
+  const merged = mergeWasteCatalog(remote);
+  const result: CatalogFetchResult = {
+    active: merged.active,
+    hiddenBuiltIns: merged.hiddenBuiltIns,
+    source: "firestore",
+  };
+  catalogCache = { at: Date.now(), result };
+  return result;
+}
+
+function validateCatalogInput(input: WasteCatalogInput): {
+  label: string;
+  category: BinCategory;
+  question: string;
+  choices: [string, string];
+  correctIndex: 0 | 1;
+  reason: string;
+} {
+  const label = input.label.trim();
+  const question = input.question.trim();
+  const c0 = input.choices[0].trim();
+  const c1 = input.choices[1].trim();
+  const reason = input.reason.trim();
+  if (!label || label.length > 120) throw new Error("Nama barang harus diisi (maksimal 120 karakter).");
+  if (!isValidCategory(input.category)) throw new Error("Pilih kategori tong yang valid.");
+  if (!question || question.length > 300) throw new Error("Pertanyaan cek cepat harus diisi (maksimal 300 karakter).");
+  if (!c0 || !c1 || c0.length > 100 || c1.length > 100) {
+    throw new Error("Kedua pilihan jawaban wajib diisi (maksimal 100 karakter).");
+  }
+  if (input.correctIndex !== 0 && input.correctIndex !== 1) throw new Error("Pilih jawaban yang benar.");
+  if (!reason || reason.length > 400) throw new Error("Alasan penjelasan wajib diisi (maksimal 400 karakter).");
+  return { label, category: input.category, question, choices: [c0, c1], correctIndex: input.correctIndex, reason };
+}
+
+/** Menambah barang kamus baru atau memperbarui barang yang ada, langsung memperbarui Cek cepat dan Coba pilah. */
+export async function saveWasteCatalogItem(input: WasteCatalogInput): Promise<WasteCatalogItem> {
+  const email = getFirebaseAuth().currentUser?.email;
+  if (!email) throw new Error("Sesi login tidak ditemukan. Masuk lagi lalu coba lagi.");
+  const clean = validateCatalogInput(input);
+  const db = getDb();
+
+  let targetId = input.id?.trim() ?? "";
+  if (!targetId) {
+    const existingSnap = await getDocs(collection(db, "wasteItems"));
+    const usedIds = new Set(DEFAULT_WASTE_CATALOG.map((item) => item.id));
+    for (const d of existingSnap.docs) usedIds.add(d.id);
+    const base = slugifyWasteId(clean.label);
+    targetId = base;
+    let suffix = 2;
+    while (usedIds.has(targetId)) {
+      targetId = `${base}-${suffix}`;
+      suffix += 1;
+    }
+  }
+
+  await setDoc(doc(db, "wasteItems", targetId), {
+    id: targetId,
+    label: clean.label,
+    category: clean.category,
+    question: clean.question,
+    choices: clean.choices,
+    correctIndex: clean.correctIndex,
+    reason: clean.reason,
+    deleted: false,
+    updatedBy: email,
+    updatedAt: serverTimestamp(),
+  });
+
+  clearWasteCatalogCache();
+  const builtIn = isBuiltInWasteItem(targetId);
+  return {
+    id: targetId,
+    ...clean,
+    builtIn,
+    overridden: builtIn,
+  };
+}
+
+/** Menghapus barang tambahan dari Firestore atau menyembunyikan barang bawaan dari kamus aktif. */
+export async function deleteWasteCatalogItem(item: WasteCatalogItem): Promise<void> {
+  const email = getFirebaseAuth().currentUser?.email;
+  if (!email) throw new Error("Sesi login tidak ditemukan. Masuk lagi lalu coba lagi.");
+  const db = getDb();
+  const ref = doc(db, "wasteItems", item.id);
+
+  if (!isBuiltInWasteItem(item.id)) {
+    await deleteDoc(ref);
+  } else {
+    await setDoc(ref, {
+      id: item.id,
+      label: item.label,
+      category: item.category,
+      question: item.question,
+      choices: item.choices,
+      correctIndex: item.correctIndex,
+      reason: item.reason,
+      deleted: true,
+      updatedBy: email,
+      updatedAt: serverTimestamp(),
+    });
+  }
+  clearWasteCatalogCache();
+}
+
+/** Mengembalikan barang bawaan yang sebelumnya dihapus atau diubah ke versi aslinya. */
+export async function restoreBuiltInWasteItem(id: string): Promise<void> {
+  if (!isBuiltInWasteItem(id)) return;
+  await deleteDoc(doc(getDb(), "wasteItems", id));
+  clearWasteCatalogCache();
 }
 
 /* ------------------------------ quiz bank (read) --------------------------- */

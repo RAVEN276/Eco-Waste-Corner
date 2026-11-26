@@ -34,7 +34,7 @@ export function PointsCard() {
           <h2 id="judul-poin" className="text-3xl">
             Poin kamu
           </h2>
-          <p className="mt-4 font-display text-[8rem] font-extrabold leading-[0.85] sm:text-[11rem]">
+          <p className="mt-4 font-display text-[5.5rem] font-extrabold leading-[0.85] sm:text-[8rem] lg:text-[11rem]">
             <CountUp value={poin} duration={1.1} />
           </p>
           <p className="mt-4 max-w-md text-sm">
@@ -47,7 +47,7 @@ export function PointsCard() {
           <p role="status" className="flex items-center gap-3">
             {cooldown.active ? (
               <>
-                <span className="font-display text-5xl font-extrabold leading-none tabular-nums">
+                <span className="font-display text-4xl font-extrabold leading-none tabular-nums sm:text-5xl">
                   {cooldown.label}
                 </span>
                 <span className="text-sm">sampai scan berikutnya</span>

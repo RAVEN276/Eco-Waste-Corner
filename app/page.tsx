@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CommonMistakes } from "@/components/landing/CommonMistakes";
 import { Hero } from "@/components/landing/Hero";
 import { PointRules } from "@/components/landing/PointRules";
+import { PrepGuide } from "@/components/landing/PrepGuide";
 import { Sdg12Banner } from "@/components/landing/Sdg12Banner";
 import { SortGame } from "@/components/landing/SortGame";
 import { SortSteps } from "@/components/landing/SortSteps";
@@ -25,6 +26,7 @@ export default function HomePage() {
       <Hero />
       <div id="edukasi">
         <WasteCategories />
+        <PrepGuide />
         <SortSteps />
         <CommonMistakes />
         <WasteDictionary />
@@ -33,13 +35,15 @@ export default function HomePage() {
       <Sdg12Banner />
       <PointRules />
       <section className="bg-cobalt text-white" aria-labelledby="judul-lokasi">
-        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1fr_1.1fr] md:items-center md:py-20">
+        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:gap-10 sm:px-6 sm:py-14 md:grid-cols-[1fr_1.1fr] md:items-center md:py-20">
           <div className="reveal">
-            <h2 id="judul-lokasi" className="text-5xl sm:text-6xl">
+            <h2 id="judul-lokasi" className="text-4xl sm:text-5xl lg:text-6xl">
               Dua titik Eco Waste Corner di kampus
             </h2>
-            <p className="mt-4 max-w-md text-lg">Lihat letaknya di denah, foto areanya, dan rute jalan kaki ke tiap titik.</p>
-            <Link href="/map" className={buttonClasses("light", "lg", "mt-6")}>
+            <p className="mt-3 max-w-md text-base sm:mt-4 sm:text-lg">
+              Lihat letaknya di denah, foto areanya, dan rute jalan kaki ke tiap titik.
+            </p>
+            <Link href="/map" className={buttonClasses("light", "lg", "mt-6 w-full sm:w-auto")}>
               Lihat peta lokasi
             </Link>
           </div>
@@ -52,7 +56,7 @@ export default function HomePage() {
               >
                 <span
                   aria-hidden="true"
-                  className="font-display text-8xl font-extrabold leading-none text-link"
+                  className="font-display text-6xl font-extrabold leading-none text-link sm:text-8xl"
                 >
                   {spot.letter}
                 </span>

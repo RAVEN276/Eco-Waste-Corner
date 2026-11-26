@@ -55,10 +55,10 @@ export function ResultStep({
           )}
           <h2 className="text-4xl">{penalized ? "Pelanggaran terdeteksi" : "Scan tercatat"}</h2>
         </div>
-        <p className="mt-4 font-display text-8xl font-extrabold leading-none">
+        <p className="mt-4 font-display text-6xl font-extrabold leading-none sm:text-7xl md:text-8xl">
           {shownPoints > 0 ? "+" : ""}
           <AnimatedCounter value={shownPoints} />
-          <span className="ml-3 text-3xl font-bold">
+          <span className="ml-2.5 text-2xl font-bold sm:ml-3 sm:text-3xl">
             {penalized ? "poin" : pendingPoints > 0 ? "poin menunggu admin" : "poin"}
           </span>
         </p>
@@ -76,16 +76,16 @@ export function ResultStep({
             : "Cek otomatis tahap 1 selesai tanpa poin karena jawaban kuis belum memenuhi syarat. Scan tetap tercatat untuk ditinjau admin."}
       </InlineNotice>
 
-      <dl className="fade-up grid grid-cols-2 gap-3 text-sm" style={{ ["--delay" as string]: "300ms" }}>
-        <div className="rounded-plate border-2 border-rule bg-surface p-4">
+      <dl className="fade-up grid grid-cols-2 gap-2.5 text-sm sm:gap-3" style={{ ["--delay" as string]: "300ms" }}>
+        <div className="rounded-plate border-2 border-rule bg-surface p-3.5 sm:p-4">
           <dt className="text-muted">Saldo poin</dt>
-          <dd className="mt-1 font-display text-5xl font-extrabold leading-none text-ink">
+          <dd className="mt-1 font-display text-4xl font-extrabold leading-none text-ink sm:text-5xl">
             <AnimatedCounter value={result.balance} />
           </dd>
         </div>
-        <div className="rounded-plate border-2 border-rule bg-surface p-4">
+        <div className="rounded-plate border-2 border-rule bg-surface p-3.5 sm:p-4">
           <dt className="text-muted">Scan berikutnya</dt>
-          <dd className="mt-1 font-display text-5xl font-extrabold leading-none tabular-nums text-ink">
+          <dd className="mt-1 font-display text-4xl font-extrabold leading-none tabular-nums text-ink sm:text-5xl">
             {cooldown.active ? cooldown.label : "Siap"}
           </dd>
         </div>
@@ -107,7 +107,7 @@ export function ResultStep({
       ) : null}
 
       <div className="fade-up flex flex-col gap-2 sm:flex-row" style={{ ["--delay" as string]: "540ms" }}>
-        <Link href="/dashboard" className={buttonClasses("primary", "lg")}>
+        <Link href="/dashboard" className={buttonClasses("primary", "lg", "w-full sm:w-auto")}>
           Lihat dashboard
         </Link>
         <Button variant="outline" size="lg" onClick={onAgain} disabled={cooldown.active}>

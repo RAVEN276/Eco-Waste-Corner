@@ -23,6 +23,8 @@ export interface AdminReviewProps {
   onLoadMore: () => void;
   loadPhoto: (scanId: string) => Promise<string | null>;
   onReview: (scanId: string, decision: ReviewDecision, note: string) => Promise<unknown>;
+  onDeleteScan?: (scanId: string) => Promise<unknown>;
+  onManageUser?: (uid: string) => void;
 }
 
 const EMPTY_COPY: Record<ReviewFilter, { title: string; description: string }> = {
@@ -75,6 +77,8 @@ export function AdminReview({
   onLoadMore,
   loadPhoto,
   onReview,
+  onDeleteScan,
+  onManageUser,
 }: AdminReviewProps) {
   const [filter, setFilter] = useState<ReviewFilter>("pending");
   const [query, setQuery] = useState("");
@@ -175,6 +179,13 @@ export function AdminReview({
     await onReview(scan.scanId, decision, note);
     // Di tab "Menunggu" scan yang baru diputuskan keluar dari antrean, jadi lanjut ke scan berikutnya.
     if (filter === "pending") setSelectedId(next?.scanId ?? null);
+  };
+
+  const handleDelete = async (scan: ScanRecord) => {
+    if (!onDeleteScan) return;
+    const next = visible[selectedIndex + 1] ?? visible[selectedIndex - 1] ?? null;
+    await onDeleteScan(scan.scanId);
+    setSelectedId(next?.scanId ?? null);
   };
 
   if (status === "loading") {
@@ -278,6 +289,8 @@ export function AdminReview({
                 loadPhoto={loadPhoto}
                 onReview={(decision, note) => handleReview(selected, decision, note)}
                 onOpenScan={openScan}
+                onManageUser={onManageUser}
+                onDeleteScan={onDeleteScan ? () => handleDelete(selected) : undefined}
               />
             </section>
           ) : null}

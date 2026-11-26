@@ -37,9 +37,9 @@ const STEPS = [
 export function PointRules() {
   return (
     <section id="aturan-poin" className="bg-night text-white" aria-labelledby="judul-aturan">
-      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-12 px-4 py-14 sm:px-6 md:py-20 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
+      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-4 py-10 sm:gap-12 sm:px-6 sm:py-14 md:py-20 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
         <div>
-          <h2 id="judul-aturan" className="text-5xl sm:text-6xl">
+          <h2 id="judul-aturan" className="text-4xl sm:text-5xl lg:text-6xl">
             Cara kerja dan aturan poin
           </h2>
           <ol className="mt-8 divide-y divide-white/25 border-y border-white/25">
@@ -85,33 +85,35 @@ export function PointRules() {
             </ul>
           </div>
 
-          <table className="w-full border-collapse text-left text-sm">
-            <caption className="pb-3 text-left font-display text-3xl font-extrabold">
-              Poin berjenjang (bonus foto lengkap: +{FULL_PROOF_BONUS})
-            </caption>
-            <thead>
-              <tr className="border-b-2 border-white text-mist">
-                <th scope="col" className="py-2 pr-4 font-bold">
-                  Kuis
-                </th>
-                <th scope="col" className="py-2 pr-4 font-bold">
-                  Foto bukti
-                </th>
-                <th scope="col" className="py-2 font-bold">
-                  Poin
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {SCORE_TABLE_ROWS.map((row) => (
-                <tr key={`${row.quiz}-${row.photo}`} className="border-b border-white/25">
-                  <td className="py-3 pr-4">{row.quiz}</td>
-                  <td className="py-3 pr-4">{row.photo}</td>
-                  <td className="py-3 font-bold">{row.points}</td>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-left text-sm">
+              <caption className="pb-3 text-left font-display text-3xl font-extrabold">
+                Poin berjenjang (bonus foto lengkap: +{FULL_PROOF_BONUS})
+              </caption>
+              <thead>
+                <tr className="border-b-2 border-white text-mist">
+                  <th scope="col" className="py-2 pr-4 font-bold">
+                    Kuis
+                  </th>
+                  <th scope="col" className="py-2 pr-4 font-bold">
+                    Foto bukti
+                  </th>
+                  <th scope="col" className="py-2 font-bold">
+                    Poin
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {SCORE_TABLE_ROWS.map((row) => (
+                  <tr key={`${row.quiz}-${row.photo}`} className="border-b border-white/25">
+                    <td className="py-3 pr-4">{row.quiz}</td>
+                    <td className="py-3 pr-4">{row.photo}</td>
+                    <td className="py-3 font-bold">{row.points}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           <div>
             <h3 className="text-3xl">Pengurangan poin otomatis</h3>

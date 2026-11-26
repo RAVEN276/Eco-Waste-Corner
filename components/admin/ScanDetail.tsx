@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { ReviewBadge } from "@/components/admin/ReviewBadge";
 import { ReviewForm } from "@/components/admin/ReviewForm";
 import {
@@ -31,6 +31,8 @@ interface ScanDetailProps {
   loadPhoto: (scanId: string) => Promise<string | null>;
   onReview: (decision: ReviewDecision, note: string) => Promise<void>;
   onOpenScan: (scanId: string) => void;
+  onManageUser?: (uid: string) => void;
+  onDeleteScan?: () => Promise<void>;
 }
 
 type PhotoState = { status: "loading" | "ready" | "missing" | "error"; url: string | null };
@@ -179,9 +181,32 @@ export function ScanDetail({
   loadPhoto,
   onReview,
   onOpenScan,
+  onManageUser,
+  onDeleteScan,
 }: ScanDetailProps) {
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const penalty = penaltyText(scan);
   const name = userName(scan, user ? new Map([[scan.userId, user]]) : new Map());
+
+  useLayoutEffect(() => {
+    return () => setDeleteOpen(false);
+  }, []);
+
+  const confirmDelete = async () => {
+    if (!onDeleteScan) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await onDeleteScan();
+      setDeleteOpen(false);
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Scan gagal dihapus.");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <div className="overflow-clip rounded-sheet border-2 border-line bg-surface">
@@ -227,13 +252,21 @@ export function ScanDetail({
 
         <div className="min-w-0 space-y-4 sm:space-y-5">
           <section className="rounded-plate border-2 border-rule bg-paper p-3.5 sm:p-4">
-            <h3 className="text-xl sm:text-2xl">Mahasiswa dan lokasi</h3>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-xl sm:text-2xl">Mahasiswa dan lokasi</h3>
+              {onManageUser && user ? (
+                <Button variant="outline" onClick={() => onManageUser(user.uid)} className="w-full sm:w-auto">
+                  Kelola akun ini
+                </Button>
+              ) : null}
+            </div>
             <dl className="mt-2.5 grid gap-2.5 sm:mt-3 sm:grid-cols-2 sm:gap-3">
               <Fact label="Nama">{name}</Fact>
               <Fact label="Email">
                 <span className="break-all">{user?.email || "Tidak ditemukan"}</span>
               </Fact>
               <Fact label="Program studi">{user?.prodi || "Belum diisi"}</Fact>
+              <Fact label="Saldo saat ini">{user ? `${user.poin} poin` : "Tidak diketahui"}</Fact>
               <Fact label="Lokasi">{scan.locationName || scan.location}</Fact>
               <Fact label="ID scan">
                 <span className="break-all font-mono text-xs">{scan.scanId}</span>
@@ -326,8 +359,45 @@ export function ScanDetail({
           </section>
 
           <ReviewForm scan={scan} onReview={onReview} />
+
+          {onDeleteScan ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-plate border-2 border-rule bg-paper p-3.5 sm:p-4">
+              <p className="text-xs text-muted sm:text-sm">
+                Scan uji coba atau duplikat dapat dihapus bersama foto buktinya.
+              </p>
+              <Button variant="danger" onClick={() => setDeleteOpen(true)} className="w-full sm:w-auto">
+                Hapus scan
+              </Button>
+            </div>
+          ) : null}
         </div>
       </div>
+
+      {onDeleteScan ? (
+        <Dialog
+          open={deleteOpen}
+          onClose={() => !deleting && setDeleteOpen(false)}
+          title="Hapus scan ini?"
+        >
+          <div className="space-y-4">
+            <p className="text-base">
+              Data scan dan foto bukti ini akan dihapus permanen.
+              {scan.review?.status === "approved" && scan.pointsEarned > 0
+                ? ` Karena scan ini sudah disetujui, +${scan.pointsEarned} poin akan ditarik kembali dari saldo pengguna.`
+                : ""}
+            </p>
+            {deleteError ? <InlineNotice tone="error">{deleteError}</InlineNotice> : null}
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button variant="outline" onClick={() => setDeleteOpen(false)} disabled={deleting}>
+                Batal
+              </Button>
+              <Button variant="danger" onClick={() => void confirmDelete()} disabled={deleting}>
+                {deleting ? "Menghapus..." : "Ya, hapus scan"}
+              </Button>
+            </div>
+          </div>
+        </Dialog>
+      ) : null}
     </div>
   );
 }

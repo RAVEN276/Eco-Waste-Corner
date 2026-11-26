@@ -189,8 +189,8 @@ export function ScanFlow() {
             originClassName="flex origin-top items-end justify-between gap-6"
           >
             <div>
-              <h1 className="fade-up text-5xl sm:text-7xl">Scan QR tong</h1>
-              <p className="fade-up mt-3 text-lg" style={{ ["--delay" as string]: "120ms" }}>
+              <h1 className="fade-up text-4xl sm:text-6xl lg:text-7xl">Scan QR tong</h1>
+              <p className="fade-up mt-2.5 text-base sm:mt-3 sm:text-lg" style={{ ["--delay" as string]: "120ms" }}>
                 Pindai QR di tong, jawab kuis, lalu klaim poin.
               </p>
             </div>
@@ -208,18 +208,25 @@ export function ScanFlow() {
       {cooldown.active && step !== "result" ? (
         <div
           role="status"
-          className="fade-up flex items-center gap-4 rounded-plate border-2 border-line bg-kertas-soft px-4 py-3"
+          className="fade-up flex items-start gap-3 rounded-plate border-2 border-line bg-kertas-soft px-4 py-3 sm:gap-4"
         >
           <span
             aria-hidden="true"
-            className="font-display text-5xl font-extrabold leading-none tabular-nums"
+            className="shrink-0 font-display text-4xl font-extrabold leading-none tabular-nums sm:text-5xl"
           >
             {cooldown.label}
           </span>
-          <p className="text-sm">
-            <strong className="sr-only">Jeda scan {cooldown.label}. </strong>Jeda {COOLDOWN_MINUTES} menit untuk scan
-            biasa ({PENALTY_COOLDOWN_MINUTES} menit bila ada pelanggaran). Kamu bisa menyiapkan pilihan sambil menunggu.
-          </p>
+          <div className="min-w-0 text-sm">
+            <p>
+              <strong className="sr-only">Jeda scan {cooldown.label}. </strong>
+              {profile.penaltyNote
+                ? "Akunmu sedang dikenai waktu penalti oleh admin. Scan dibuka lagi setelah hitung mundur selesai."
+                : `Jeda ${COOLDOWN_MINUTES} menit untuk scan biasa (${PENALTY_COOLDOWN_MINUTES} menit bila ada pelanggaran). Kamu bisa menyiapkan pilihan sambil menunggu.`}
+            </p>
+            {profile.penaltyNote ? (
+              <p className="mt-1.5 break-words font-bold text-brick-ink">Catatan admin: {profile.penaltyNote}</p>
+            ) : null}
+          </div>
         </div>
       ) : null}
 

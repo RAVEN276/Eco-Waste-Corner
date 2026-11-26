@@ -31,9 +31,9 @@ export function Hero() {
       data-replay=""
       className="border-b-2 border-line bg-cobalt text-white"
     >
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 pb-12 pt-10 sm:px-6 md:grid-cols-[1.05fr_1fr] md:items-center md:gap-12 md:pb-16 md:pt-14">
+      <div className="mx-auto grid max-w-6xl gap-8 px-4 pb-10 pt-8 sm:gap-10 sm:px-6 sm:pb-12 sm:pt-10 md:grid-cols-[1.05fr_1fr] md:items-center md:gap-12 md:pb-16 md:pt-14">
         <div className="fade-up">
-          <h1 id="judul-hero" className="text-5xl sm:text-6xl lg:text-7xl">
+          <h1 id="judul-hero" className="text-4xl sm:text-6xl lg:text-7xl">
             Buang sampah sambil belajar, tukar jadi{" "}
             <mark
               className="wipe mt-[0.3em] inline-block rounded-ctl bg-night px-3 pb-1 leading-none text-white"
@@ -72,12 +72,12 @@ export function Hero() {
                 {BIN_LIST.map((bin, index) => (
                   <li
                     key={bin.id}
-                    className={cn("p-3 sm:p-4", bin.tone.solid, index > 0 && "border-l-2 border-line")}
+                    className={cn("min-w-0 p-2.5 sm:p-4", bin.tone.solid, index > 0 && "border-l-2 border-line")}
                   >
-                    <span className="block font-display text-5xl font-extrabold leading-none sm:text-6xl">
+                    <span className="block font-display text-4xl font-extrabold leading-none sm:text-5xl lg:text-6xl">
                       {BASE_POINTS[bin.id]}
                     </span>
-                    <span className="mt-1 block text-sm font-bold leading-tight">{bin.label}</span>
+                    <span className="mt-1 block text-xs font-bold leading-tight sm:text-sm">{bin.label}</span>
                     <span className="block text-xs">poin dasar</span>
                   </li>
                 ))}
@@ -93,13 +93,13 @@ export function Hero() {
           {STEPS.map((step, index) => (
             <li
               key={step}
-              className="fade-up flex items-start gap-3 bg-night px-4 py-5 sm:px-6"
+              className="fade-up flex min-w-0 items-start gap-2.5 bg-night px-3.5 py-4 sm:gap-3 sm:px-6 sm:py-5"
               style={delay(600 + index * 120)}
             >
-              <span aria-hidden="true" className="font-display text-5xl font-extrabold leading-none">
+              <span aria-hidden="true" className="shrink-0 font-display text-4xl font-extrabold leading-none sm:text-5xl">
                 {index + 1}
               </span>
-              <span className="pt-1 text-sm font-medium">{step}</span>
+              <span className="pt-0.5 text-xs font-medium leading-snug sm:pt-1 sm:text-sm">{step}</span>
             </li>
           ))}
         </ol>

@@ -2,21 +2,22 @@
 
 import { useState } from "react";
 import { EmptyState } from "@/components/ui/States";
+import { useWasteCatalog } from "@/hooks/useWasteCatalog";
 import { BINS, BIN_LIST } from "@/lib/data/bins";
-import { WASTE_ITEMS } from "@/lib/data/items";
 import type { BinCategory } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type Filter = "semua" | BinCategory;
 
-// Kamus barang: cari nama barang atau saring per tong. Daftar lengkap tampil dulu (tanpa JS pun
-// terbaca), jadi pencarian hanya menyempitkan. Warna tong hanya penanda tambahan, nama tong tertulis.
+// Kamus barang: cari nama barang atau saring per tong. Daftar lengkap tampil dulu dari data bawaan,
+// lalu tersinkron dengan kamus yang ditambah atau diubah admin.
 export function WasteDictionary() {
+  const { items } = useWasteCatalog();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("semua");
 
   const needle = query.trim().toLowerCase();
-  const results = WASTE_ITEMS.filter(
+  const results = items.filter(
     (item) =>
       (filter === "semua" || item.category === filter) &&
       (needle === "" || item.label.toLowerCase().includes(needle)),
@@ -25,15 +26,15 @@ export function WasteDictionary() {
   return (
     <section
       aria-labelledby="judul-kamus"
-      className="border-y-2 border-line bg-surface"
+      className="bg-paper"
     >
-      <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 md:py-20">
+      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14 md:py-20">
         <div className="reveal max-w-2xl">
-          <h2 id="judul-kamus" className="text-5xl sm:text-6xl">
+          <h2 id="judul-kamus" className="text-4xl sm:text-5xl lg:text-6xl">
             Kamus sampah: masuk tong mana?
           </h2>
           <p className="mt-4 text-lg text-muted">
-            {WASTE_ITEMS.length} barang yang sering ditemui di kampus. Ketik nama barangnya, atau
+            {items.length} barang yang sering ditemui di kampus. Ketik nama barangnya, atau
             saring berdasarkan tong.
           </p>
         </div>
@@ -84,14 +85,14 @@ export function WasteDictionary() {
         </div>
 
         <p role="status" aria-live="polite" className="mt-5 text-sm text-muted">
-          Menampilkan {results.length} dari {WASTE_ITEMS.length} barang.
+          Menampilkan {results.length} dari {items.length} barang.
         </p>
 
         {results.length === 0 ? (
           <EmptyState
             className="mt-3"
             title="Barangnya belum ada di kamus"
-            description="Coba kata yang lebih pendek, atau pakai tiga pertanyaan di atas untuk menentukan tongnya."
+            description="Coba kata yang lebih pendek, atau pakai cek cepat kondisi di atas untuk menentukan tongnya."
           />
         ) : (
           <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
